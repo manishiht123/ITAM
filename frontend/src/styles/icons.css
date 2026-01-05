@@ -1,0 +1,8 @@
+.icon {
+  color: #a5b4fc;
+}
+
+.sidebar a.active .icon {
+  color: #ffffff;
+}
+

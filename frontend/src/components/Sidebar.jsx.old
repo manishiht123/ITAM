@@ -1,0 +1,77 @@
+import { NavLink, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import {
+  FaTachometerAlt,
+  FaBox,
+  FaUsers,
+  FaCog,
+  FaSignOutAlt,
+  FaChevronDown,
+  FaChevronRight,
+} from "react-icons/fa";
+
+export default function Sidebar() {
+  const [collapsed, setCollapsed] = useState(false);
+  const [openSettings, setOpenSettings] = useState(false);
+  const navigate = useNavigate();
+
+  return (
+    <aside className={`sidebar ${collapsed ? "collapsed" : ""}`}>
+      <div className="sidebar-top">
+        <button
+          className="collapse-btn"
+          onClick={() => setCollapsed(!collapsed)}
+        >
+          ☰
+        </button>
+      </div>
+
+      <nav className="menu">
+        <NavLink to="/dashboard">
+          <FaTachometerAlt /> {!collapsed && "Dashboard"}
+        </NavLink>
+
+        <NavLink to="/assets">
+          <FaBox /> {!collapsed && "Assets"}
+        </NavLink>
+
+        <NavLink to="/employees">
+          <FaUsers /> {!collapsed && "Employees"}
+        </NavLink>
+
+        <div className="submenu">
+          <button onClick={() => setOpenSettings(!openSettings)}>
+            <FaCog />
+            {!collapsed && "Settings"}
+            {!collapsed &&
+              (openSettings ? <FaChevronDown /> : <FaChevronRight />)}
+          </button>
+
+          {openSettings && !collapsed && (
+            <div className="submenu-items">
+              <span>Organization & Entities</span>
+              <span>Users & Roles</span>
+              <span>Asset Configuration</span>
+              <span>Licenses & Compliance</span>
+              <span>Assignments & Ownership</span>
+              <span>Notifications</span>
+              <span>Security & Audit</span>
+              <span>Financial Settings</span>
+              <span>System Preferences</span>
+            </div>
+          )}
+        </div>
+      </nav>
+
+      <div
+        className="logout"
+        onClick={() => {
+          navigate("/login");
+        }}
+      >
+        <FaSignOutAlt /> {!collapsed && "Logout"}
+      </div>
+    </aside>
+  );
+}
+

@@ -1,0 +1,99 @@
+:root {
+  --brand-color: #e11d48;
+}
+
+/* =========================
+   LOGIN PAGE BACKGROUND
+   ========================= */
+.login-page {
+  height: 100vh;
+
+  /* Calm, ambient background */
+  background:
+    radial-gradient(
+      circle at center,
+      rgba(255, 255, 255, 0.96) 0%,
+      rgba(0, 0, 0, 0.12) 60%,
+      rgba(0, 0, 0, 0.28) 100%
+    ),
+    radial-gradient(
+      circle at top,
+      rgba(225, 29, 72, 0.14),
+      transparent 55%
+    ),
+    linear-gradient(
+      120deg,
+      #f1f5f9,
+      #e5e7eb,
+      #eef2f7,
+      #e5e7eb
+    );
+
+  background-size: 100% 100%, 100% 100%, 300% 300%;
+  animation: loginGradientCalm 35s ease-in-out infinite;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* =========================
+   CALM ANIMATION
+   ========================= */
+@keyframes loginGradientCalm {
+  0% {
+    background-position: center, top, 0% 50%;
+  }
+  50% {
+    background-position: center, top, 100% 50%;
+  }
+  100% {
+    background-position: center, top, 0% 50%;
+  }
+}
+
+
+/* =========================
+   LOGIN CARD ACCENT
+   ========================= */
+.login-accent {
+  height: 4px;
+  background: linear-gradient(
+    90deg,
+    var(--brand-color),
+    #fb7185
+  );
+  border-radius: 8px 8px 0 0;
+}
+
+/* =========================
+   BUTTON
+   ========================= */
+.login-button {
+  width: 100%;
+  padding: 10px;
+  background: linear-gradient(
+    90deg,
+    var(--brand-color),
+    #fb7185
+  );
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.login-button:hover {
+  opacity: 0.95;
+}
+
+/* =========================
+   INPUT FOCUS
+   ========================= */
+.login-input:focus {
+  outline: none;
+  border-color: var(--brand-color);
+  box-shadow: 0 0 0 2px rgba(225, 29, 72, 0.2);
+}
+

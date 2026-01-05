@@ -1,0 +1,23 @@
+import { FaBell, FaMoon, FaSun } from "react-icons/fa";
+import { useTheme } from "../context/ThemeContext";
+
+export default function Topbar() {
+  const { theme, toggleTheme } = useTheme();
+
+  return (
+    <header className="topbar">
+      <div className="logo">
+        <img src="/logo.svg" alt="Company Logo" />
+      </div>
+
+      <div className="actions">
+        <button onClick={toggleTheme}>
+          {theme === "dark" ? <FaSun /> : <FaMoon />}
+        </button>
+        <FaBell />
+        <span>Admin</span>
+      </div>
+    </header>
+  );
+}
+

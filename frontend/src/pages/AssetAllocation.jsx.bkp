@@ -1,0 +1,169 @@
+import React, { useState } from "react";
+import "./AssetAllocation.css";
+import { useNavigate } from "react-router-dom";
+
+/* ===== MOCK DATA (will come from API later) ===== */
+
+const AVAILABLE_ASSETS = [
+  { id: "AST-1002", name: "HP ProDesk", type: "Desktop" },
+  { id: "AST-1006", name: "HP EliteBook", type: "Laptop" },
+];
+
+const EMPLOYEES = [
+  { id: "EMP-101", name: "Rahul Sharma", email: "rahul@company.com", dept: "IT" },
+  { id: "EMP-102", name: "Ankit Verma", email: "ankit@company.com", dept: "Finance" },
+  { id: "EMP-103", name: "Amit Singh", email: "amit@company.com", dept: "Operations" },
+];
+
+/* ===== SECURITY CLASSIFICATION AUTO MAP ===== */
+
+const SECURITY_BY_DEPT = {
+  IT: {
+    confidentiality: "High",
+    integrity: "High",
+    availability: "High",
+    sensitivity: "Critical",
+  },
+  Finance: {
+    confidentiality: "High",
+    integrity: "High",
+    availability: "Medium",
+    sensitivity: "Sensitive",
+  },
+  Operations: {
+    confidentiality: "Medium",
+    integrity: "Medium",
+    availability: "High",
+    sensitivity: "Internal",
+  },
+};
+
+export default function AssetAllocation() {
+  const navigate = useNavigate();
+
+  const [employee, setEmployee] = useState(null);
+  const [assetId, setAssetId] = useState("");
+  const [allocationDate, setAllocationDate] = useState("");
+
+  const security =
+    employee && SECURITY_BY_DEPT[employee.dept]
+      ? SECURITY_BY_DEPT[employee.dept]
+      : {};
+
+  return (
+    <div className="asset-allocation-page">
+
+      {/* HEADER */}
+      <div className="page-header">
+        <h1>Asset Allocation</h1>
+        <p>Assign an available asset to an employee</p>
+      </div>
+
+      <form className="allocation-form">
+
+        {/* ================= ASSET SELECTION ================= */}
+        <section className="form-section">
+          <h3>Asset Selection</h3>
+
+          <div className="form-grid">
+            <select
+              value={assetId}
+              onChange={(e) => setAssetId(e.target.value)}
+            >
+              <option value="">Select Available Asset</option>
+              {AVAILABLE_ASSETS.map(a => (
+                <option key={a.id} value={a.id}>
+                  {a.id} – {a.name} ({a.type})
+                </option>
+              ))}
+            </select>
+
+            <input
+              type="date"
+              value={allocationDate}
+              onChange={(e) => setAllocationDate(e.target.value)}
+            />
+          </div>
+        </section>
+
+        {/* ================= EMPLOYEE DETAILS ================= */}
+        <section className="form-section">
+          <h3>Employee Details</h3>
+
+          <div className="form-grid">
+            <select
+              onChange={(e) => {
+                const emp = EMPLOYEES.find(x => x.id === e.target.value);
+                setEmployee(emp);
+              }}
+            >
+              <option value="">Select Employee</option>
+              {EMPLOYEES.map(emp => (
+                <option key={emp.id} value={emp.id}>
+                  {emp.name} ({emp.id})
+                </option>
+              ))}
+            </select>
+
+            <input value={employee?.email || ""} placeholder="Employee Email" disabled />
+            <input value={employee?.dept || ""} placeholder="Department" disabled />
+          </div>
+        </section>
+
+        {/* ================= SECURITY CLASSIFICATION ================= */}
+        <section className="form-section">
+          <h3>Security Classification</h3>
+
+          <div className="form-grid">
+            <input value={security.confidentiality || ""} placeholder="Confidentiality" disabled />
+            <input value={security.integrity || ""} placeholder="Integrity" disabled />
+            <input value={security.availability || ""} placeholder="Availability" disabled />
+            <input value={security.sensitivity || ""} placeholder="Sensitivity" disabled />
+          </div>
+        </section>
+
+        {/* ================= SOFTWARE & LICENSING ================= */}
+        <section className="form-section">
+          <h3>Software & Licensing</h3>
+
+          <div className="form-grid">
+            <input placeholder="MS Office ID" />
+            <input placeholder="Windows License Key" />
+            <select>
+              <option>Antivirus Status</option>
+              <option>Yes</option>
+              <option>No</option>
+            </select>
+	    <select>
+              <option>ME Status</option>
+              <option>Yes</option>
+              <option>No</option>
+            </select>
+            <select>
+              <option>VPN Access</option>
+              <option>Yes</option>
+              <option>No</option>
+            </select>
+          </div>
+        </section>
+
+        {/* ================= ACTIONS ================= */}
+        <div className="form-actions">
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={() => navigate("/assets")}
+          >
+            Cancel
+          </button>
+
+          <button type="submit" className="btn-primary">
+            Allocate Asset
+          </button>
+        </div>
+
+      </form>
+    </div>
+  );
+}
+

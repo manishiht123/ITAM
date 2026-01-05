@@ -1,0 +1,237 @@
+/* =========================================================
+   ITAM DASHBOARD – ENTERPRISE UI (V2)
+   UX POLISH – NO JSX CHANGES
+   ========================================================= */
+
+/* ---------------- GLOBAL ---------------- */
+body {
+  background: #f4f6f9;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #0f172a;
+}
+
+/* ---------------- PAGE ---------------- */
+.page-container,
+div[style*="padding: 24px"] {
+  padding: 28px !important;
+}
+
+/* ---------------- HEADINGS ---------------- */
+h1 {
+  font-size: 26px;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 48px 0 16px;
+  padding-left: 8px;
+  border-left: 4px solid #6366f1;
+}
+
+h4 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+/* ---------------- SECTION SEPARATION ---------------- */
+.section-divider {
+  height: 1px;
+  background: linear-gradient(to right, #e5e7eb, transparent);
+  margin: 40px 0;
+}
+
+/* ---------------- KPI CARDS ---------------- */
+.kpi-card,
+div[style*="Total Assets"],
+div[style*="Allocated"] {
+  background: linear-gradient(180deg, #ffffff, #fafafa);
+  border-radius: 14px;
+  padding: 18px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.12);
+}
+
+.kpi-title {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.kpi-value {
+  font-size: 30px;
+  font-weight: 800;
+  margin-top: 6px;
+  color: #0f172a;
+}
+
+/* ---------------- CARDS (CHARTS / TABLES) ---------------- */
+.card,
+div[style*="background: #fff"] {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 18px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+/* ---------------- CHARTS ---------------- */
+.chart-card {
+  height: 360px;
+}
+
+canvas {
+  max-height: 260px !important;
+}
+
+/* ---------------- ALERTS ---------------- */
+.alert-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.alert-critical {
+  background: linear-gradient(135deg, #fee2e2, #fecaca);
+  border-left: 6px solid #ef4444;
+}
+
+.alert-warning {
+  background: linear-gradient(135deg, #fef9c3, #fde68a);
+  border-left: 6px solid #f59e0b;
+}
+
+.alert-ok {
+  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+  border-left: 6px solid #22c55e;
+}
+
+.alert-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.alert-value {
+  font-size: 26px;
+  font-weight: 800;
+  margin-top: 6px;
+}
+
+/* ---------------- COMPLIANCE ---------------- */
+.compliance-card {
+  background: linear-gradient(135deg, #ecfeff, #cffafe);
+  border-left: 6px solid #06b6d4;
+}
+
+.compliance-good {
+  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+  border-left: 6px solid #22c55e;
+}
+
+/* ---------------- TABLES ---------------- */
+.table-wrapper {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
+}
+
+thead {
+  background: #f8fafc;
+}
+
+th {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  padding: 14px;
+}
+
+td {
+  padding: 14px;
+  font-size: 13px;
+}
+
+tr:hover {
+  background: #f1f5f9;
+}
+
+/* ---------------- STATUS BADGES ---------------- */
+.status-assigned {
+  background: #dcfce7;
+  color: #166534;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.status-unassigned {
+  background: #ffedd5;
+  color: #9a3412;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* ---------------- BUTTONS ---------------- */
+.btn {
+  border: 1px solid #c7d2fe;
+  background: #ffffff;
+  padding: 6px 12px;
+  font-size: 12px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.btn:hover {
+  background: #eef2ff;
+}
+
+/* ---------------- SIDEBAR ---------------- */
+.sidebar {
+  background: linear-gradient(180deg, #020617, #020617);
+  color: #e5e7eb;
+}
+
+.sidebar-item {
+  padding: 12px 18px;
+  font-size: 14px;
+}
+
+.sidebar-item.active {
+  background: #1e293b;
+  border-left: 4px solid #6366f1;
+}
+
+/* ---------------- TOPBAR ---------------- */
+.topbar {
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+}
+
+/* ---------------- RESPONSIVE ---------------- */
+@media (max-width: 1024px) {
+  .alert-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+
+

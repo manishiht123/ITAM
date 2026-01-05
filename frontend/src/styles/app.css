@@ -1,0 +1,42 @@
+:root {
+  --bg: #f8fafc;
+  --card: #ffffff;
+  --border: #e5e7eb;
+  --primary: #6366f1;
+}
+
+[data-theme="dark"] {
+  --bg: #020617;
+  --card: #020617;
+  --border: #1e293b;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  font-family: Inter, system-ui, sans-serif;
+}
+
+/* GRID LAYOUT */
+.app-shell {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  min-height: 100vh;
+}
+
+.app-shell.collapsed {
+  grid-template-columns: 80px 1fr;
+}
+
+/* MAIN */
+.app-main {
+  display: grid;
+  grid-template-rows: 64px 1fr;
+}
+
+/* CONTENT */
+.app-content {
+  padding: 24px;
+  background: var(--bg);
+}
+
