@@ -1,21 +1,14 @@
-/* ================================
-   PAGE WRAPPER
-================================ */
+/* ================= PAGE ================= */
 .assets-page {
   padding: 24px;
-  width: 100%;
-  max-width: 1280px;
-  box-sizing: border-box;
 }
 
-/* ================================
-   HEADER
-================================ */
+/* ================= HEADER ================= */
 .assets-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 22px;
+  margin-bottom: 24px;
 }
 
 .assets-subtitle {
@@ -24,43 +17,37 @@
   margin-top: 4px;
 }
 
-/* ================================
-   ACTION BUTTONS
-================================ */
+/* ================= ACTION BUTTONS ================= */
 .asset-actions {
   display: flex;
-  gap: 12px;
+  gap: 10px;
 }
 
 .asset-action-btn {
+  padding: 8px 16px;
   border-radius: 10px;
-  padding: 9px 16px;
   font-size: 14px;
   font-weight: 600;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #374151;
   cursor: pointer;
-  border: none;
-  transition: all 0.25s ease;
+  transition: all 0.2s ease;
 }
 
 .asset-action-btn.primary {
   background: linear-gradient(135deg, #9333ea, #7c3aed);
-  color: #fff;
-  box-shadow: 0 8px 20px rgba(147, 51, 234, 0.25);
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 6px 16px rgba(147, 51, 234, 0.28);
 }
 
 .asset-action-btn.primary:hover {
   transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(147, 51, 234, 0.35);
 }
 
-.asset-action-btn.secondary {
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  color: #374151;
-}
-
-/* ================================
-   KPI CARDS
-================================ */
+/* ================= KPI CARDS ================= */
 .asset-kpis {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -72,8 +59,7 @@
   background: #ffffff;
   border-radius: 14px;
   padding: 16px 18px;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
-  min-height: 90px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
 }
 
 .kpi-card span {
@@ -82,41 +68,42 @@
 }
 
 .kpi-card strong {
+  display: block;
+  margin-top: 6px;
   font-size: 22px;
   font-weight: 700;
   color: #111827;
-  margin-top: 6px;
 }
 
-/* ================================
-   CHARTS SECTION
-================================ */
+/* ================= CHART GRID ================= */
 .assets-charts {
-  background: #ffffff;
-  background: #ffffff;
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 10px 28px rgba(0,0,0,0.06);
-  min-height: 320px;     /* 🔑 key fix */
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
 }
 
+/* ================= CHART CARD ================= */
 .chart-card {
   background: #ffffff;
   border-radius: 16px;
   padding: 20px;
-  box-shadow: 0 10px 28px rgba(0,0,0,0.06);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.06);
 }
 
-/* ================================
-   DONUT CHART
-================================ */
+.chart-card h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 16px;
+}
+
+/* ================= DONUT ================= */
 .donut-wrapper {
-  width: 200px;
-  height: 200px;
+  width: 220px;
+  height: 220px;
   margin: 0 auto;
+  position: relative;
 }
 
 .donut {
@@ -133,22 +120,54 @@
   justify-content: center;
 }
 
+.donut-center strong {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.donut-center span {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+/* ================= LEGEND ================= */
 .legend {
   display: flex;
   justify-content: center;
-  gap: 14px;
-  margin-top: 10px;
+  gap: 16px;
+  margin-top: 12px;
   font-size: 13px;
 }
 
-/* ================================
-   STATUS BARS
-================================ */
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-item span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+/* ================= STATUS BARS ================= */
 .status-row {
   display: grid;
-  grid-template-columns: 120px 1fr 32px;
+  grid-template-columns: 120px 1fr 30px;
   align-items: center;
+  gap: 12px;
   margin-bottom: 12px;
+}
+
+.status-row span {
+  font-size: 14px;
+  color: #374151;
+}
+
+.status-row strong {
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .status-bar {
@@ -163,29 +182,27 @@
   border-radius: 999px;
 }
 
-/* ================================
-   FILTERS
-================================ */
+/* ================= FILTERS ================= */
 .asset-filters {
   display: flex;
   gap: 12px;
-  margin: 16px 0;
+  margin: 18px 0;
 }
 
 .asset-filters input,
 .asset-filters select {
-  padding: 8px 10px;
+  padding: 8px 12px;
   border-radius: 8px;
   border: 1px solid #d1d5db;
+  font-size: 14px;
 }
 
-/* ================================
-   TABLE
-================================ */
+/* ================= TABLE ================= */
 .asset-table-wrapper {
   background: #ffffff;
-  border-radius: 14px;
+  border-radius: 16px;
   padding: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.06);
 }
 
 table {
@@ -194,44 +211,44 @@ table {
 }
 
 th, td {
-  padding: 10px 12px;
+  padding: 12px 14px;
   border-bottom: 1px solid #e5e7eb;
 }
 
 th {
   background: #f9fafb;
-  font-size: 13px;
+  font-size: 12px;
+  font-weight: 600;
   color: #6b7280;
+  text-transform: uppercase;
 }
 
-/* ================================
-   ROW ACTION BUTTONS
-================================ */
+/* ================= ROW ACTIONS ================= */
 .row-action-btn {
-  background: #9333ea;
-  color: #ffffff;
-  border: none;
   padding: 6px 12px;
   border-radius: 6px;
   font-size: 13px;
+  font-weight: 600;
+  border: none;
   cursor: pointer;
 }
 
-.row-action-btn.warning {
+.row-action-btn.allocate {
+  background: #9333ea;
+  color: #ffffff;
+}
+
+.row-action-btn.handover {
   background: #f97316;
+  color: #ffffff;
 }
 
-.row-action-btn:hover {
-  opacity: 0.9;
-}
-
-/* ================================
-   PAGINATION
-================================ */
+/* ================= PAGINATION ================= */
 .pagination {
   margin-top: 14px;
   display: flex;
   align-items: center;
   gap: 10px;
+  font-size: 14px;
 }
 
