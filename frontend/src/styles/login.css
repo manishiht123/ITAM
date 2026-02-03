@@ -1,5 +1,5 @@
 :root {
-  --brand-color: #e11d48;
+  --brand-color: var(--primary);
 }
 
 /* =========================
@@ -18,7 +18,7 @@
     ),
     radial-gradient(
       circle at top,
-      rgba(225, 29, 72, 0.14),
+      rgba(14, 165, 164, 0.18),
       transparent 55%
     ),
     linear-gradient(
@@ -96,4 +96,3 @@
   border-color: var(--brand-color);
   box-shadow: 0 0 0 2px rgba(225, 29, 72, 0.2);
 }
-

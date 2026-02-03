@@ -2,7 +2,7 @@
   --bg: #f8fafc;
   --card: #ffffff;
   --border: #e5e7eb;
-  --primary: #6366f1;
+  --primary: #7c3aed;
 }
 
 [data-theme="dark"] {
@@ -14,7 +14,7 @@
 body {
   margin: 0;
   background: var(--bg);
-  font-family: Inter, system-ui, sans-serif;
+  font-family: var(--font-sans);
 }
 
 /* GRID LAYOUT */
@@ -39,4 +39,3 @@ body {
   padding: 24px;
   background: var(--bg);
 }
-

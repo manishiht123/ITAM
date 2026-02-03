@@ -1,9 +1,11 @@
 // src/components/tables/AssetsNeedingAttention.jsx
-export default function AssetsNeedingAttention({ entity }) {
-  const data = [
-    { item: "LAP-0771", issue: "Warranty Expiring", severity: "High" },
-    { item: "LIC-CRM-12", issue: "License Overused", severity: "High" }
-  ];
+const fallbackRows = [
+  { item: "LAP-0771", issue: "Warranty Expiring", severity: "High" },
+  { item: "LIC-CRM-12", issue: "License Overused", severity: "High" }
+];
+
+export default function AssetsNeedingAttention({ rows }) {
+  const data = Array.isArray(rows) ? rows : fallbackRows;
 
   return (
     <table width="100%">
@@ -19,11 +21,19 @@ export default function AssetsNeedingAttention({ entity }) {
           <tr key={i}>
             <td>{row.item}</td>
             <td>{row.issue}</td>
-            <td style={{ color: "red" }}>{row.severity}</td>
+            <td style={{ color: row.severity === "High" ? "#dc2626" : "#b45309" }}>
+              {row.severity}
+            </td>
           </tr>
         ))}
+        {!data.length && (
+          <tr>
+            <td colSpan={3} style={{ color: "#6b7280" }}>
+              No attention items.
+            </td>
+          </tr>
+        )}
       </tbody>
     </table>
   );
 }
-

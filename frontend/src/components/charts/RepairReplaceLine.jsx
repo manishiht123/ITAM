@@ -9,8 +9,8 @@ export default function RepairReplaceLine({ data }) {
       {
         label: "Repair",
         data: data.map((d) => d.repair),
-        borderColor: "#2563eb",          // blue
-        backgroundColor: "rgba(37,99,235,0.2)",
+        borderColor: "#7c3aed",
+        backgroundColor: "rgba(124,58,237,0.2)",
         pointRadius: 5,
         pointHoverRadius: 7,
         borderWidth: 2,
@@ -58,7 +58,7 @@ export default function RepairReplaceLine({ data }) {
           precision: 0,
         },
         grid: {
-          color: "#e5e7eb",
+          color: "#e2e8f0",
         },
       },
     },
@@ -75,4 +75,3 @@ export default function RepairReplaceLine({ data }) {
     </div>
   );
 }
-

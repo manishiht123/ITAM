@@ -1,4 +1,11 @@
-export default function ComplianceSummary() {
+const fallbackItems = [
+  { title: "License Compliance", status: "Compliant", color: "#dcfce7" },
+  { title: "Audit Readiness", status: "Audit Ready", color: "#dcfce7" },
+  { title: "Shadow IT Risk", status: "Low Risk", color: "#e0f2fe" }
+];
+
+export default function ComplianceSummary({ items }) {
+  const data = Array.isArray(items) && items.length ? items : fallbackItems;
   return (
     <div
       style={{
@@ -7,23 +14,14 @@ export default function ComplianceSummary() {
         gap: 16
       }}
     >
-      <ComplianceCard
-        title="License Compliance"
-        status="Compliant"
-        color="#dcfce7"
-      />
-
-      <ComplianceCard
-        title="Audit Readiness"
-        status="Audit Ready"
-        color="#dcfce7"
-      />
-
-      <ComplianceCard
-        title="Shadow IT Risk"
-        status="Low Risk"
-        color="#e0f2fe"
-      />
+      {data.map((item, idx) => (
+        <ComplianceCard
+          key={`${item.title}-${idx}`}
+          title={item.title}
+          status={item.status}
+          color={item.color}
+        />
+      ))}
     </div>
   );
 }
@@ -43,4 +41,3 @@ function ComplianceCard({ title, status, color }) {
     </div>
   );
 }
-

@@ -2,8 +2,22 @@ import { createContext, useContext, useState } from "react";
 
 const EntityContext = createContext(null);
 
+const getInitialEntity = () => {
+  try {
+    const stored = localStorage.getItem("authUser");
+    if (!stored) return "ALL";
+    const user = JSON.parse(stored);
+    const allowed = Array.isArray(user.allowedEntities) ? user.allowedEntities : [];
+    if (allowed.length === 1) return allowed[0];
+    if (allowed.length > 1) return "ALL";
+    return "ALL";
+  } catch (err) {
+    return "ALL";
+  }
+};
+
 export const EntityProvider = ({ children }) => {
-  const [entity, setEntity] = useState("OFB");
+  const [entity, setEntity] = useState(getInitialEntity());
 
   return (
     <EntityContext.Provider value={{ entity, setEntity }}>
@@ -19,4 +33,3 @@ export const useEntity = () => {
   }
   return context;
 };
-

@@ -1,6 +1,40 @@
 import AlertCard from "./AlertCard";
 
-export default function AlertsPanel({ entity }) {
+const fallbackAlerts = [
+  {
+    severity: "critical",
+    title: "Licenses Expiring Soon",
+    value: "—",
+    description: "Expiring within 30 days"
+  },
+  {
+    severity: "critical",
+    title: "Warranty Expiring",
+    value: "—",
+    description: "Assets nearing warranty end"
+  },
+  {
+    severity: "critical",
+    title: "Over-utilized Licenses",
+    value: "—",
+    description: "Compliance breach"
+  },
+  {
+    severity: "warning",
+    title: "Unassigned Assets",
+    value: "—",
+    description: "Assets not allocated"
+  },
+  {
+    severity: "warning",
+    title: "Inactive Assets",
+    value: "—",
+    description: "No activity in 90 days"
+  }
+];
+
+export default function AlertsPanel({ alerts }) {
+  const items = Array.isArray(alerts) && alerts.length ? alerts : fallbackAlerts;
   return (
     <div
       style={{
@@ -9,41 +43,15 @@ export default function AlertsPanel({ entity }) {
         gap: 16
       }}
     >
-      <AlertCard
-        severity="critical"
-        title="Licenses Expiring Soon"
-        value="12"
-        description="Expiring within 30 days"
-      />
-
-      <AlertCard
-        severity="critical"
-        title="Warranty Expiring"
-        value="8"
-        description="Assets nearing warranty end"
-      />
-
-      <AlertCard
-        severity="critical"
-        title="Over-utilized Licenses"
-        value="3"
-        description="Compliance breach"
-      />
-
-      <AlertCard
-        severity="warning"
-        title="Unassigned Assets"
-        value="21"
-        description="Assets not allocated"
-      />
-
-      <AlertCard
-        severity="warning"
-        title="Inactive Assets"
-        value="14"
-        description="No activity in 90 days"
-      />
+      {items.map((item, idx) => (
+        <AlertCard
+          key={`${item.title}-${idx}`}
+          severity={item.severity}
+          title={item.title}
+          value={item.value}
+          description={item.description}
+        />
+      ))}
     </div>
   );
 }
-

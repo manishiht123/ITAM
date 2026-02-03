@@ -14,7 +14,7 @@
 }
 
 .page-subtitle {
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 14px;
   margin-bottom: 24px;
 }
@@ -23,11 +23,12 @@
    CARD CONTAINER (MATCH ADD ASSET)
 ================================ */
 .form-card {
-  background: #ffffff;
+  background: var(--bg-elevated);
   border-radius: 12px;
   padding: 16px 18px;
   margin-bottom: 16px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.04);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
 }
 
 
@@ -35,12 +36,12 @@
   font-size: 15px;
   font-weight: 600;
   margin-bottom: 16px;
-  color: #111827;
+  color: var(--text-primary);
 }
 
 /* Accent card (same as Add Asset) */
 .form-card.accent {
-  border-left: 4px solid #9333ea;
+  border-left: 4px solid var(--primary);
   padding-left: 14px;
 }
 
@@ -52,6 +53,17 @@
   gap:  12px 16px;
 }
 
+.form-grid.single-line {
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(220px, 1fr);
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+
+.form-grid.single-line .form-group {
+  min-width: 220px;
+}
+
 .form-grid.two {
   grid-template-columns: repeat(2, 1fr);
 }
@@ -60,8 +72,18 @@
   grid-template-columns: repeat(3, 1fr);
 }
 
-.form-grid.four {
-  grid-template-columns: repeat(4, 1fr);
+.form-grid.five {
+  grid-template-columns: repeat(5, 1fr);
+}
+
+.software-grid {
+  grid-template-columns: repeat(5, minmax(180px, 1fr));
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.software-grid .form-group {
+  min-width: 180px;
 }
 
 /* ===============================
@@ -75,7 +97,7 @@
 .form-group label {
   font-size: 12px;
   font-weight: 500;
-  color: #374151;
+  color: var(--text-secondary);
   margin-bottom: 4px;
 }
 
@@ -84,26 +106,26 @@
 .form-group select {
   height: 36px;
   border-radius: 8px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border);
   padding: 6px 10px;
   font-size: 13px;
-  background: #ffffff;
+  background: var(--bg-elevated);
   transition: all 0.2s ease;
 }
 
 .form-group input:focus,
 .form-group select:focus {
   outline: none;
-  border-color: #9333ea;
-  box-shadow: 0 0 0 2px rgba(147, 51, 234, 0.15);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(14, 165, 164, 0.2);
 }
 
 /* ===============================
    READONLY FIELDS
 ================================ */
 .form-group.readonly input {
-  background: #f3f4f6;
-  color: #4b5563;
+  background: var(--bg-muted);
+  color: var(--text-secondary);
   cursor: not-allowed;
   font-weight: 500;
 }
@@ -112,8 +134,8 @@
    SECURITY CLASSIFICATION
 ================================ */
 .form-card input[readonly] {
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--bg-muted);
+  color: var(--text-secondary);
 }
 
 /* ===============================
@@ -127,7 +149,7 @@
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #9333ea, #7c3aed);
+  background: linear-gradient(135deg, var(--primary), var(--primary-700));
   color: #ffffff;
   border: none;
   height: 40px;
@@ -145,8 +167,8 @@
 }
 
 .btn-secondary {
-  background: #e5e7eb;
-  color: #111827;
+  background: var(--bg-muted);
+  color: var(--text-primary);
   border: none;
   height: 40px;
   padding: 8px 14px;
@@ -192,7 +214,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #9ca3af;
+  color: var(--text-muted);
   font-size: 13px;
 }
 
@@ -200,7 +222,7 @@
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background: #e5e7eb;
+  background: var(--bg-muted);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -208,18 +230,18 @@
 }
 
 .step.active span {
-  background: #9333ea;
+  background: var(--primary);
   color: #ffffff;
 }
 
 .step.done span {
-  background: #22c55e;
+  background: var(--success);
   color: #ffffff;
 }
 
 .step.active,
 .step.done {
-  color: #111827;
+  color: var(--text-primary);
 }
 
 
@@ -230,7 +252,7 @@
 }
 
 .security-pill {
-  background: #f3f4f6;
+  background: var(--bg-muted);
   border-radius: 10px;
   padding: 8px 12px;
   font-size: 13px;

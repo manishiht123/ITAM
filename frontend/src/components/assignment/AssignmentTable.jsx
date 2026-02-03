@@ -1,46 +1,49 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 /**
  * PHASE 3 – Assignment & Ownership
  * Industry-standard operational table
  */
 
-export default function AssignmentTable({ entity }) {
+const fallbackAssignments = [
+  {
+    assetTag: "LAP-0991",
+    assetType: "Laptop",
+    user: "Rahul Sharma",
+    department: "Sales",
+    entity: "OXYZO",
+    status: "Assigned"
+  },
+  {
+    assetTag: "DES-2101",
+    assetType: "Desktop",
+    user: "Neha Verma",
+    department: "Finance",
+    entity: "OFB",
+    status: "Assigned"
+  },
+  {
+    assetTag: "LAP-1203",
+    assetType: "Laptop",
+    user: "—",
+    department: "—",
+    entity: "OXYZO",
+    status: "Unassigned"
+  }
+];
+
+export default function AssignmentTable({ entity, rows }) {
+  const navigate = useNavigate();
   const [filter, setFilter] = useState("");
 
-  // MOCK DATA (Phase 6 → replace with API)
-  const assignments = [
-    {
-      assetTag: "LAP-0991",
-      assetType: "Laptop",
-      user: "Rahul Sharma",
-      department: "Sales",
-      entity: "OXYZO",
-      status: "Assigned"
-    },
-    {
-      assetTag: "DES-2101",
-      assetType: "Desktop",
-      user: "Neha Verma",
-      department: "Finance",
-      entity: "OFB",
-      status: "Assigned"
-    },
-    {
-      assetTag: "LAP-1203",
-      assetType: "Laptop",
-      user: "—",
-      department: "—",
-      entity: "OXYZO",
-      status: "Unassigned"
-    }
-  ];
+  const assignments = Array.isArray(rows) ? rows : fallbackAssignments;
 
   const filtered = assignments.filter(
     (a) =>
       (entity === "ALL" || a.entity === entity) &&
-      (a.assetTag.toLowerCase().includes(filter.toLowerCase()) ||
-        a.user.toLowerCase().includes(filter.toLowerCase()))
+      (String(a.assetTag).toLowerCase().includes(filter.toLowerCase()) ||
+        String(a.user || "").toLowerCase().includes(filter.toLowerCase()))
   );
 
   return (
@@ -81,22 +84,54 @@ export default function AssignmentTable({ entity }) {
         </thead>
 
         <tbody>
-          {filtered.map((row, idx) => (
-            <tr key={idx} style={{ borderBottom: "1px solid #e5e7eb" }}>
-              <td style={td}>{row.assetTag}</td>
-              <td style={td}>{row.assetType}</td>
-              <td style={td}>{row.user}</td>
-              <td style={td}>{row.department}</td>
-              <td style={td}>{row.entity}</td>
-              <td style={td}>
-                <StatusBadge status={row.status} />
-              </td>
-              <td style={td}>
-                <button style={btn}>Reassign</button>
-                <button style={{ ...btn, marginLeft: 8 }}>History</button>
+          {filtered.length ? (
+            filtered.map((row, idx) => (
+              <tr key={idx} style={{ borderBottom: "1px solid #e5e7eb" }}>
+                <td style={td}>{row.assetTag}</td>
+                <td style={td}>{row.assetType}</td>
+                <td style={td}>{row.user}</td>
+                <td style={td}>{row.department}</td>
+                <td style={td}>{row.entity}</td>
+                <td style={td}>
+                  <StatusBadge status={row.status} />
+                </td>
+                <td style={td}>
+                  <button
+                    style={btn}
+                    onClick={() => {
+                      const targetEntity = row.entity || entity;
+                      navigate(
+                        `/assets/allocate?asset=${encodeURIComponent(
+                          row.assetTag
+                        )}&entity=${encodeURIComponent(targetEntity)}`
+                      );
+                    }}
+                  >
+                    Reassign
+                  </button>
+                  <button
+                    style={{ ...btn, marginLeft: 8 }}
+                    onClick={() => {
+                      const targetEntity = row.entity || entity;
+                      navigate(
+                        `/assets/allocate?history=1&entity=${encodeURIComponent(
+                          targetEntity
+                        )}`
+                      );
+                    }}
+                  >
+                    History
+                  </button>
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td style={{ ...td, color: "#6b7280" }} colSpan={7}>
+                No assignments found.
               </td>
             </tr>
-          ))}
+          )}
         </tbody>
       </table>
     </div>
@@ -147,4 +182,3 @@ const btn = {
   background: "#fff",
   cursor: "pointer"
 };
-

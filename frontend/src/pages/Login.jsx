@@ -1,8 +1,28 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import LoginCard from "../components/ui/LoginCard";
 import "../styles/login.css";
 import CompanyLogo from "../assets/logos/default.svg";
+import api from "../services/api";
 
 export default function Login() {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  const handleLogin = async () => {
+    setError("");
+    try {
+      const data = await api.login({ email, password });
+      localStorage.setItem("authToken", data.token);
+      localStorage.setItem("authUser", JSON.stringify(data.user));
+      navigate("/dashboard");
+    } catch (err) {
+      setError(err?.message || "Login failed");
+    }
+  };
+
   return (
     <div className="login-page">
       <LoginCard>
@@ -42,6 +62,8 @@ export default function Login() {
               type="email"
               className="login-input"
               placeholder="name@company.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               style={{
                 width: "100%",
                 padding: "8px 10px",
@@ -61,6 +83,8 @@ export default function Login() {
               type="password"
               className="login-input"
               placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               style={{
                 width: "100%",
                 padding: "8px 10px",
@@ -72,9 +96,14 @@ export default function Login() {
           </div>
 
           {/* Login Button */}
-          <button className="login-button">
+          <button className="login-button" onClick={handleLogin}>
             Login
           </button>
+          {error && (
+            <p style={{ marginTop: 12, color: "#dc2626", fontSize: 12, textAlign: "center" }}>
+              {error}
+            </p>
+          )}
 
           <p
             style={{
@@ -91,4 +120,3 @@ export default function Login() {
     </div>
   );
 }
-

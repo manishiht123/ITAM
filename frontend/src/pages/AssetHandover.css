@@ -3,11 +3,12 @@
 }
 
 .handover-card {
-  background: #fff;
+  background: var(--bg-elevated);
   padding: 24px;
   border-radius: 12px;
   max-width: 420px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border);
 }
 
 .field {
@@ -18,7 +19,7 @@
 
 .field label {
   font-size: 13px;
-  color: #374151;
+  color: var(--text-secondary);
   margin-bottom: 6px;
 }
 
@@ -26,7 +27,7 @@
 .field select {
   padding: 9px 12px;
   border-radius: 8px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border);
 }
 
 .handover-actions {
@@ -36,7 +37,7 @@
 }
 
 .primary {
-  background: #9333ea;
+  background: var(--primary);
   color: #fff;
   border: none;
   padding: 10px 18px;
@@ -44,9 +45,8 @@
 }
 
 .secondary {
-  background: #e5e7eb;
+  background: var(--bg-muted);
   border: none;
   padding: 10px 18px;
   border-radius: 8px;
 }
-

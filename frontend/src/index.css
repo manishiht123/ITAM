@@ -1,27 +1,11 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Global sanity styles */
-:root {
-  --brand-primary: #5b2dff;
-  --brand-dark: #0b1020;
-  --brand-accent: #7c5cff;
-
-  --bg-light: #f6f7fb;
-  --bg-dark: #0e1326;
-
-  --text-light: #0f172a;
-  --text-dark: #e5e7eb;
-}
-
-[data-theme="dark"] {
-  background: var(--bg-dark);
-  color: var(--text-dark);
-}
-
 body {
   margin: 0;
-  font-family: Inter, system-ui, sans-serif;
-  background: var(--bg-light);
+  font-family: var(--font-sans);
+  background: var(--bg-main);
 }

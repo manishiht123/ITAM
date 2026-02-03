@@ -4,30 +4,76 @@ import {
   Tooltip,
   Legend
 } from "chart.js";
-import { Pie } from "react-chartjs-2";
+import { Doughnut } from "react-chartjs-2";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
-export default function AssetStatusPie() {
-  const data = {
-    labels: ["In Use", "In Stock", "Under Maintenance", "Retired"],
+const STATUS_ORDER = ["In Use", "Available", "Under Repair", "Retired", "Unknown"];
+const STATUS_COLORS = {
+  "In Use": "#7c3aed",
+  Available: "#22c55e",
+  "Under Repair": "#f97316",
+  Retired: "#9ca3af",
+  Unknown: "#cbd5f5"
+};
+
+export default function AssetStatusPie({ data }) {
+  const normalized = Array.isArray(data) ? data : [];
+  const ordered = STATUS_ORDER.flatMap((status) =>
+    normalized.find((entry) => entry.label === status) || []
+  );
+  const extras = normalized.filter(
+    (entry) => !STATUS_ORDER.includes(entry.label)
+  );
+  const finalData = [...ordered, ...extras];
+
+  const chartData = {
+    labels: finalData.map((entry) => entry.label),
     datasets: [
       {
-        data: [1400, 300, 100, 50],
-        backgroundColor: ["#4f46e5", "#22c55e", "#f97316", "#9ca3af"]
+        data: finalData.map((entry) => entry.value),
+        backgroundColor: finalData.map(
+          (entry) => STATUS_COLORS[entry.label] || "#94a3b8"
+        ),
+        borderColor: "rgba(255,255,255,0.85)",
+        borderWidth: 2,
+        hoverOffset: 6
       }
     ]
   };
 
   const options = {
     responsive: true,
-    maintainAspectRatio: false
+    maintainAspectRatio: false,
+    cutout: "35%",
+    plugins: {
+      legend: {
+        position: "bottom"
+      }
+    }
+  };
+
+  if (!finalData.length) {
+    return <p style={{ color: "var(--text-secondary)" }}>No asset status data yet.</p>;
+  }
+
+  const shadowPlugin = {
+    id: "shadowPie",
+    beforeDatasetsDraw: (chart) => {
+      const { ctx } = chart;
+      ctx.save();
+      ctx.shadowColor = "rgba(0, 0, 0, 0.25)";
+      ctx.shadowBlur = 18;
+      ctx.shadowOffsetY = 6;
+    },
+    afterDatasetsDraw: (chart) => {
+      chart.ctx.restore();
+    }
   };
 
   return (
-    <div style={{ height: 240 }}>
-      <Pie data={data} options={options} />
+    <div style={{ height: 260 }}>
+      <Doughnut data={chartData} options={options} plugins={[shadowPlugin]} />
     </div>
   );
 }
-

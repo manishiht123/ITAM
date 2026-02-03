@@ -2,11 +2,134 @@
   box-sizing: border-box;
 }
 body {
+  margin: 0;
   background: var(--bg-main);
   color: var(--text-primary);
+  font-family: var(--font-sans);
+  line-height: 1.5;
   transition: background 0.25s ease, color 0.25s ease;
 }
 
+h1,
+h2,
+h3,
+h4 {
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
 
+h1 {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 18px;
+}
 
+h2 {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 28px 0 14px;
+}
+
+h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 18px 0 10px;
+}
+
+p {
+  color: var(--text-secondary);
+}
+
+a {
+  color: var(--primary-600);
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: var(--font-sans);
+}
+
+input,
+select,
+textarea {
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  padding: 8px 12px;
+  font-size: 14px;
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  transition: border 0.2s ease, box-shadow 0.2s ease;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(14, 165, 164, 0.18);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th {
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  background: var(--bg-muted);
+}
+
+th,
+td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.card,
+.dashboard-card,
+.panel-card,
+.settings-card,
+.chart-card,
+.table-wrapper,
+.asset-table-wrapper {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+/* Shared action buttons */
+.asset-action-btn {
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.asset-action-btn.primary {
+  background: linear-gradient(135deg, var(--primary), var(--primary-700));
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 6px 16px rgba(14, 165, 164, 0.28);
+}
+
+.asset-action-btn.primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(14, 165, 164, 0.35);
+}
+
+.asset-action-btn.secondary:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
 

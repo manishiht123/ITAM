@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Asset Allocation Consent Form</title>
+    <style>
+      body { font-family: Arial, sans-serif; color: #111827; }
+      .container { max-width: 720px; margin: 0 auto; padding: 24px; }
+      h1 { font-size: 20px; margin-bottom: 12px; }
+      .meta { margin-bottom: 16px; }
+      table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+      th, td { border: 1px solid #e5e7eb; padding: 8px; text-align: left; }
+      .footer { margin-top: 24px; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Asset Allocation Consent Form</h1>
+      <div class="meta">
+        <p>Employee: {{employeeName}}</p>
+        <p>Email: {{employeeEmail}}</p>
+        <p>Allocation Date: {{allocationDate}}</p>
+      </div>
+
+      <table>
+        <tr><th>Asset ID</th><td>{{assetId}}</td></tr>
+        <tr><th>Asset Name</th><td>{{assetName}}</td></tr>
+        <tr><th>Asset Serial No</th><td>{{serialNumber}}</td></tr>
+        <tr><th>RAM</th><td>{{ram}}</td></tr>
+        <tr><th>Storage</th><td>{{storage}}</td></tr>
+        <tr><th>Condition</th><td>{{condition}}</td></tr>
+      </table>
+
+      <div class="footer">
+        <p>By accepting this asset, the employee agrees to use it responsibly, keep it in good condition, and return it upon request or when employment ends.</p>
+        <p>Employee Signature: ______________________ Date: ____________</p>
+        <p>IT Representative: ______________________ Date: ____________</p>
+      </div>
+    </div>
+  </body>
+</html>

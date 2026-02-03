@@ -1,8 +1,18 @@
+import { useEffect } from "react";
+import { Outlet, useNavigate } from "react-router-dom";
 import Sidebar from "./sidebar/Sidebar";
 import Topbar from "./topbar/Topbar";
-import { Outlet } from "react-router-dom";
 
 export default function Layout() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem("authToken") || localStorage.getItem("token");
+    if (!token) {
+      navigate("/login");
+    }
+  }, [navigate]);
+
   return (
     <>
       <Sidebar />
@@ -14,4 +24,3 @@ export default function Layout() {
     </>
   );
 }
-

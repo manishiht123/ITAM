@@ -1,10 +1,29 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./AssetAllocation.css";
 import AllocationHistoryDrawer from "../components/AllocationHistoryDrawer";
+import api from "../services/api";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useEntity } from "../context/EntityContext";
 
 export default function AssetAllocation() {
-  const [step, setStep] = useState(1);
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { entity, setEntity } = useEntity();
   const [openHistory, setOpenHistory] = useState(false);
+
+  // Data State
+  const [availableAssets, setAvailableAssets] = useState([]);
+  const [employees, setEmployees] = useState([]);
+  const [allAssets, setAllAssets] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [allocationLimit, setAllocationLimit] = useState(2);
+  const [allocationWarningMessage, setAllocationWarningMessage] = useState(
+    "This employee already has 1 asset allocated. Do you want to allow a second asset?"
+  );
+
+  // Selection State
+  const [selectedAssetId, setSelectedAssetId] = useState("");
+  const [selectedEmpId, setSelectedEmpId] = useState("");
 
   const today = new Date().toLocaleDateString("en-GB", {
     day: "2-digit",
@@ -12,22 +31,145 @@ export default function AssetAllocation() {
     year: "numeric",
   });
 
-  const allocationHistory = [
-    {
-      employee: "Rahul Sharma",
-      department: "IT",
-      allocatedOn: "01 Jan 2023",
-      handoverOn: "15 Jun 2024",
-      status: "Returned",
-    },
-    {
-      employee: "Ankit Verma",
-      department: "IT",
-      allocatedOn: "20 Jun 2024",
-      handoverOn: null,
-      status: "Allocated",
-    },
-  ];
+  useEffect(() => {
+    loadData();
+  }, [entity]);
+
+  useEffect(() => {
+    const targetEntity = searchParams.get("entity");
+    if (targetEntity && targetEntity !== entity) {
+      setEntity(targetEntity);
+    }
+  }, [searchParams, entity, setEntity]);
+
+  useEffect(() => {
+    const loadPrefs = async () => {
+      try {
+        const prefs = await api.getSystemPreferences();
+        if (prefs?.maxAssetsPerEmployee) {
+          setAllocationLimit(Number(prefs.maxAssetsPerEmployee));
+        }
+        if (prefs?.allocationWarningMessage) {
+          setAllocationWarningMessage(String(prefs.allocationWarningMessage));
+        }
+      } catch (err) {
+        console.error("Failed to load system preferences", err);
+      }
+    };
+    loadPrefs();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      const entityCode = entity === "ALL" ? null : entity;
+      const [assetsData, empsData] = await Promise.all([
+        api.getAssets(entityCode),
+        api.getEmployees(entityCode)
+      ]);
+      setAllAssets(assetsData);
+      // Filter only available assets
+      const available = assetsData.filter(
+        (asset) => asset.status === "Available" || asset.status === "In Stock"
+      );
+      setAvailableAssets(available);
+      setEmployees(empsData);
+
+      const assetParam = searchParams.get("asset");
+      const assetIdParam = searchParams.get("assetId");
+      const historyParam = searchParams.get("history");
+      if (historyParam === "1") {
+        setOpenHistory(true);
+      }
+      if (assetParam || assetIdParam) {
+        const target = assetParam || assetIdParam;
+        const match = assetsData.find(
+          (asset) =>
+            String(asset.assetId || "").toLowerCase() === String(target).toLowerCase() ||
+            String(asset.id) === String(target)
+        );
+        if (match) {
+          setSelectedAssetId(String(match.id));
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load allocation data", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAllocate = async () => {
+    if (!selectedAssetId || !selectedEmpId) {
+      alert("Please select an asset and an employee.");
+      return;
+    }
+
+    const emp = employees.find(e => e.id == selectedEmpId);
+    const employeeKey = (emp?.employeeId || emp?.email || "").toString().trim().toLowerCase();
+    if (!employeeKey) {
+      alert("Employee details are missing. Please select a valid employee.");
+      return;
+    }
+
+    const assignedCount = allAssets.filter((asset) => {
+      const assetEmployee = (asset.employeeId || "").toString().trim().toLowerCase();
+      const isAllocated = asset.status === "In Use" || asset.status === "Allocated";
+      return isAllocated && assetEmployee && assetEmployee === employeeKey && String(asset.id) !== String(selectedAssetId);
+    }).length;
+
+    const maxAllowed = Math.max(1, allocationLimit || 2);
+    if (assignedCount >= maxAllowed) {
+      alert(`This employee already has ${maxAllowed} assets allocated. A new allocation is not allowed.`);
+      return;
+    }
+
+    if (assignedCount === maxAllowed - 1 && maxAllowed > 1) {
+      const ok = window.confirm(allocationWarningMessage || "This employee already has 1 asset allocated. Do you want to allow a second asset?");
+      if (!ok) return;
+    }
+
+    try {
+      const entityCode = entity === "ALL" ? null : entity;
+      // Verify asset ID format. The dropdown value should be the database ID (integer) or AssetID string?
+      // Let's assume we used the database PK `id` for the value in dropdown.
+
+      await api.updateAsset(selectedAssetId, {
+        status: "In Use",
+        employeeId: emp?.employeeId || emp?.email || "Unknown",
+        department: emp?.department || "Unknown"
+        // Add other fields if backend supports them (allocatedDate etc)
+      }, entityCode);
+
+      alert("Asset allocated successfully!");
+      navigate("/assets");
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const getSelectedAssetDetails = () => availableAssets.find(a => a.id == selectedAssetId) || {};
+  const getSelectedEmpDetails = () => employees.find(e => e.id == selectedEmpId) || {};
+
+  const allocationHistory = allAssets
+    .filter((asset) => asset.employeeId || asset.status === "In Use" || asset.status === "Allocated")
+    .map((asset) => {
+      const emp =
+        employees.find((e) => e.employeeId === asset.employeeId || e.email === asset.employeeId) || {};
+      const wasReturned = ["Available", "In Stock"].includes(asset.status);
+      const allocatedOn = asset.updatedAt || asset.createdAt || null;
+      const formatDate = (value) =>
+        value ? new Date(value).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "-";
+
+      return {
+        employee: emp.name || asset.employeeId || "—",
+        department: emp.department || asset.department || "—",
+        allocatedOn: formatDate(allocatedOn),
+        handoverOn: wasReturned ? formatDate(asset.updatedAt || asset.createdAt) : "—",
+        status: wasReturned ? "Returned" : "Allocated",
+      };
+    });
+
+  if (loading) return <div className="p-8">Loading available assets...</div>;
 
   return (
     <div className="assets-page">
@@ -55,157 +197,140 @@ export default function AssetAllocation() {
         history={allocationHistory}
       />
 
-      {/* STEPPER */}
-      <div className="stepper">
-        {["Asset", "Employee", "Security", "Software"].map((label, i) => (
-          <div
-            key={label}
-            className={`step ${
-              step === i + 1 ? "active" : step > i + 1 ? "done" : ""
-            }`}
-          >
-            <span>{i + 1}</span>
-            <p>{label}</p>
+      {/* ASSET */}
+      <div className="form-card accent">
+        <h3>Asset Selection</h3>
+
+        <div className="form-grid three single-line">
+          <div className="form-group">
+            <label>Available Asset</label>
+            <select value={selectedAssetId} onChange={e => setSelectedAssetId(e.target.value)}>
+              <option value="">Select Available Asset</option>
+              {availableAssets.map(asset => (
+                <option key={asset.id} value={asset.id}>
+                  {asset.assetId} - {asset.name}
+                </option>
+              ))}
+            </select>
           </div>
-        ))}
+
+          <div className="form-group readonly">
+            <label>Allocation Date</label>
+            <input value={today} readOnly />
+          </div>
+
+          <div className="form-group readonly">
+            <label>Status</label>
+            <input value="Allocated" readOnly />
+          </div>
+
+          <div className="form-group readonly">
+            <label>Category</label>
+            <input value={getSelectedAssetDetails().category || ""} readOnly />
+          </div>
+        </div>
       </div>
 
-      {/* STEP 1 — ASSET */}
-      {step === 1 && (
-        <div className="form-card accent">
-          <h3>Asset Selection</h3>
+      {/* EMPLOYEE */}
+      <div className="form-card">
+        <h3>Employee Details</h3>
 
-          <div className="form-grid three">
-            <div className="form-group">
-              <label>Available Asset</label>
-              <select>
-                <option>Select Available Asset</option>
-                <option>OFB/ITL/0028</option>
-                <option>OFB/ITD/0012</option>
-              </select>
-            </div>
+        <div className="form-grid three single-line">
+          <div className="form-group">
+            <label>Employee</label>
+            <select value={selectedEmpId} onChange={e => setSelectedEmpId(e.target.value)}>
+              <option value="">Select Employee</option>
+              {employees.map(emp => (
+                <option key={emp.id} value={emp.id}>
+                  {emp.name} ({emp.employeeId || emp.email})
+                </option>
+              ))}
+            </select>
+          </div>
 
-            <div className="form-group readonly">
-              <label>Allocation Date</label>
-              <input value={today} readOnly />
-            </div>
+          <div className="form-group readonly">
+            <label>Email</label>
+            <input value={getSelectedEmpDetails().email || ""} readOnly />
+          </div>
 
-            <div className="form-group readonly">
-              <label>Status</label>
-              <input value="Allocated" readOnly />
-            </div>
+          <div className="form-group readonly">
+            <label>Department</label>
+            <input value={getSelectedEmpDetails().department || ""} readOnly />
           </div>
         </div>
-      )}
+      </div>
 
-      {/* STEP 2 — EMPLOYEE */}
-      {step === 2 && (
-        <div className="form-card">
-          <h3>Employee Details</h3>
+      {/* SECURITY */}
+      <div className="form-card">
+        <h3>Security Classification (Auto)</h3>
 
-          <div className="form-grid three">
-            <div className="form-group">
-              <label>Employee</label>
-              <select>
-                <option>Select Employee</option>
-                <option>Rahul Sharma (EMP-101)</option>
-                <option>Rohan Kumar (EMP-102)</option>
-              </select>
-            </div>
-
-            <div className="form-group readonly">
-              <label>Email</label>
-              <input value="rahul@company.com" readOnly />
-            </div>
-
-            <div className="form-group readonly">
-              <label>Department</label>
-              <input value="IT" readOnly />
-            </div>
+        <div className="form-grid four single-line">
+          <div className="form-group readonly">
+            <label>Confidentiality</label>
+            <input value="High" readOnly />
+          </div>
+          <div className="form-group readonly">
+            <label>Integrity</label>
+            <input value="High" readOnly />
+          </div>
+          <div className="form-group readonly">
+            <label>Availability</label>
+            <input value="High" readOnly />
+          </div>
+          <div className="form-group readonly">
+            <label>Sensitivity</label>
+            <input value="Critical" readOnly />
           </div>
         </div>
-      )}
+      </div>
 
-      {/* STEP 3 — SECURITY */}
-      {step === 3 && (
-        <div className="form-card">
-          <h3>Security Classification (Auto)</h3>
+      {/* SOFTWARE */}
+      <div className="form-card">
+        <h3>Software & Licensing</h3>
 
-          <div className="form-grid four">
-            <div className="form-group readonly">
-              <label>Confidentiality</label>
-              <input value="High" readOnly />
-            </div>
-            <div className="form-group readonly">
-              <label>Integrity</label>
-              <input value="High" readOnly />
-            </div>
-            <div className="form-group readonly">
-              <label>Availability</label>
-              <input value="High" readOnly />
-            </div>
-            <div className="form-group readonly">
-              <label>Sensitivity</label>
-              <input value="Critical" readOnly />
-            </div>
+        <div className="form-grid software-grid single-line">
+          <div className="form-group">
+            <label>MS Office ID</label>
+            <input placeholder="office@company.com" />
+          </div>
+
+          <div className="form-group">
+            <label>Windows License Key</label>
+            <input placeholder="XXXXX-XXXXX" />
+          </div>
+
+          <div className="form-group">
+            <label>Antivirus Installed</label>
+            <select>
+              <option>Yes</option>
+              <option>No</option>
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label>VPN Access</label>
+            <select>
+              <option>Yes</option>
+              <option>No</option>
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label>ManageEngine Installation</label>
+            <select>
+              <option>Yes</option>
+              <option>No</option>
+            </select>
           </div>
         </div>
-      )}
-
-      {/* STEP 4 — SOFTWARE */}
-      {step === 4 && (
-        <div className="form-card">
-          <h3>Software & Licensing</h3>
-
-          <div className="form-grid four">
-            <div className="form-group">
-              <label>MS Office ID</label>
-              <input placeholder="office@company.com" />
-            </div>
-
-            <div className="form-group">
-              <label>Windows License Key</label>
-              <input placeholder="XXXXX-XXXXX" />
-            </div>
-
-            <div className="form-group">
-              <label>Antivirus Installed</label>
-              <select>
-                <option>Yes</option>
-                <option>No</option>
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label>VPN Access</label>
-              <select>
-                <option>Yes</option>
-                <option>No</option>
-              </select>
-            </div>
-          </div>
-        </div>
-      )}
+      </div>
 
       {/* ACTIONS */}
       <div className="form-actions">
-        {step > 1 && (
-          <button className="btn-secondary" onClick={() => setStep(step - 1)}>
-            Back
-          </button>
-        )}
-
-        {step < 4 ? (
-          <button className="btn-primary" onClick={() => setStep(step + 1)}>
-            Next
-          </button>
-        ) : (
-          <button className="btn-primary">
-            Allocate Asset
-          </button>
-        )}
+        <button className="btn-primary" onClick={handleAllocate}>
+          Allocate Asset
+        </button>
       </div>
     </div>
   );
 }
-

@@ -1,21 +1,35 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   FaTachometerAlt,
   FaBoxOpen,
+  FaTags,
   FaUsers,
   FaCog,
   FaChevronDown,
   FaSignOutAlt,
-  FaBars
+  FaBars,
+  FaBuilding,
+  FaLayerGroup
 } from "react-icons/fa";
 
 import "../../styles/sidebar.css";
+import { FaLocationPin } from "react-icons/fa6";
 
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const navigate = useNavigate();
+  const userName = useMemo(() => {
+    try {
+      const stored = localStorage.getItem("authUser");
+      if (!stored) return "User";
+      const user = JSON.parse(stored);
+      return user.name || user.email || "User";
+    } catch (err) {
+      return "User";
+    }
+  }, []);
 
   const handleLogout = () => {
     localStorage.clear();
@@ -38,6 +52,12 @@ export default function Sidebar() {
         </button>
       </div>
 
+      {!collapsed && (
+        <div style={{ padding: "0 20px 12px", color: "#e5e7eb", fontSize: 12 }}>
+          Logged in as <strong style={{ color: "#ffffff" }}>{userName}</strong>
+        </div>
+      )}
+
       {/* ================= MENU ================= */}
       <nav className="sidebar-menu">
         <NavLink to="/dashboard" className="menu-item">
@@ -50,16 +70,35 @@ export default function Sidebar() {
           {!collapsed && <span>Assets</span>}
         </NavLink>
 
+        <NavLink to="/software" className="menu-item">
+          <FaLayerGroup />
+          {!collapsed && <span>Software</span>}
+        </NavLink>
+
         <NavLink to="/employees" className="menu-item">
           <FaUsers />
           {!collapsed && <span>Employees</span>}
         </NavLink>
 
+        <NavLink to="/departments" className="menu-item">
+          <FaBuilding />
+          {!collapsed && <span>Department</span>}
+        </NavLink>
+
+        <NavLink to="/locations" className="menu-item">
+          <FaLocationPin />
+          {!collapsed && <span>Locations</span>}
+        </NavLink>
+
+        <NavLink to="/asset-categories" className="menu-item">
+          <FaTags />
+          {!collapsed && <span>Asset Category</span>}
+        </NavLink>  
+
         {/* ========== SETTINGS ========== */}
         <div
-          className={`menu-item settings ${
-            settingsOpen ? "open" : ""
-          }`}
+          className={`menu-item settings ${settingsOpen ? "open" : ""
+            }`}
           onClick={() => setSettingsOpen(!settingsOpen)}
         >
           <FaCog />
@@ -71,13 +110,14 @@ export default function Sidebar() {
           <div className="submenu">
             <NavLink to="/settings/entities">Organization & Entities</NavLink>
             <NavLink to="/settings/users">Users & Roles</NavLink>
-            <NavLink to="/settings/assets">Asset Configuration</NavLink>
             <NavLink to="/settings/licenses">Licenses & Compliance</NavLink>
             <NavLink to="/settings/assignments">Assignments & Ownership</NavLink>
             <NavLink to="/settings/notifications">Notifications</NavLink>
             <NavLink to="/settings/security">Security & Audit</NavLink>
+            <NavLink to="/settings/reports">Reports</NavLink>
             <NavLink to="/settings/finance">Financial Settings</NavLink>
             <NavLink to="/settings/system">System Preferences</NavLink>
+            <NavLink to="/settings/password">Password Policy</NavLink>
           </div>
         )}
       </nav>
@@ -92,4 +132,3 @@ export default function Sidebar() {
     </aside>
   );
 }
-

@@ -1,4 +1,7 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useEntity } from "../context/EntityContext";
+import { getDashboardData } from "../services/dashboardService";
 
 /* =========================
    PHASE 1 – Executive Snapshot
@@ -33,9 +36,42 @@ import UpcomingRenewals from "../components/tables/UpcomingRenewals";
 
 export default function Dashboard() {
   const { entity } = useEntity();
+  const navigate = useNavigate();
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setError("");
+
+    getDashboardData(entity)
+      .then((data) => {
+        if (!active) return;
+        setDashboardData(data);
+      })
+      .catch((err) => {
+        if (!active) return;
+        setError(err?.message || "Failed to load dashboard data");
+      })
+      .finally(() => {
+        if (!active) return;
+        setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [entity]);
 
   return (
     <div style={{ padding: 24 }}>
+      {loading && <p style={{ color: "#6b7280" }}>Loading dashboard…</p>}
+      {!loading && error && (
+        <p style={{ color: "#dc2626" }}>{error}</p>
+      )}
+
       {/* =========================
           PHASE 1 – EXECUTIVE SNAPSHOT
          ========================= */}
@@ -46,14 +82,46 @@ export default function Dashboard() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          gap: 16
+          gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
+          gap: 12
         }}
       >
-        <KpiCard title="Total Assets" value="1800" />
-        <KpiCard title="Allocated" value="1400" />
-        <KpiCard title="Available" value="300" />
-        <KpiCard title="Under Repair" value="100" />
+        <KpiCard
+          title="Total Assets"
+          value={dashboardData?.kpis?.totalAssets ?? "—"}
+          compact
+          onClick={() => navigate("/assets")}
+        />
+        <KpiCard
+          title="Allocated"
+          value={dashboardData?.kpis?.allocated ?? "—"}
+          compact
+          onClick={() => navigate("/assets?status=In%20Use")}
+        />
+        <KpiCard
+          title="Available"
+          value={dashboardData?.kpis?.available ?? "—"}
+          compact
+          onClick={() => navigate("/assets?status=Available")}
+        />
+        <KpiCard
+          title="Under Repair"
+          value={dashboardData?.kpis?.underRepair ?? "—"}
+          compact
+          onClick={() => navigate("/assets?status=Under%20Repair")}
+        />
+        <KpiCard
+          title="Total Licenses"
+          value={dashboardData?.licenseKpis?.totalLicenses ?? "—"}
+          compact
+          onClick={() => navigate("/settings/licenses")}
+        />
+        <KpiCard
+          title="Overused Seats"
+          value={dashboardData?.licenseKpis?.overusedSeats ?? "—"}
+          compact
+          onClick={() => navigate("/settings/licenses")}
+        />
       </div>
 
       {/* PIE ROW */}
@@ -66,11 +134,11 @@ export default function Dashboard() {
         }}
       >
         <Card title="Asset Status Overview">
-          <AssetStatusPie entity={entity} />
+          <AssetStatusPie data={dashboardData?.statusBreakdown} />
         </Card>
 
         <Card title="License Usage Overview">
-          <LicenseUsagePie entity={entity} />
+          <LicenseUsagePie data={dashboardData?.licenseUsage} />
         </Card>
       </div>
 
@@ -89,11 +157,11 @@ export default function Dashboard() {
         }}
       >
         <Card title="Assets by Category">
-          <AssetCategoryBar entity={entity} />
+          <AssetCategoryBar data={dashboardData?.categoryBreakdown} />
         </Card>
 
         <Card title="Assets by Operating System">
-          <AssetOSBar entity={entity} />
+          <AssetOSBar data={dashboardData?.osBreakdown} />
         </Card>
       </div>
 
@@ -104,11 +172,11 @@ export default function Dashboard() {
       <h2 style={{ marginTop: 48 }}>Alerts & Compliance</h2>
 
       <div style={{ marginTop: 24 }}>
-        <AlertsPanel entity={entity} />
+        <AlertsPanel alerts={dashboardData?.alerts} />
       </div>
 
       <div style={{ marginTop: 24 }}>
-        <ComplianceSummary entity={entity} />
+        <ComplianceSummary items={dashboardData?.compliance} />
       </div>
 
       {/* =========================
@@ -119,7 +187,10 @@ export default function Dashboard() {
 
       <div style={{ marginTop: 24 }}>
         <Card title="Asset Assignments">
-          <AssignmentTable entity={entity} />
+          <AssignmentTable
+            entity={entity}
+            rows={dashboardData?.assignments}
+          />
         </Card>
       </div>
 
@@ -131,25 +202,37 @@ export default function Dashboard() {
 
       <div style={{ marginTop: 24 }}>
         <Card title="Recently Added Assets">
-          <RecentlyAddedAssets entity={entity} />
+          <RecentlyAddedAssets
+            entity={entity}
+            rows={dashboardData?.recentlyAdded}
+          />
         </Card>
       </div>
 
       <div style={{ marginTop: 24 }}>
         <Card title="Recently Assigned Assets">
-          <RecentlyAssignedAssets entity={entity} />
+          <RecentlyAssignedAssets
+            entity={entity}
+            rows={dashboardData?.recentlyAssigned}
+          />
         </Card>
       </div>
 
       <div style={{ marginTop: 24 }}>
         <Card title="Assets Needing Attention">
-          <AssetsNeedingAttention entity={entity} />
+          <AssetsNeedingAttention
+            entity={entity}
+            rows={dashboardData?.attentionItems}
+          />
         </Card>
       </div>
 
       <div style={{ marginTop: 24 }}>
         <Card title="Upcoming Renewals">
-          <UpcomingRenewals entity={entity} />
+          <UpcomingRenewals
+            entity={entity}
+            rows={dashboardData?.upcomingRenewals}
+          />
         </Card>
       </div>
     </div>
@@ -160,31 +243,36 @@ export default function Dashboard() {
    REUSABLE UI COMPONENTS
    ========================= */
 
-function KpiCard({ title, value }) {
+function KpiCard({ title, value, compact, onClick }) {
   return (
     <div
       style={{
         border: "1px solid #e5e7eb",
-        borderRadius: 8,
-        padding: 16,
-        background: "#fff"
+        borderRadius: 10,
+        padding: compact ? "10px 12px" : 16,
+        background: "#fff",
+        cursor: onClick ? "pointer" : "default",
+        transition: "box-shadow 0.2s ease"
       }}
+      onClick={onClick}
     >
-      <p style={{ fontSize: 14, color: "#6b7280" }}>{title}</p>
-      <h2 style={{ marginTop: 8 }}>{value}</h2>
+      <p style={{ fontSize: compact ? 11 : 14, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.04em" }}>{title}</p>
+      <h2 style={{ marginTop: 6, fontSize: compact ? 18 : 24 }}>{value}</h2>
     </div>
   );
 }
 
-function Card({ title, children }) {
+function Card({ title, children, onClick }) {
   return (
     <div
       style={{
         border: "1px solid #e5e7eb",
         borderRadius: 8,
         padding: 16,
-        background: "#fff"
+        background: "#fff",
+        cursor: onClick ? "pointer" : "default"
       }}
+      onClick={onClick}
     >
       <h4 style={{ marginBottom: 16 }}>{title}</h4>
       {children}

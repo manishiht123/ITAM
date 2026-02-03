@@ -1,15 +1,33 @@
-export default function EmployeeTable() {
-  const employees = [
-    {
-      id: 1,
-      name: "Rahul Sharma",
-      email: "rahul@company.com",
-      department: "IT",
-      entity: "OXYZO",
-      status: "Active",
-      assets: 2
+import { useState, useEffect } from "react";
+import api from "../../services/api";
+import { useEntity } from "../../context/EntityContext";
+
+export default function EmployeeTable({ onEdit, refreshToken }) {
+  const { entity } = useEntity();
+  const [employees, setEmployees] = useState([]);
+
+  useEffect(() => {
+    loadEmployees();
+  }, [entity, refreshToken]);
+
+  const loadEmployees = async () => {
+    try {
+      if (entity === "ALL") {
+        const entities = await api.getEntities();
+        const codes = (entities || []).map((e) => e.code).filter(Boolean);
+        const results = await Promise.allSettled(
+          codes.map((code) => api.getEmployees(code))
+        );
+        const combined = results.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
+        setEmployees(combined);
+      } else {
+        const data = await api.getEmployees(entity);
+        setEmployees(data);
+      }
+    } catch (error) {
+      console.error("Error fetching employees:", error);
     }
-  ];
+  };
 
   return (
     <table className="table">
@@ -38,7 +56,12 @@ export default function EmployeeTable() {
               </span>
             </td>
             <td>
-              <button className="btn-secondary">Edit</button>
+              <button
+                className="btn-secondary"
+                onClick={() => onEdit && onEdit(emp)}
+              >
+                Edit
+              </button>
             </td>
           </tr>
         ))}
@@ -46,4 +69,3 @@ export default function EmployeeTable() {
     </table>
   );
 }
-

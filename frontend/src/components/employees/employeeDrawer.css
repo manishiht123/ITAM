@@ -11,7 +11,7 @@
   right: 0;
   width: 440px;
   height: 100vh;
-  background: #f8fafc;
+  background: var(--bg-muted);
   z-index: 100;
   display: flex;
   flex-direction: column;
@@ -25,11 +25,11 @@
 
 .drawer-header {
   padding: 18px 20px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--border);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #fff;
+  background: var(--bg-elevated);
 }
 
 .drawer-header h3 {
@@ -51,11 +51,12 @@
 }
 
 .drawer-card {
-  background: #fff;
+  background: var(--bg-elevated);
   border-radius: 14px;
   padding: 16px;
   margin-bottom: 18px;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.04);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
 }
 
 .drawer-card h4 {
@@ -72,7 +73,7 @@
 
 .form-group label {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--text-secondary);
   margin-bottom: 4px;
 }
 
@@ -80,16 +81,15 @@
 .form-group select {
   padding: 9px 12px;
   border-radius: 10px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border);
   font-size: 14px;
 }
 
 .drawer-footer {
   padding: 14px 20px;
-  border-top: 1px solid #e5e7eb;
-  background: #fff;
+  border-top: 1px solid var(--border);
+  background: var(--bg-elevated);
   display: flex;
   justify-content: flex-end;
   gap: 10px;
 }
-

@@ -9,8 +9,8 @@ export default function AssetGrowthLine({ data }) {
       {
         label: "Asset Growth Over Time",
         data: data.map((d) => d.count),
-        borderColor: "#2563eb",
-        backgroundColor: "rgba(37, 99, 235, 0.2)",
+        borderColor: "#7c3aed",
+        backgroundColor: "rgba(124, 58, 237, 0.2)",
         tension: 0.3,
         fill: true,
       },
@@ -46,4 +46,3 @@ export default function AssetGrowthLine({ data }) {
     </div>
   );
 }
-
