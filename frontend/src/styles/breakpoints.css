@@ -1,0 +1,232 @@
+/* ============================
+   RESPONSIVE BREAKPOINTS
+   ============================ */
+
+:root {
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+}
+
+/* ============================
+   MOBILE ADJUSTMENTS (≤768px)
+   ============================ */
+
+@media (max-width: 768px) {
+  /* Force single column for all grids */
+  .software-grid,
+  .reports-grid,
+  .security-grid,
+  .dashboard-grid,
+  .asset-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* KPI rows to 2 columns on mobile */
+  .kpi-row,
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: var(--space-md);
+  }
+
+  /* Filters to single column */
+  .filters,
+  .filter-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Form grids to single column */
+  .form-grid.two-col,
+  .form-grid.three-col {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Tables scroll horizontally */
+  .table-container {
+    overflow-x: auto;
+  }
+
+  /* Adjust page padding */
+  .page-layout,
+  .software-page,
+  .dashboard-page,
+  .assets-page {
+    padding: var(--space-lg) !important;
+  }
+
+  /* Sidebar adjustments */
+  .sidebar {
+    width: 240px;
+  }
+
+  .sidebar.collapsed {
+    width: 0;
+  }
+
+  /* Header stacking */
+  .page-header,
+  .software-header,
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+
+  /* Action buttons full width */
+  .page-actions,
+  .software-actions {
+    width: 100%;
+  }
+
+  .page-actions > *,
+  .software-actions > * {
+    flex: 1;
+  }
+
+  /* Card padding adjustments */
+  .card {
+    border-radius: var(--radius-md);
+  }
+
+  /* Modal full width */
+  .modal {
+    width: 95vw !important;
+    margin: var(--space-sm);
+  }
+
+  /* Drawer full width */
+  .drawer {
+    width: 100vw !important;
+  }
+}
+
+/* ============================
+   TABLET ADJUSTMENTS (≤1100px)
+   ============================ */
+
+@media (max-width: 1100px) {
+  /* Asset KPIs to 3 columns */
+  .asset-kpis {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+
+  /* Report tiles to 2 columns */
+  .report-tiles {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* Dashboard charts */
+  .dashboard-charts {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ============================
+   SMALL MOBILE (≤480px)
+   ============================ */
+
+@media (max-width: 480px) {
+  /* KPI cards to single column */
+  .kpi-row,
+  .stats-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Reduce spacing */
+  .page-layout,
+  .software-page,
+  .dashboard-page {
+    padding: var(--space-md) !important;
+  }
+
+  /* Smaller typography */
+  h1 {
+    font-size: var(--text-2xl) !important;
+  }
+
+  h2 {
+    font-size: var(--text-lg) !important;
+  }
+
+  /* Compact buttons */
+  .btn {
+    font-size: var(--text-sm);
+    padding: 0 var(--space-md);
+  }
+
+  /* Compact table cells */
+  .table th,
+  .table td {
+    padding: var(--space-sm) var(--space-sm);
+    font-size: var(--text-xs);
+  }
+}
+
+/* ============================
+   PRINT STYLES
+   ============================ */
+
+@media print {
+  /* Hide UI elements */
+  .sidebar,
+  .topbar,
+  .btn,
+  .drawer,
+  .modal,
+  .toast-container {
+    display: none !important;
+  }
+
+  /* Expand content */
+  .main-content {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Remove shadows and borders */
+  .card,
+  .table-container {
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
+  }
+
+  /* Ensure readable text */
+  body {
+    color: #000 !important;
+    background: #fff !important;
+  }
+}
+
+/* ============================
+   LANDSCAPE TABLET (768px - 1024px)
+   ============================ */
+
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
+  /* Optimize for landscape tablets */
+  .software-grid,
+  .dashboard-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .kpi-row {
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+}
+
+/* ============================
+   LARGE SCREENS (≥1536px)
+   ============================ */
+
+@media (min-width: 1536px) {
+  /* Increase max width for large screens */
+  .page-layout {
+    max-width: 1680px;
+    margin: 0 auto;
+  }
+
+  /* More columns for KPIs on large screens */
+  .kpi-row {
+    grid-template-columns: repeat(6, 1fr) !important;
+  }
+}

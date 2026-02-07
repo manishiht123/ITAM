@@ -1,0 +1,119 @@
+.kpi-card {
+  background: linear-gradient(135deg, var(--bg-elevated), var(--bg-muted));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-base);
+  position: relative;
+  overflow: hidden;
+  animation: fadeIn 300ms ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary), var(--primary-600));
+  transform: scaleX(0);
+  transition: transform var(--transition-base);
+}
+
+.kpi-card:hover::before {
+  transform: scaleX(1);
+}
+
+.kpi-card-clickable {
+  cursor: pointer;
+}
+
+.kpi-card-clickable:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+/* ============== HEADER ============== */
+.kpi-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--space-md);
+}
+
+.kpi-label {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: var(--font-weight-semibold);
+}
+
+.kpi-icon {
+  font-size: 24px;
+  color: var(--primary);
+  opacity: 0.6;
+}
+
+/* ============== VALUE ============== */
+.kpi-value {
+  font-size: var(--text-3xl);
+  font-weight: var(--font-weight-extrabold);
+  color: var(--primary);
+  line-height: 1;
+  margin-bottom: var(--space-sm);
+}
+
+/* ============== TREND ============== */
+.kpi-trend {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.kpi-trend.positive {
+  color: var(--success);
+}
+
+.kpi-trend.negative {
+  color: var(--danger);
+}
+
+/* ============== VARIANTS ============== */
+.kpi-card-success .kpi-value {
+  color: var(--success);
+}
+
+.kpi-card-warning .kpi-value {
+  color: var(--warning);
+}
+
+.kpi-card-danger .kpi-value {
+  color: var(--danger);
+}
+
+/* ============== SIZES ============== */
+.kpi-card-sm {
+  padding: var(--space-md);
+}
+
+.kpi-card-sm .kpi-value {
+  font-size: var(--text-2xl);
+}
+
+.kpi-card-lg {
+  padding: var(--space-xl);
+}
+
+.kpi-card-lg .kpi-value {
+  font-size: 36px;
+}

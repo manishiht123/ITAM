@@ -180,6 +180,7 @@ export default function SecurityAudit() {
               <tr>
                 <th>Event</th>
                 <th>User</th>
+                <th>IP</th>
                 <th>Time</th>
                 <th>Source</th>
                 <th>Severity</th>
@@ -193,6 +194,7 @@ export default function SecurityAudit() {
                   <tr key={log.id || idx}>
                     <td>{log.action || "Event"}</td>
                     <td>{log.user || "—"}</td>
+                    <td>{log.ip || "—"}</td>
                     <td>{toDate(log.timestamp)?.toLocaleString() || "—"}</td>
                     <td><span className="pill">{moduleName}</span></td>
                     <td>
@@ -205,7 +207,7 @@ export default function SecurityAudit() {
               })}
               {!filteredLogs.length && (
                 <tr>
-                  <td colSpan={5} style={{ textAlign: "center", color: "#64748b", padding: "16px" }}>
+                  <td colSpan={6} style={{ textAlign: "center", color: "#64748b", padding: "16px" }}>
                     No audit logs found for the selected filters.
                   </td>
                 </tr>

@@ -1,10 +1,25 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../services/api";
 import { useEntity } from "../context/EntityContext";
+import { useToast } from "../context/ToastContext";
+import {
+  Button,
+  Card,
+  Input,
+  Select,
+  FormField,
+  Badge,
+  Table,
+  Drawer,
+  LoadingOverlay,
+  PageLayout,
+  Grid
+} from "../components/ui";
 import "./Software.css";
 
 export default function Software() {
   const { entity } = useEntity();
+  const toast = useToast();
   const [loading, setLoading] = useState(true);
   const [inventory, setInventory] = useState({ licenses: [], assignments: [] });
   const [search, setSearch] = useState("");
@@ -13,6 +28,7 @@ export default function Software() {
   const [entities, setEntities] = useState([]);
   const [targetEntity, setTargetEntity] = useState("");
   const [editingLicense, setEditingLicense] = useState(null);
+  const [editingAssignment, setEditingAssignment] = useState(null);
   const [licenseForm, setLicenseForm] = useState({
     product: "",
     vendor: "",
@@ -88,6 +104,7 @@ export default function Software() {
       }
     } catch (error) {
       console.error("Failed to load software inventory", error);
+      toast.error("Failed to load software inventory");
     } finally {
       setLoading(false);
     }
@@ -113,18 +130,20 @@ export default function Software() {
   const handleCreateLicense = async () => {
     const destinationEntity = entity === "ALL" ? targetEntity : entity;
     if (!destinationEntity) {
-      alert("Please select an entity to add a license.");
+      toast.warning("Please select an entity to add a license.");
       return;
     }
     if (!licenseForm.product || !licenseForm.vendor) {
-      alert("Product and Vendor are required.");
+      toast.warning("Product and Vendor are required.");
       return;
     }
     try {
       if (editingLicense) {
         await api.updateSoftwareLicense(editingLicense.id, licenseForm, destinationEntity);
+        toast.success("License updated successfully!");
       } else {
         await api.addSoftwareLicense(licenseForm, destinationEntity);
+        toast.success("License added successfully!");
       }
       setOpenLicense(false);
       setEditingLicense(null);
@@ -140,23 +159,30 @@ export default function Software() {
       });
       await loadInventory();
     } catch (error) {
-      alert(error?.message || "Failed to add software license.");
+      toast.error(error?.message || "Failed to save software license.");
     }
   };
 
   const handleCreateAssignment = async () => {
     const destinationEntity = entity === "ALL" ? targetEntity : entity;
     if (!destinationEntity) {
-      alert("Please select an entity to assign a license.");
+      toast.warning("Please select an entity to assign a license.");
       return;
     }
     if (!assignForm.softwareLicenseId || !assignForm.employeeId) {
-      alert("Select license and employee.");
+      toast.warning("Select license and employee.");
       return;
     }
     try {
-      await api.addSoftwareAssignment(assignForm, destinationEntity);
+      if (editingAssignment) {
+        await api.updateSoftwareAssignment(editingAssignment.id, assignForm, destinationEntity);
+        toast.success("Assignment updated successfully!");
+      } else {
+        await api.addSoftwareAssignment(assignForm, destinationEntity);
+        toast.success("License assigned successfully!");
+      }
       setOpenAssign(false);
+      setEditingAssignment(null);
       setAssignForm({
         softwareLicenseId: "",
         employeeId: "",
@@ -166,277 +192,380 @@ export default function Software() {
       });
       await loadInventory();
     } catch (error) {
-      alert(error?.message || "Failed to assign software license.");
+      toast.error(error?.message || "Failed to assign software license.");
     }
   };
 
+  // Table columns for licenses
+  const licenseColumns = [
+    { key: 'product', label: 'Product' },
+    { key: 'vendor', label: 'Vendor' },
+    {
+      key: 'entity',
+      label: 'Entity',
+      render: (_, row) => (row.entity || row._entityCode || entity) || "—"
+    },
+    { key: 'seatsOwned', label: 'Seats' },
+    { key: 'seatsUsed', label: 'Used' },
+    {
+      key: 'renewalDate',
+      label: 'Renewal',
+      render: (value) => value || "—"
+    },
+    {
+      key: 'action',
+      label: 'Action',
+      render: (_, row) => (
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => {
+            const resolvedEntity = entity === "ALL" ? row._entityCode : entity;
+            if (entity === "ALL" && !resolvedEntity) {
+              toast.error("Entity not available for this license.");
+              return;
+            }
+            setEditingLicense(row);
+            setTargetEntity(resolvedEntity || "");
+            setLicenseForm({
+              product: row.product || "",
+              vendor: row.vendor || "",
+              version: row.version || "",
+              licenseKey: row.licenseKey || "",
+              seatsOwned: Number(row.seatsOwned || 0),
+              seatsUsed: Number(row.seatsUsed || 0),
+              renewalDate: row.renewalDate || "",
+              status: row.status || "Active"
+            });
+            setOpenLicense(true);
+          }}
+        >
+          Edit
+        </Button>
+      )
+    }
+  ];
+
+  // Table columns for assignments
+  const assignmentColumns = [
+    {
+      key: 'employeeName',
+      label: 'Employee',
+      render: (_, row) => row.employeeName || row.employeeId
+    },
+    {
+      key: 'employeeEmail',
+      label: 'Email',
+      render: (value) => value || "—"
+    },
+    {
+      key: 'license',
+      label: 'License',
+      render: (_, row) => row.license?.product || "—"
+    },
+    {
+      key: 'vendor',
+      label: 'Vendor',
+      render: (_, row) => row.license?.vendor || "—"
+    },
+    {
+      key: 'assignedAt',
+      label: 'Assigned',
+      render: (value) => value ? new Date(value).toLocaleDateString() : "—"
+    },
+    {
+      key: 'action',
+      label: 'Action',
+      render: (_, row) => (
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => {
+            const resolvedEntity = entity === "ALL" ? row._entityCode : entity;
+            if (entity === "ALL" && !resolvedEntity) {
+              toast.error("Entity not available for this assignment.");
+              return;
+            }
+            setEditingAssignment(row);
+            setTargetEntity(resolvedEntity || "");
+            setAssignForm({
+              softwareLicenseId: row.softwareLicenseId || row.license?.id || "",
+              employeeId: row.employeeId || "",
+              employeeName: row.employeeName || "",
+              employeeEmail: row.employeeEmail || "",
+              notes: row.notes || ""
+            });
+            setOpenAssign(true);
+          }}
+        >
+          Edit
+        </Button>
+      )
+    }
+  ];
+
   return (
-    <div className="software-page">
-      <div className="software-header">
-        <div>
-          <h1>Software Inventory</h1>
-          <p>Track software licenses and user-wise assignments.</p>
-          <div className="software-hint">
-            Managing entity: <span className="software-entity-pill">{entity || "All Entities"}</span>
-          </div>
-        </div>
-        <div className="software-actions">
-          <button
-            className="asset-action-btn secondary"
-            onClick={() => {
-              setTargetEntity(entity === "ALL" ? "" : entity);
-              setOpenAssign(true);
-            }}
-          >
-            Assign License
-          </button>
-          <button
-            className="asset-action-btn primary"
-            onClick={() => {
-              setTargetEntity(entity === "ALL" ? "" : entity);
-              setEditingLicense(null);
-              setOpenLicense(true);
-            }}
-          >
-            Add License
-          </button>
-        </div>
-      </div>
+    <PageLayout>
+      <LoadingOverlay visible={loading} message="Loading software inventory..." />
 
-      {loading && <p style={{ color: "#6b7280" }}>Loading software inventory...</p>}
+      <PageLayout.Header
+        title="Software Inventory"
+        subtitle="Track software licenses and user-wise assignments."
+        badge={<Badge variant="primary">{entity || "All Entities"}</Badge>}
+        actions={
+          <>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setTargetEntity(entity === "ALL" ? "" : entity);
+                setEditingAssignment(null);
+                setOpenAssign(true);
+              }}
+            >
+              Assign License
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => {
+                setTargetEntity(entity === "ALL" ? "" : entity);
+                setEditingLicense(null);
+                setOpenLicense(true);
+              }}
+            >
+              Add License
+            </Button>
+          </>
+        }
+      />
 
-      <div className="software-grid">
-        <div className="software-card">
-          <div className="card-title">License Catalog</div>
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Product</th>
-                <th>Vendor</th>
-                <th>Seats</th>
-                <th>Used</th>
-                <th>Renewal</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(inventory.licenses || []).map((row) => (
-                <tr key={row.id}>
-                  <td>{row.product}</td>
-                  <td>{row.vendor}</td>
-                  <td>{row.seatsOwned}</td>
-                  <td>{row.seatsUsed}</td>
-                  <td>{row.renewalDate || "—"}</td>
-                  <td>
-                    <button
-                      className="asset-action-btn secondary"
-                      onClick={() => {
-                        const resolvedEntity =
-                          entity === "ALL" ? row._entityCode : entity;
-                        if (entity === "ALL" && !resolvedEntity) {
-                          alert("Entity not available for this license.");
-                          return;
-                        }
-                        setEditingLicense(row);
-                        setTargetEntity(resolvedEntity || "");
-                        setLicenseForm({
-                          product: row.product || "",
-                          vendor: row.vendor || "",
-                          version: row.version || "",
-                          licenseKey: row.licenseKey || "",
-                          seatsOwned: Number(row.seatsOwned || 0),
-                          seatsUsed: Number(row.seatsUsed || 0),
-                          renewalDate: row.renewalDate || "",
-                          status: row.status || "Active"
-                        });
-                        setOpenLicense(true);
-                      }}
-                    >
-                      Edit
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {!inventory.licenses?.length && (
-                <tr>
-                  <td colSpan={6} style={{ textAlign: "center", color: "#6b7280" }}>
-                    No licenses added.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+      <PageLayout.Content>
+        <Grid columns={2} gap="xl">
+        <Card padding="none">
+          <Card.Header>
+            <Card.Title>License Catalog</Card.Title>
+          </Card.Header>
+          <Table
+            data={inventory.licenses || []}
+            columns={licenseColumns}
+            emptyMessage="No licenses added."
+          />
+        </Card>
 
-        <div className="software-card">
-          <div className="card-title">User-wise Assignments</div>
-          <div className="software-filter">
-            <input
+        <Card padding="none">
+          <Card.Header>
+            <Card.Title>User-wise Assignments</Card.Title>
+          </Card.Header>
+          <div style={{ padding: 'var(--space-lg)' }}>
+            <Input
               placeholder="Search employee or license..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              fullWidth
             />
           </div>
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Employee</th>
-                <th>Email</th>
-                <th>License</th>
-                <th>Vendor</th>
-                <th>Assigned</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredAssignments.map((row) => (
-                <tr key={row.id}>
-                  <td>{row.employeeName || row.employeeId}</td>
-                  <td>{row.employeeEmail || "—"}</td>
-                  <td>{row.license?.product || "—"}</td>
-                  <td>{row.license?.vendor || "—"}</td>
-                  <td>{row.assignedAt ? new Date(row.assignedAt).toLocaleDateString() : "—"}</td>
-                </tr>
-              ))}
-              {!filteredAssignments.length && (
-                <tr>
-                  <td colSpan={5} style={{ textAlign: "center", color: "#6b7280" }}>
-                    No assignments found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+          <Table
+            data={filteredAssignments}
+            columns={assignmentColumns}
+            emptyMessage="No assignments found."
+          />
+        </Card>
+        </Grid>
+      </PageLayout.Content>
 
-      {openLicense && (
-        <>
-          <div className="drawer-overlay" onClick={() => setOpenLicense(false)} />
-          <div className="drawer-panel">
-            <div className="drawer-header">
-              <h3>{editingLicense ? "Edit Software License" : "Add Software License"}</h3>
-              <button className="action-link" onClick={() => setOpenLicense(false)}>Close</button>
-            </div>
-            <div className="drawer-body">
-              {entity === "ALL" && (
-                <div className="form-group">
-                  <label>Entity</label>
-                  <select value={targetEntity} onChange={(e) => setTargetEntity(e.target.value)}>
-                    <option value="">Select Entity</option>
-                    {entities.map((ent) => (
-                      <option key={ent.id} value={ent.code}>{ent.name} ({ent.code})</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-              <div className="form-group">
-                <label>Product</label>
-                <input value={licenseForm.product} onChange={(e) => setLicenseForm((prev) => ({ ...prev, product: e.target.value }))} />
-              </div>
-              <div className="form-group">
-                <label>Vendor</label>
-                <input value={licenseForm.vendor} onChange={(e) => setLicenseForm((prev) => ({ ...prev, vendor: e.target.value }))} />
-              </div>
-              <div className="form-grid two-col">
-                <div className="form-group">
-                  <label>Seats Owned</label>
-                  <input type="number" value={licenseForm.seatsOwned} onChange={(e) => setLicenseForm((prev) => ({ ...prev, seatsOwned: Number(e.target.value) }))} />
-                </div>
-                <div className="form-group">
-                  <label>Seats Used</label>
-                  <input type="number" value={licenseForm.seatsUsed} onChange={(e) => setLicenseForm((prev) => ({ ...prev, seatsUsed: Number(e.target.value) }))} />
-                </div>
-              </div>
-              <div className="form-grid two-col">
-                <div className="form-group">
-                  <label>Version</label>
-                  <input value={licenseForm.version} onChange={(e) => setLicenseForm((prev) => ({ ...prev, version: e.target.value }))} />
-                </div>
-                <div className="form-group">
-                  <label>License Key</label>
-                  <input value={licenseForm.licenseKey} onChange={(e) => setLicenseForm((prev) => ({ ...prev, licenseKey: e.target.value }))} />
-                </div>
-              </div>
-              <div className="form-grid two-col">
-                <div className="form-group">
-                  <label>Renewal Date</label>
-                  <input type="date" value={licenseForm.renewalDate} onChange={(e) => setLicenseForm((prev) => ({ ...prev, renewalDate: e.target.value }))} />
-                </div>
-                <div className="form-group">
-                  <label>Status</label>
-                  <select value={licenseForm.status} onChange={(e) => setLicenseForm((prev) => ({ ...prev, status: e.target.value }))}>
-                    <option value="Active">Active</option>
-                    <option value="Expired">Expired</option>
-                    <option value="Suspended">Suspended</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-            <div className="drawer-footer">
-              <button className="btn-secondary" onClick={() => setOpenLicense(false)}>Cancel</button>
-              <button className="btn-primary" onClick={handleCreateLicense}>
-                {editingLicense ? "Save Changes" : "Save License"}
-              </button>
-            </div>
-          </div>
-        </>
-      )}
+      {/* License Drawer */}
+      <Drawer
+        open={openLicense}
+        onClose={() => setOpenLicense(false)}
+        title={editingLicense ? "Edit Software License" : "Add Software License"}
+        size="md"
+      >
+        <Drawer.Body>
+          {entity === "ALL" && (
+            <FormField label="Entity" required>
+              <Select
+                value={targetEntity}
+                onChange={(e) => setTargetEntity(e.target.value)}
+                placeholder="Select Entity"
+                options={entities.map((ent) => ({
+                  value: ent.code,
+                  label: `${ent.name} (${ent.code})`
+                }))}
+                fullWidth
+              />
+            </FormField>
+          )}
 
-      {openAssign && (
-        <>
-          <div className="drawer-overlay" onClick={() => setOpenAssign(false)} />
-          <div className="drawer-panel">
-            <div className="drawer-header">
-              <h3>Assign License</h3>
-              <button className="action-link" onClick={() => setOpenAssign(false)}>Close</button>
-            </div>
-            <div className="drawer-body">
-              {entity === "ALL" && (
-                <div className="form-group">
-                  <label>Entity</label>
-                  <select value={targetEntity} onChange={(e) => setTargetEntity(e.target.value)}>
-                    <option value="">Select Entity</option>
-                    {entities.map((ent) => (
-                      <option key={ent.id} value={ent.code}>{ent.name} ({ent.code})</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-              <div className="form-group">
-                <label>License</label>
-                <select value={assignForm.softwareLicenseId} onChange={(e) => setAssignForm((prev) => ({ ...prev, softwareLicenseId: e.target.value }))}>
-                  <option value="">Select License</option>
-                  {(inventory.licenses || []).map((lic) => (
-                    <option key={lic.id} value={lic.id}>{lic.product} ({lic.vendor})</option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Employee ID</label>
-                <input value={assignForm.employeeId} onChange={(e) => setAssignForm((prev) => ({ ...prev, employeeId: e.target.value }))} />
-              </div>
-              <div className="form-grid two-col">
-                <div className="form-group">
-                  <label>Employee Name</label>
-                  <input value={assignForm.employeeName} onChange={(e) => setAssignForm((prev) => ({ ...prev, employeeName: e.target.value }))} />
-                </div>
-                <div className="form-group">
-                  <label>Employee Email</label>
-                  <input value={assignForm.employeeEmail} onChange={(e) => setAssignForm((prev) => ({ ...prev, employeeEmail: e.target.value }))} />
-                </div>
-              </div>
-              <div className="form-group">
-                <label>Notes</label>
-                <textarea value={assignForm.notes} onChange={(e) => setAssignForm((prev) => ({ ...prev, notes: e.target.value }))} />
-              </div>
-            </div>
-            <div className="drawer-footer">
-              <button className="btn-secondary" onClick={() => setOpenAssign(false)}>Cancel</button>
-              <button className="btn-primary" onClick={handleCreateAssignment}>Assign</button>
-            </div>
+          <FormField label="Product" required>
+            <Input
+              value={licenseForm.product}
+              onChange={(e) => setLicenseForm((prev) => ({ ...prev, product: e.target.value }))}
+              fullWidth
+            />
+          </FormField>
+
+          <FormField label="Vendor" required>
+            <Input
+              value={licenseForm.vendor}
+              onChange={(e) => setLicenseForm((prev) => ({ ...prev, vendor: e.target.value }))}
+              fullWidth
+            />
+          </FormField>
+
+          <div className="form-grid two-col">
+            <FormField label="Seats Owned">
+              <Input
+                type="number"
+                value={licenseForm.seatsOwned}
+                onChange={(e) => setLicenseForm((prev) => ({ ...prev, seatsOwned: Number(e.target.value) }))}
+                fullWidth
+              />
+            </FormField>
+
+            <FormField label="Seats Used">
+              <Input
+                type="number"
+                value={licenseForm.seatsUsed}
+                onChange={(e) => setLicenseForm((prev) => ({ ...prev, seatsUsed: Number(e.target.value) }))}
+                fullWidth
+              />
+            </FormField>
           </div>
-        </>
-      )}
-    </div>
+
+          <div className="form-grid two-col">
+            <FormField label="Version">
+              <Input
+                value={licenseForm.version}
+                onChange={(e) => setLicenseForm((prev) => ({ ...prev, version: e.target.value }))}
+                fullWidth
+              />
+            </FormField>
+
+            <FormField label="License Key">
+              <Input
+                value={licenseForm.licenseKey}
+                onChange={(e) => setLicenseForm((prev) => ({ ...prev, licenseKey: e.target.value }))}
+                fullWidth
+              />
+            </FormField>
+          </div>
+
+          <div className="form-grid two-col">
+            <FormField label="Renewal Date">
+              <Input
+                type="date"
+                value={licenseForm.renewalDate}
+                onChange={(e) => setLicenseForm((prev) => ({ ...prev, renewalDate: e.target.value }))}
+                fullWidth
+              />
+            </FormField>
+
+            <FormField label="Status">
+              <Select
+                value={licenseForm.status}
+                onChange={(e) => setLicenseForm((prev) => ({ ...prev, status: e.target.value }))}
+                options={[
+                  { value: "Active", label: "Active" },
+                  { value: "Expired", label: "Expired" },
+                  { value: "Suspended", label: "Suspended" }
+                ]}
+                fullWidth
+              />
+            </FormField>
+          </div>
+        </Drawer.Body>
+
+        <Drawer.Footer>
+          <Button variant="secondary" onClick={() => setOpenLicense(false)}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleCreateLicense}>
+            {editingLicense ? "Save Changes" : "Save License"}
+          </Button>
+        </Drawer.Footer>
+      </Drawer>
+
+      {/* Assignment Drawer */}
+      <Drawer
+        open={openAssign}
+        onClose={() => setOpenAssign(false)}
+        title={editingAssignment ? "Edit Assignment" : "Assign License"}
+        size="md"
+      >
+        <Drawer.Body>
+          {entity === "ALL" && (
+            <FormField label="Entity" required>
+              <Select
+                value={targetEntity}
+                onChange={(e) => setTargetEntity(e.target.value)}
+                placeholder="Select Entity"
+                options={entities.map((ent) => ({
+                  value: ent.code,
+                  label: `${ent.name} (${ent.code})`
+                }))}
+                fullWidth
+              />
+            </FormField>
+          )}
+
+          <FormField label="License" required>
+            <Select
+              value={assignForm.softwareLicenseId}
+              onChange={(e) => setAssignForm((prev) => ({ ...prev, softwareLicenseId: e.target.value }))}
+              placeholder="Select License"
+              options={(inventory.licenses || []).map((lic) => ({
+                value: lic.id,
+                label: `${lic.product} (${lic.vendor})`
+              }))}
+              fullWidth
+            />
+          </FormField>
+
+          <FormField label="Employee ID" required>
+            <Input
+              value={assignForm.employeeId}
+              onChange={(e) => setAssignForm((prev) => ({ ...prev, employeeId: e.target.value }))}
+              fullWidth
+            />
+          </FormField>
+
+          <div className="form-grid two-col">
+            <FormField label="Employee Name">
+              <Input
+                value={assignForm.employeeName}
+                onChange={(e) => setAssignForm((prev) => ({ ...prev, employeeName: e.target.value }))}
+                fullWidth
+              />
+            </FormField>
+
+            <FormField label="Employee Email">
+              <Input
+                value={assignForm.employeeEmail}
+                onChange={(e) => setAssignForm((prev) => ({ ...prev, employeeEmail: e.target.value }))}
+                fullWidth
+              />
+            </FormField>
+          </div>
+
+          <FormField label="Notes">
+            <textarea
+              className="input"
+              value={assignForm.notes}
+              onChange={(e) => setAssignForm((prev) => ({ ...prev, notes: e.target.value }))}
+              rows={4}
+              style={{ width: '100%', resize: 'vertical' }}
+            />
+          </FormField>
+        </Drawer.Body>
+
+        <Drawer.Footer>
+          <Button variant="secondary" onClick={() => setOpenAssign(false)}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleCreateAssignment}>
+            {editingAssignment ? "Save Changes" : "Assign"}
+          </Button>
+        </Drawer.Footer>
+      </Drawer>
+    </PageLayout>
   );
 }

@@ -53,8 +53,8 @@ export default function Sidebar() {
       </div>
 
       {!collapsed && (
-        <div style={{ padding: "0 20px 12px", color: "#e5e7eb", fontSize: 12 }}>
-          Logged in as <strong style={{ color: "#ffffff" }}>{userName}</strong>
+        <div className="sidebar-user-info">
+          Logged in as <strong>{userName}</strong>
         </div>
       )}
 

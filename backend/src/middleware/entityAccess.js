@@ -3,7 +3,8 @@ module.exports = (req, res, next) => {
   if (!user) return next();
 
   const allowed = Array.isArray(user.allowedEntities) ? user.allowedEntities.filter(Boolean) : [];
-  const isAdmin = user.role === "admin" || user.role === "superadmin";
+  const role = String(user.role || "").trim().toLowerCase();
+  const isAdmin = ["admin", "superadmin", "administrator"].includes(role);
 
   if (!allowed.length || isAdmin) return next();
 

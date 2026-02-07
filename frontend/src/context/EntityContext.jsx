@@ -7,6 +7,8 @@ const getInitialEntity = () => {
     const stored = localStorage.getItem("authUser");
     if (!stored) return "ALL";
     const user = JSON.parse(stored);
+    const role = String(user.role || "").trim().toLowerCase();
+    if (["admin", "superadmin", "administrator"].includes(role)) return "ALL";
     const allowed = Array.isArray(user.allowedEntities) ? user.allowedEntities : [];
     if (allowed.length === 1) return allowed[0];
     if (allowed.length > 1) return "ALL";

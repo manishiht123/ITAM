@@ -102,3 +102,37 @@ exports.updateSoftwareLicense = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+exports.updateSoftwareAssignment = async (req, res) => {
+  try {
+    const { SoftwareLicense, SoftwareAssignment } = await getModels(req);
+    const assignment = await SoftwareAssignment.findByPk(req.params.id);
+    if (!assignment) {
+      return res.status(404).json({ error: "Software assignment not found." });
+    }
+
+    const previousLicenseId = assignment.softwareLicenseId;
+    await assignment.update(req.body);
+
+    if (req.body.softwareLicenseId && req.body.softwareLicenseId !== previousLicenseId) {
+      const previous = await SoftwareLicense.findByPk(previousLicenseId);
+      const next = await SoftwareLicense.findByPk(req.body.softwareLicenseId);
+      if (previous) {
+        await previous.update({ seatsUsed: Math.max(0, (previous.seatsUsed || 0) - 1) });
+      }
+      if (next) {
+        await next.update({ seatsUsed: (next.seatsUsed || 0) + 1 });
+      }
+    }
+
+    await logAudit(
+      req,
+      "Software license assignment updated",
+      `Employee: ${assignment.employeeId || "Unknown"}`
+    );
+
+    res.json(assignment);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};

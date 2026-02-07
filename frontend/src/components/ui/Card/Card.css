@@ -1,0 +1,91 @@
+.card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  transition: box-shadow var(--transition-base), transform var(--transition-base);
+  animation: fadeIn 300ms ease;
+}
+
+/* ============== VARIANTS ============== */
+.card-elevated {
+  box-shadow: var(--shadow-lg);
+}
+
+.card-bordered {
+  border: 2px solid var(--border);
+  box-shadow: none;
+}
+
+.card-glass {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+[data-theme="dark"] .card-glass {
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ============== PADDING ============== */
+.card-padding-none {
+  padding: 0;
+}
+
+.card-padding-sm {
+  padding: var(--space-md);
+}
+
+.card-padding-md {
+  padding: var(--space-lg);
+}
+
+.card-padding-lg {
+  padding: var(--space-xl);
+}
+
+/* ============== INTERACTIVE STATES ============== */
+.card-hoverable:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-4px);
+}
+
+.card-clickable {
+  cursor: pointer;
+}
+
+/* ============== CARD HEADER ============== */
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-lg);
+  border-bottom: 1px solid var(--border);
+}
+
+.card-title {
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.card-actions {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+/* ============== CARD BODY ============== */
+.card-body {
+  padding: var(--space-lg);
+}
+
+/* ============== CARD FOOTER ============== */
+.card-footer {
+  padding: var(--space-lg);
+  border-top: 1px solid var(--border);
+  background: var(--bg-muted);
+  border-bottom-left-radius: var(--radius-lg);
+  border-bottom-right-radius: var(--radius-lg);
+}

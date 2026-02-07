@@ -339,6 +339,13 @@ const api = {
             body: JSON.stringify(payload),
         }));
     },
+    updateSoftwareAssignment: async (id, payload, entityCode) => {
+        return handleResponse(await fetch(`${BASE_URL}/software/assignments/${id}`, {
+            method: "PUT",
+            headers: buildHeaders(entityCode, { "Content-Type": "application/json" }),
+            body: JSON.stringify(payload),
+        }));
+    },
 
     // --- AUTH ---
     login: async (payload) => handleResponse(await fetch(`${BASE_URL}/auth/login`, {

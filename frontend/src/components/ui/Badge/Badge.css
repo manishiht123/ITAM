@@ -1,0 +1,65 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: var(--font-weight-semibold);
+  line-height: 1;
+  transition: all var(--transition-fast);
+}
+
+/* ============== SIZES ============== */
+.badge-sm {
+  font-size: var(--text-xs);
+  padding: 3px 8px;
+}
+
+.badge-md {
+  font-size: var(--text-sm);
+  padding: 5px 12px;
+}
+
+.badge-lg {
+  font-size: var(--text-base);
+  padding: 6px 14px;
+}
+
+/* ============== VARIANTS ============== */
+.badge-primary {
+  background: rgba(124, 58, 237, 0.15);
+  color: var(--primary);
+}
+
+.badge-success {
+  background: var(--feedback-success-bg);
+  color: var(--feedback-success-text);
+}
+
+.badge-warning {
+  background: var(--feedback-warning-bg);
+  color: var(--feedback-warning-text);
+}
+
+.badge-danger {
+  background: var(--feedback-danger-bg);
+  color: var(--feedback-danger-text);
+}
+
+.badge-info {
+  background: var(--feedback-info-bg);
+  color: var(--feedback-info-text);
+}
+
+.badge-neutral {
+  background: var(--bg-muted);
+  color: var(--text-secondary);
+}
+
+/* ============== DOT INDICATOR ============== */
+.badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
