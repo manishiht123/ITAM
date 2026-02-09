@@ -227,6 +227,10 @@
   font-size: var(--text-base);
   color: var(--text-primary);
   display: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
 }
 
 @media (min-width: 768px) {

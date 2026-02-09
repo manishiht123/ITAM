@@ -2,11 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import { useEntity } from "../../context/EntityContext";
+import { Button } from "../../components/ui";
+import { useToast } from "../../context/ToastContext";
 import "./AssignmentsOwnership.css";
 
 export default function AssignmentsOwnership() {
   const navigate = useNavigate();
   const { entity } = useEntity();
+  const toast = useToast();
   const [policy, setPolicy] = useState({
     requireApproval: true,
     maxAssetsPerUser: 3,
@@ -116,15 +119,15 @@ export default function AssignmentsOwnership() {
           <p>Manage allocation rules, ownership policies, and assignment workflow.</p>
         </div>
         <div className="assignments-actions">
-          <button
-            className="asset-action-btn primary"
+          <Button
+            variant="primary"
             onClick={() => {
               localStorage.setItem("assignmentsPolicy", JSON.stringify(policy));
-              alert("Policy saved successfully.");
+              toast.success("Policy saved successfully");
             }}
           >
             Save Policy
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -227,7 +230,7 @@ export default function AssignmentsOwnership() {
                   </td>
                   <td>{row.assignedOn}</td>
                   <td>
-                    <button className="action-link" onClick={() => navigate("/assets")}>View</button>
+                    <Button variant="ghost" size="sm" onClick={() => navigate("/assets")}>View</Button>
                   </td>
                 </tr>
               ))}

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { FaTimes } from 'react-icons/fa';
 import './Drawer.css';
 
@@ -10,6 +10,8 @@ const Drawer = ({
   title = null,
   children
 }) => {
+  const drawerRef = useRef(null);
+
   useEffect(() => {
     if (open) {
       document.body.style.overflow = 'hidden';
@@ -21,15 +23,40 @@ const Drawer = ({
     };
   }, [open]);
 
+  // Close on Escape key
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [open, onClose]);
+
+  // Trap focus inside drawer
+  useEffect(() => {
+    if (!open || !drawerRef.current) return;
+    const focusable = drawerRef.current.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    if (focusable.length) focusable[0].focus();
+  }, [open]);
+
   if (!open) return null;
 
   return (
     <>
-      <div className="drawer-overlay" onClick={onClose} />
-      <div className={`drawer drawer-${position} drawer-${size}`}>
+      <div className="drawer-overlay" onClick={onClose} aria-hidden="true" />
+      <div
+        ref={drawerRef}
+        className={`drawer drawer-${position} drawer-${size}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title || 'Drawer'}
+      >
         <div className="drawer-header">
           {title && <h3 className="drawer-title">{title}</h3>}
-          <button className="drawer-close" onClick={onClose}>
+          <button className="drawer-close" onClick={onClose} aria-label="Close drawer">
             <FaTimes />
           </button>
         </div>

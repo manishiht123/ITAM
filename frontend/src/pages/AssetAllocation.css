@@ -148,34 +148,7 @@
   margin-top: 20px;
 }
 
-.btn-primary {
-  background: linear-gradient(135deg, var(--primary), var(--primary-700));
-  color: #ffffff;
-  border: none;
-  height: 40px;
-  padding: 0 22px;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.btn-primary:hover {
-  opacity: 0.95;
-  padding: 8px 16px;
-  font-size: 13px;
-}
-
-.btn-secondary {
-  background: var(--bg-muted);
-  color: var(--text-primary);
-  border: none;
-  height: 40px;
-  padding: 8px 14px;
-  border-radius: 10px;
-  font-size: 13px;
-  cursor: pointer;
-}
+/* Button styles handled by Button component CSS */
 
 /* ===============================
    RESPONSIVE (IMPORTANT)

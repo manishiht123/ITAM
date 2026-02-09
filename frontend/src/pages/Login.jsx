@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import LoginCard from "../components/ui/LoginCard";
+import { FaEnvelope, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
 import "../styles/login.css";
 import CompanyLogo from "../assets/logos/default.svg";
 import api from "../services/api";
@@ -10,113 +10,130 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
-  const handleLogin = async () => {
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    if (!email || !password) {
+      setError("Please enter both email and password");
+      return;
+    }
     setError("");
+    setLoading(true);
     try {
       const data = await api.login({ email, password });
       localStorage.setItem("authToken", data.token);
       localStorage.setItem("authUser", JSON.stringify(data.user));
       navigate("/dashboard");
     } catch (err) {
-      setError(err?.message || "Login failed");
+      setError(err?.message || "Invalid email or password. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="login-page">
-      <LoginCard>
-        {/* Brand Accent (color comes from CSS variable) */}
+      {/* Decorative background shapes */}
+      <div className="login-bg-shape login-bg-shape-1" />
+      <div className="login-bg-shape login-bg-shape-2" />
+
+      <div className="login-card">
+        {/* Brand accent bar */}
         <div className="login-accent" />
 
-        <div style={{ padding: 24 }}>
-          {/* Logo */}
-          <div style={{ textAlign: "center", marginBottom: 24 }}>
-            <img
-              src={CompanyLogo}
-              alt="Company Logo"
-              style={{ height: 48, marginBottom: 12 }}
-            />
-            <h3 style={{ margin: 0, fontWeight: 600 }}>
-              IT Asset Management
-            </h3>
+        <div className="login-card-body">
+          {/* Logo & Brand */}
+          <div className="login-brand">
+            <img src={CompanyLogo} alt="Company Logo" className="login-logo" />
+            <h1 className="login-title">IT Asset Management</h1>
+            <p className="login-subtitle">Sign in to your account</p>
           </div>
 
-          <p
-            style={{
-              marginBottom: 24,
-              color: "#6b7280",
-              fontSize: 14,
-              textAlign: "center"
-            }}
-          >
-            Login to continue
-          </p>
-
-          {/* Email */}
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 14, display: "block", marginBottom: 4 }}>
-              Email Address
-            </label>
-            <input
-              type="email"
-              className="login-input"
-              placeholder="name@company.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "8px 10px",
-                border: "1px solid #d1d5db",
-                borderRadius: 6,
-                fontSize: 14
-              }}
-            />
-          </div>
-
-          {/* Password */}
-          <div style={{ marginBottom: 24 }}>
-            <label style={{ fontSize: 14, display: "block", marginBottom: 4 }}>
-              Password
-            </label>
-            <input
-              type="password"
-              className="login-input"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "8px 10px",
-                border: "1px solid #d1d5db",
-                borderRadius: 6,
-                fontSize: 14
-              }}
-            />
-          </div>
-
-          {/* Login Button */}
-          <button className="login-button" onClick={handleLogin}>
-            Login
-          </button>
+          {/* Error Message */}
           {error && (
-            <p style={{ marginTop: 12, color: "#dc2626", fontSize: 12, textAlign: "center" }}>
-              {error}
-            </p>
+            <div className="login-error">
+              <span className="login-error-icon">!</span>
+              <span>{error}</span>
+            </div>
           )}
 
-          <p
-            style={{
-              marginTop: 24,
-              fontSize: 12,
-              color: "#9ca3af",
-              textAlign: "center"
-            }}
-          >
-            © 2025 IT Asset Management System
+          {/* Login Form */}
+          <form onSubmit={handleLogin} className="login-form" noValidate>
+            {/* Email Field */}
+            <div className="login-field">
+              <label className="login-label" htmlFor="login-email">
+                Email Address
+              </label>
+              <div className="login-input-wrapper">
+                <FaEnvelope className="login-input-icon" />
+                <input
+                  id="login-email"
+                  type="email"
+                  className="login-input"
+                  placeholder="name@company.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
+                  autoFocus
+                  disabled={loading}
+                />
+              </div>
+            </div>
+
+            {/* Password Field */}
+            <div className="login-field">
+              <label className="login-label" htmlFor="login-password">
+                Password
+              </label>
+              <div className="login-input-wrapper">
+                <FaLock className="login-input-icon" />
+                <input
+                  id="login-password"
+                  type={showPassword ? "text" : "password"}
+                  className="login-input login-input-password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                  disabled={loading}
+                />
+                <button
+                  type="button"
+                  className="login-password-toggle"
+                  onClick={() => setShowPassword(!showPassword)}
+                  tabIndex={-1}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <FaEyeSlash /> : <FaEye />}
+                </button>
+              </div>
+            </div>
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              className={`login-button ${loading ? "login-button-loading" : ""}`}
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <span className="login-spinner" />
+                  <span>Signing in...</span>
+                </>
+              ) : (
+                "Sign In"
+              )}
+            </button>
+          </form>
+
+          {/* Footer */}
+          <p className="login-footer">
+            &copy; {new Date().getFullYear()} IT Asset Management System
           </p>
         </div>
-      </LoginCard>
+      </div>
     </div>
   );
 }

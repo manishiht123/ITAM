@@ -185,18 +185,7 @@ tr:hover {
 }
 
 /* ---------------- BUTTONS ---------------- */
-.btn {
-  border: 1px solid var(--border);
-  background: var(--bg-elevated);
-  padding: 6px 12px;
-  font-size: 12px;
-  border-radius: 8px;
-  font-weight: 600;
-}
-
-.btn:hover {
-  background: var(--bg-muted);
-}
+/* Button styles handled by Button component CSS */
 
 /* ---------------- SIDEBAR ---------------- */
 .sidebar {

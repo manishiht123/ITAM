@@ -10,21 +10,6 @@
   cursor: pointer;
   transition: all var(--transition-fast);
   white-space: nowrap;
-  position: relative;
-  overflow: hidden;
-}
-
-.btn::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: rgba(255, 255, 255, 0.15);
-  opacity: 0;
-  transition: opacity var(--transition-fast);
-}
-
-.btn:hover::before {
-  opacity: 1;
 }
 
 .btn:active {
@@ -60,6 +45,7 @@
 .btn-primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 22px rgba(124, 58, 237, 0.35);
+  filter: brightness(1.1);
 }
 
 .btn-secondary {
@@ -92,6 +78,7 @@
 .btn-danger:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 22px rgba(239, 68, 68, 0.35);
+  filter: brightness(1.1);
 }
 
 /* ============== STATES ============== */

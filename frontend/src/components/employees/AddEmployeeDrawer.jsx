@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import "./employeeDrawer.css";
+import { Drawer, Button, Input, Select, FormField, Card } from "../ui";
+import { useToast } from "../../context/ToastContext";
 import api from "../../services/api";
 import { useEntity } from "../../context/EntityContext";
 
@@ -24,8 +25,8 @@ export default function AddEmployeeDrawer({
   initialData
 }) {
   const { entity: currentEntity } = useEntity();
+  const toast = useToast();
   const [formData, setFormData] = useState(emptyForm);
-
   const [departments, setDepartments] = useState([]);
   const [entities, setEntities] = useState([]);
 
@@ -59,35 +60,37 @@ export default function AddEmployeeDrawer({
     try {
       const entityData = await api.getEntities();
       setEntities(entityData);
-      // Departments are loaded via the other useEffect
     } catch (err) {
       console.error("Failed to load dropdowns", err);
+      toast.error("Failed to load form data");
     }
   };
 
   const handleSave = async () => {
     try {
       if (!formData.name || !formData.email || !formData.entity || !formData.department) {
-        alert("Please fill required fields (Name, Email, Entity, Department)");
+        toast.warning("Please fill required fields (Name, Email, Entity, Department)");
         return;
       }
+
       if (mode === "edit") {
         if (!initialData?.id) {
-          alert("Missing employee ID for update.");
+          toast.error("Missing employee ID for update");
           return;
         }
         await api.updateEmployee(initialData.id, formData, formData.entity);
+        toast.success("Employee updated successfully!");
       } else {
         await api.addEmployee(formData, formData.entity);
+        toast.success("Employee added successfully!");
       }
+
       onSaved?.();
       onClose();
     } catch (err) {
-      alert(err.message);
+      toast.error(err.message || "Failed to save employee");
     }
   };
-
-  if (!open) return null;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -95,103 +98,157 @@ export default function AddEmployeeDrawer({
   };
 
   return (
-    <>
-      <div className="drawer-overlay" onClick={onClose}></div>
-      <div className="drawer-right">
-        <div className="drawer-header">
-          <h3>{mode === "edit" ? "Edit Employee" : "Add Employee"}</h3>
-          <button className="drawer-close" onClick={onClose}>✕</button>
-        </div>
+    <Drawer
+      open={open}
+      onClose={onClose}
+      title={mode === "edit" ? "Edit Employee" : "Add Employee"}
+      size="md"
+    >
+      <Drawer.Body>
+        {/* Personal Information */}
+        <Card>
+          <Card.Header>
+            <Card.Title>Personal Information</Card.Title>
+          </Card.Header>
+          <Card.Body>
+            <FormField label="Full Name" required>
+              <Input
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder="Full Name"
+                fullWidth
+              />
+            </FormField>
 
-        <div className="drawer-body">
-          {/* ... Personal Info ... */}
-          <div className="drawer-card">
-            <h4>Personal Information</h4>
-            <div className="form-group">
-              <label>Full Name</label>
-              <input name="name" value={formData.name} onChange={handleChange} placeholder="Full Name" />
-            </div>
-            <div className="form-group">
-              <label>Email</label>
-              <input name="email" value={formData.email} onChange={handleChange} placeholder="Employee Email" />
-            </div>
-            <div className="form-group">
-              <label>Phone Number</label>
-              <input name="phone" value={formData.phone} onChange={handleChange} placeholder="Phone Number" />
-            </div>
-            <div className="form-group">
-              <label>Employee ID</label>
-              <input name="employeeId" value={formData.employeeId} onChange={handleChange} placeholder="EMP ID" />
-            </div>
-          </div>
+            <FormField label="Email" required>
+              <Input
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="Employee Email"
+                fullWidth
+              />
+            </FormField>
 
-          <div className="drawer-card">
-            <h4>Job Details</h4>
-            <div className="form-group">
-              <label>Position / Designation</label>
-              <input name="designation" value={formData.designation} onChange={handleChange} placeholder="Designation" />
-            </div>
+            <FormField label="Phone Number">
+              <Input
+                name="phone"
+                type="tel"
+                value={formData.phone}
+                onChange={handleChange}
+                placeholder="Phone Number"
+                fullWidth
+              />
+            </FormField>
 
-            <div className="form-group">
-              <label>Entity</label>
-              <select
+            <FormField label="Employee ID">
+              <Input
+                name="employeeId"
+                value={formData.employeeId}
+                onChange={handleChange}
+                placeholder="EMP ID"
+                fullWidth
+              />
+            </FormField>
+          </Card.Body>
+        </Card>
+
+        {/* Job Details */}
+        <Card>
+          <Card.Header>
+            <Card.Title>Job Details</Card.Title>
+          </Card.Header>
+          <Card.Body>
+            <FormField label="Position / Designation">
+              <Input
+                name="designation"
+                value={formData.designation}
+                onChange={handleChange}
+                placeholder="Designation"
+                fullWidth
+              />
+            </FormField>
+
+            <FormField label="Entity" required>
+              <Select
                 name="entity"
                 value={formData.entity}
                 onChange={handleChange}
                 disabled={mode === "edit"}
-              >
-                <option value="">Select Entity</option>
-                {entities.map(e => (
-                  <option key={e.id} value={e.code}>{e.name}</option>
-                ))}
-              </select>
-            </div>
+                placeholder="Select Entity"
+                options={entities.map(e => ({
+                  value: e.code,
+                  label: e.name
+                }))}
+                fullWidth
+              />
+            </FormField>
 
-            <div className="form-group">
-              <label>Department</label>
-              <select name="department" value={formData.department} onChange={handleChange}>
-                <option value="">Select Department</option>
-                {departments.map(d => (
-                  <option key={d.id} value={d.name}>{d.name}</option>
-                ))}
-              </select>
-            </div>
+            <FormField label="Department" required>
+              <Select
+                name="department"
+                value={formData.department}
+                onChange={handleChange}
+                placeholder="Select Department"
+                options={departments.map(d => ({
+                  value: d.name,
+                  label: d.name
+                }))}
+                fullWidth
+              />
+            </FormField>
 
-            <div className="form-group">
-              <label>Joining Date</label>
-              <input type="date" name="joiningDate" value={formData.joiningDate} onChange={handleChange} />
-            </div>
+            <FormField label="Joining Date">
+              <Input
+                type="date"
+                name="joiningDate"
+                value={formData.joiningDate}
+                onChange={handleChange}
+                fullWidth
+              />
+            </FormField>
 
-            <div className="form-group">
-              <label>Status</label>
-              <select name="status" value={formData.status} onChange={handleChange}>
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label>Employee Type</label>
-              <select name="type" value={formData.type} onChange={handleChange}>
-                <option value="Permanent">Permanent</option>
-                <option value="Intern">Intern</option>
-                <option value="Contract">Contract</option>
-                <option value="Consultant">Consultant</option>
-              </select>
-            </div>
+            <FormField label="Status">
+              <Select
+                name="status"
+                value={formData.status}
+                onChange={handleChange}
+                options={[
+                  { value: "Active", label: "Active" },
+                  { value: "Inactive", label: "Inactive" }
+                ]}
+                fullWidth
+              />
+            </FormField>
 
-          </div>
-        </div>
+            <FormField label="Employee Type">
+              <Select
+                name="type"
+                value={formData.type}
+                onChange={handleChange}
+                options={[
+                  { value: "Permanent", label: "Permanent" },
+                  { value: "Intern", label: "Intern" },
+                  { value: "Contract", label: "Contract" },
+                  { value: "Consultant", label: "Consultant" }
+                ]}
+                fullWidth
+              />
+            </FormField>
+          </Card.Body>
+        </Card>
+      </Drawer.Body>
 
-        {/* Footer */}
-        <div className="drawer-footer">
-          <button className="btn-secondary" onClick={onClose}>
-            Cancel
-          </button>
-          <button className="btn-primary" onClick={handleSave}>
-            Save
-          </button>
-        </div>
-      </div>
-    </>
+      <Drawer.Footer>
+        <Button variant="secondary" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button variant="primary" onClick={handleSave}>
+          Save
+        </Button>
+      </Drawer.Footer>
+    </Drawer>
   );
 }

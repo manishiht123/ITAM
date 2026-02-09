@@ -32,6 +32,11 @@
   --space-2xl: 32px;
   --space-3xl: 48px;
 
+  /* ============== LAYOUT DIMENSIONS ============== */
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 80px;
+  --header-height: 64px;
+
   /* ============== COLORS ============== */
   /* Backgrounds */
   --bg-main: #f5f7fb;

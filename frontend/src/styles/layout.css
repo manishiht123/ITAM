@@ -1,67 +1,25 @@
-:root {
-  --sidebar-width: 260px;
-  --sidebar-collapsed-width: 80px;
-  --topbar-height: 64px;
-}
+/* ============================
+   MAIN CONTENT LAYOUT
+   Styles for the main app content area
+   ============================ */
 
-/* ======================
-   SIDEBAR
-====================== */
-.sidebar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  height: 100vh;
-  width: var(--sidebar-width);
-  background: linear-gradient(180deg, var(--bg-sidebar), var(--bg-sidebar-strong));
-  color: var(--text-invert);
-  z-index: 1000;
-  transition: width 0.25s ease;
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.sidebar.collapsed {
-  width: var(--sidebar-collapsed-width);
-}
-
-/* ======================
-   TOPBAR
-====================== */
-.topbar {
-  position: fixed;
-  top: 0;
-  left: var(--sidebar-width);
-  height: var(--topbar-height);
-  width: calc(100% - var(--sidebar-width));
-  background: var(--bg-elevated);
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  padding: 0 24px;
-  z-index: 900;
-  transition: left 0.25s ease, width 0.25s ease;
-  box-shadow: var(--shadow-sm);
-}
-
-/* When sidebar collapsed */
-.sidebar.collapsed ~ .topbar {
-  left: var(--sidebar-collapsed-width);
-  width: calc(100% - var(--sidebar-collapsed-width));
-}
-
-/* ======================
-   MAIN CONTENT
-====================== */
 .app-main {
-  margin-top: var(--topbar-height);
+  margin-top: var(--header-height);
   margin-left: var(--sidebar-width);
-  padding: 24px;
-  min-height: calc(100vh - var(--topbar-height));
+  min-height: calc(100vh - var(--header-height));
   background: linear-gradient(180deg, var(--bg-main), var(--bg-muted));
-  transition: margin-left 0.25s ease;
+  transition: margin-left var(--transition-slow);
 }
 
 /* When sidebar collapsed */
 .sidebar.collapsed ~ .app-main {
   margin-left: var(--sidebar-collapsed-width);
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .app-main {
+    margin-left: 0;
+    margin-top: var(--header-height);
+  }
 }

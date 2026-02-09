@@ -1,13 +1,15 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useEntity } from "../context/EntityContext";
 import "./Assets.css";
-import KpiCard from "../components/KpiCard";
+import { KpiCard, Card, Button, Badge } from "../components/ui";
 import ChartCard from "../components/ChartCard";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import api from "../services/api";
+import { useToast } from "../context/ToastContext";
 
 export default function Assets() {
   const navigate = useNavigate();
+  const toast = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const fileInputRef = useRef(null);
   const [search, setSearch] = useState("");
@@ -171,9 +173,10 @@ export default function Assets() {
         department: null,
         location: null
       }, entityCode);
+      toast.success(`Asset ${asset.name} returned successfully`);
       loadData(); // Reload to refresh UI
     } catch (err) {
-      alert("Failed to return asset");
+      toast.error(err.message || "Failed to return asset");
     }
   };
 
@@ -198,16 +201,17 @@ export default function Assets() {
         department: emp.department,
         location: emp.entity // Assuming entity maps to location or logic
       }, entityCode);
+      toast.success(`Asset allocated to ${emp.name} successfully`);
       setShowAllocateModal(false);
       loadData();
     } catch (err) {
-      alert("Failed to allocate asset");
+      toast.error(err.message || "Failed to allocate asset");
     }
   };
 
   const handleExport = async () => {
     try {
-      const blob = await api.exportAssets(entity, "csv");
+      const blob = await api.exportAssets(selectedEntityCode, "csv");
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -215,8 +219,9 @@ export default function Assets() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      toast.success("Assets exported successfully");
     } catch (err) {
-      alert(err.message || "Export failed.");
+      toast.error(err.message || "Export failed");
     }
   };
 
@@ -270,17 +275,17 @@ export default function Assets() {
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (!entity || entity === "ALL") {
-      alert("Please select a single entity to import assets.");
+    if (!selectedEntityCode || selectedEntityCode === "ALL") {
+      toast.warning("Please select a single entity to import assets");
       e.target.value = null;
       return;
     }
     try {
-      const result = await api.importAssets(file, entity);
-      alert(result?.message || "Assets imported.");
+      const result = await api.importAssets(file, selectedEntityCode);
+      toast.success(result?.message || "Assets imported successfully");
       await loadData();
     } catch (err) {
-      alert(err.message || "Import failed.");
+      toast.error(err.message || "Import failed");
     } finally {
       e.target.value = null;
     }
@@ -332,15 +337,18 @@ export default function Assets() {
       {/* ================= HEADER ================= */}
       <div className="assets-header">
         <div>
-          <h1>Assets</h1>
+          <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
+            Assets
+            <Badge variant="primary">{selectedEntityCode === "ALL" || !selectedEntityCode ? "All Entities" : selectedEntityCode}</Badge>
+          </h1>
           <p className="assets-subtitle">
             Centralized inventory across entities
           </p>
         </div>
 
         <div className="asset-actions">
-          <button className="asset-action-btn primary" onClick={() => navigate("/assets/add")}>+ Add Asset</button>
-          <button className="asset-action-btn primary" onClick={() => navigate("/assets/allocate")}>Allocate</button>
+          <Button variant="primary" onClick={() => navigate("/assets/add")}>+ Add Asset</Button>
+          <Button variant="primary" onClick={() => navigate("/assets/allocate")}>Allocate</Button>
 
           <input
             type="file"
@@ -349,57 +357,39 @@ export default function Assets() {
             accept=".csv,.xlsx"
             onChange={handleFileChange}
           />
-          <button className="asset-action-btn primary" onClick={handleImportClick}>Import</button>
-          <button className="asset-action-btn primary" onClick={handleExport}>Export</button>
-          <button className="asset-action-btn primary" onClick={handleDownloadTemplate}>Template</button>
+          <Button variant="primary" onClick={handleImportClick}>Import</Button>
+          <Button variant="primary" onClick={handleExport}>Export</Button>
+          <Button variant="primary" onClick={handleDownloadTemplate}>Template</Button>
         </div>
       </div>
 
       {/* ================= KPI CARDS ================= */}
       <div className="asset-kpis">
         <div onClick={() => handleStatusFilter("")}>
-          <KpiCard label="Total Assets" value={kpis.total} />
+          <KpiCard label="Total Assets" value={kpis.total} size="sm" />
         </div>
         <div onClick={() => handleStatusFilter("In Use")}>
-          <KpiCard label="In Use" value={kpis.inUse} />
+          <KpiCard label="In Use" value={kpis.inUse} size="sm" variant="primary" />
         </div>
         <div onClick={() => handleStatusFilter("Available")}>
-          <KpiCard label="Available" value={kpis.available} />
+          <KpiCard label="Available" value={kpis.available} size="sm" variant="success" />
         </div>
         <div onClick={() => handleStatusFilter("Under Repair")}>
-          <KpiCard label="Under Repair" value={kpis.repair} />
+          <KpiCard label="Under Repair" value={kpis.repair} size="sm" variant="warning" />
         </div>
         <div onClick={() => handleStatusFilter("Retired")}>
-          <KpiCard label="Retired" value={kpis.retired} />
+          <KpiCard label="Retired" value={kpis.retired} size="sm" variant="danger" />
         </div>
         <div onClick={() => handleStatusFilter("Theft/Missing")}>
-          <KpiCard label="Theft/Missing" value={kpis.theftMissing} />
+          <KpiCard label="Theft/Missing" value={kpis.theftMissing} size="sm" variant="danger" />
         </div>
         <div onClick={() => handleStatusFilter("Not Submitted")}>
-          <KpiCard label="Not Submitted" value={kpis.notSubmitted} />
+          <KpiCard label="Not Submitted" value={kpis.notSubmitted} size="sm" variant="warning" />
         </div>
       </div>
 
       {/* ================= CHARTS ROW ================= */}
       <div className="assets-charts">
-        {/* Entity Selector Card */}
-        <div className="dashboard-card entity-card">
-          <h3 className="entity-title">Select Entity Scope</h3>
-          <select
-            value={selectedEntityCode}
-            onChange={(e) => setSelectedEntityCode(e.target.value)}
-            className="entity-select"
-          >
-            <option value="ALL">All Entities</option>
-            {entityList.map(ent => (
-              <option key={ent.id} value={ent.code}>{ent.name} ({ent.code})</option>
-            ))}
-          </select>
-          <p className="entity-note">
-            Viewing assets for: <strong>{selectedEntityCode === "ALL" || !selectedEntityCode ? "All Entities" : selectedEntityCode}</strong>
-          </p>
-        </div>
-
         {/* Assets by Status */}
         <ChartCard title="Assets by Status">
           {Object.entries(statusCounts).map(([status, count]) => (
@@ -440,12 +430,6 @@ export default function Assets() {
         {!!statusFilter && (
           <button onClick={() => handleStatusFilter("")}>
             Clear Status Filter
-          </button>
-        )}
-
-        {selectedEntityCode && selectedEntityCode !== "ALL" && (
-          <button onClick={() => setSelectedEntityCode("")}>
-            Clear Entity Filter
           </button>
         )}
       </div>
@@ -516,40 +500,44 @@ export default function Assets() {
                   <td>{asset.department || "-"}</td>
                   <td>{asset.location || "-"}</td>
                   <td>
-                    <span className="status-badge" style={{
-                      backgroundColor: STATUS_COLORS[asset.status] + "20",
-                      color: STATUS_COLORS[asset.status],
-                      padding: "4px 8px",
-                      borderRadius: "4px",
-                      fontSize: "0.85rem",
-                      fontWeight: 600
-                    }}>
+                    <Badge
+                      variant={
+                        isAllocatedStatus(asset.status) ? "primary" :
+                        isAvailableStatus(asset.status) ? "success" :
+                        asset.status === "Under Repair" ? "warning" :
+                        asset.status === "Retired" || asset.status === "Theft/Missing" ? "danger" :
+                        "neutral"
+                      }
+                    >
                       {asset.status}
-                    </span>
+                    </Badge>
                   </td>
                   <td>
                     {/* ACTION BUTTONS */}
-                    <button
-                      className="row-action-btn allocate"
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => navigate(`/assets/edit/${asset.id}?entity=${encodeURIComponent(asset.entity || "")}`)}
                     >
                       Edit
-                    </button>
+                    </Button>
                     {isAvailableStatus(asset.status) && (
-                      <button
-                        className="row-action-btn allocate"
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => navigate(`/assets/allocate?assetId=${encodeURIComponent(asset.id)}`)}
                       >
                         Allocate
-                      </button>
+                      </Button>
                     )}
                     {isAllocatedStatus(asset.status) && (
-                      <button
-                        className="row-action-btn handover"
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => handleReturn(asset)}
                       >
                         Return
-                      </button>
+                      </Button>
                     )}
                   </td>
                 </tr>
@@ -587,19 +575,18 @@ export default function Assets() {
               </div>
 
               <div className="flex justify-end gap-3">
-                <button
-                  type="button"
+                <Button
+                  variant="secondary"
                   onClick={() => setShowAllocateModal(false)}
-                  className="px-4 py-2 border rounded text-gray-600 hover:bg-gray-50"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="primary"
                   type="submit"
-                  className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
                 >
                   Confirm Allocation
-                </button>
+                </Button>
               </div>
             </form>
           </div>

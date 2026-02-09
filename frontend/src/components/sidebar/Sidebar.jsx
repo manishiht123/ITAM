@@ -54,7 +54,13 @@ export default function Sidebar() {
 
       {!collapsed && (
         <div className="sidebar-user-info">
-          Logged in as <strong>{userName}</strong>
+          <span className="sidebar-user-avatar">
+            {userName?.charAt(0)?.toUpperCase() || "U"}
+          </span>
+          <div className="sidebar-user-details">
+            <span className="sidebar-user-name">{userName}</span>
+            <span className="sidebar-user-role">Administrator</span>
+          </div>
         </div>
       )}
 

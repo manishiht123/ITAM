@@ -2,9 +2,12 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Assets.css";
 import api from "../services/api";
+import { Button } from "../components/ui";
+import { useToast } from "../context/ToastContext";
 
 export default function AddAssetCategory() {
   const navigate = useNavigate();
+  const toast = useToast();
   const [formData, setFormData] = useState({
     name: "",
     description: ""
@@ -25,9 +28,10 @@ export default function AddAssetCategory() {
       await api.addAssetCategoryCommon(
         { name: formData.name.trim(), description: formData.description.trim() }
       );
+      toast.success("Asset category added successfully");
       navigate("/asset-categories");
     } catch (error) {
-      alert(error.message || "Failed to add asset category");
+      toast.error(error.message || "Failed to add asset category");
     } finally {
       setSubmitting(false);
     }
@@ -70,20 +74,19 @@ export default function AddAssetCategory() {
           </div>
 
           <div className="asset-actions">
-            <button
-              type="button"
-              className="asset-action-btn secondary"
+            <Button
+              variant="secondary"
               onClick={() => navigate("/asset-categories")}
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="primary"
               type="submit"
-              className="asset-action-btn primary"
-              disabled={submitting}
+              loading={submitting}
             >
-              {submitting ? "Saving..." : "Save Category"}
-            </button>
+              Save Category
+            </Button>
           </div>
         </form>
       </div>

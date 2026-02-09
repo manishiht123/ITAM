@@ -1,16 +1,26 @@
+import { useEffect } from "react";
 import "./AllocationHistoryDrawer.css";
 
 export default function AllocationHistoryDrawer({ open, onClose, history = [] }) {
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [open, onClose]);
+
   if (!open) return null;
 
   return (
     <>
-      <div className="drawer-overlay" onClick={onClose} />
+      <div className="drawer-overlay" onClick={onClose} aria-hidden="true" />
 
-      <aside className="drawer">
+      <aside className="drawer" role="dialog" aria-modal="true" aria-label="Allocation History">
         <div className="drawer-header">
           <h3>Allocation History</h3>
-          <button onClick={onClose}>✕</button>
+          <button onClick={onClose} aria-label="Close drawer">✕</button>
         </div>
 
         <div className="drawer-body">

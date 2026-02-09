@@ -309,9 +309,13 @@ export default function Software() {
       <LoadingOverlay visible={loading} message="Loading software inventory..." />
 
       <PageLayout.Header
-        title="Software Inventory"
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
+            Software Inventory
+            <Badge variant="primary">{entity || "All Entities"}</Badge>
+          </div>
+        }
         subtitle="Track software licenses and user-wise assignments."
-        badge={<Badge variant="primary">{entity || "All Entities"}</Badge>}
         actions={
           <>
             <Button

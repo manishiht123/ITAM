@@ -1,0 +1,72 @@
+/* Dashboard Page Styles */
+
+.dashboard-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3xl);
+  gap: var(--space-lg);
+}
+
+.dashboard-loading p {
+  font-size: var(--text-md);
+  color: var(--text-secondary);
+}
+
+/* KPI Grid - 6 columns */
+.dashboard-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
+}
+
+/* Chart Grid - 2 columns */
+.dashboard-chart-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-xl);
+  margin-bottom: var(--space-xl);
+}
+
+/* Section Title */
+.dashboard-section-title {
+  font-size: var(--text-xl);
+  font-weight: var(--font-weight-semibold);
+  margin: var(--space-3xl) 0 var(--space-lg);
+  padding-left: var(--space-md);
+  border-left: 4px solid var(--primary);
+  color: var(--text-primary);
+}
+
+/* Responsive Design */
+@media (max-width: 1280px) {
+  .dashboard-kpi-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 1024px) {
+  .dashboard-chart-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-sm);
+  }
+
+  .dashboard-section-title {
+    font-size: var(--text-lg);
+    margin: var(--space-xl) 0 var(--space-md);
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+}

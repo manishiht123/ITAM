@@ -8,6 +8,7 @@
   position: relative;
   overflow: hidden;
   animation: fadeIn 300ms ease;
+  font-family: var(--font-sans);
 }
 
 @keyframes fadeIn {
@@ -43,9 +44,10 @@
 /* ============== HEADER ============== */
 .kpi-header {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  justify-content: center;
+  align-items: center;
   margin-bottom: var(--space-md);
+  text-align: center;
 }
 
 .kpi-label {
@@ -54,6 +56,7 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   font-weight: var(--font-weight-semibold);
+  font-family: var(--font-sans);
 }
 
 .kpi-icon {
@@ -69,6 +72,7 @@
   color: var(--primary);
   line-height: 1;
   margin-bottom: var(--space-sm);
+  text-align: center;
 }
 
 /* ============== TREND ============== */

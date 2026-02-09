@@ -3,6 +3,7 @@ import "./Assets.css";
 import api from "../services/api";
 import { useEntity } from "../context/EntityContext";
 import { useNavigate } from "react-router-dom";
+import { Button, Badge, PageLayout } from "../components/ui";
 
 export default function AssetCategories() {
   const { entity } = useEntity();
@@ -80,72 +81,75 @@ export default function AssetCategories() {
   );
 
   return (
-    <div className="assets-page">
-      <div className="assets-header">
-        <div>
-          <h1>Asset Category</h1>
-          <p className="assets-subtitle">Overview of categories across assets</p>
-        </div>
-        <div className="asset-actions">
-          <button
-            className="asset-action-btn primary"
-            onClick={() => navigate("/asset-categories/add")}
-          >
+    <PageLayout>
+      <PageLayout.Header
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
+            Asset Categories
+            <Badge variant="primary">{entity || "All Entities"}</Badge>
+          </div>
+        }
+        subtitle="Overview of categories across assets"
+        actions={
+          <Button variant="primary" onClick={() => navigate("/asset-categories/add")}>
             + Add Asset Category
-          </button>
+          </Button>
+        }
+      />
+
+      <PageLayout.Content>
+        <div className="asset-filters">
+          <input
+            placeholder="Search categories..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="asset-search-input"
+          />
         </div>
-      </div>
 
-      <div className="asset-filters">
-        <input
-          placeholder="Search categories..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </div>
-
-      <div className="asset-table-wrapper">
-        <table className="assets-table">
-          <thead>
-            <tr>
-              <th>Category</th>
-              <th>Description</th>
-              <th>Total Assets</th>
-              <th>In Use</th>
-              <th>Available</th>
-              <th>Under Repair</th>
-              <th>Retired</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading && (
+        <div className="asset-table-wrapper">
+          <table className="assets-table">
+            <thead>
               <tr>
-                <td colSpan="7" style={{ textAlign: "center", padding: "20px" }}>
-                  Loading categories...
-                </td>
+                <th>Category</th>
+                <th>Description</th>
+                <th>Total Assets</th>
+                <th>In Use</th>
+                <th>Available</th>
+                <th>Under Repair</th>
+                <th>Retired</th>
               </tr>
-            )}
-            {!loading && filteredCategories.map((category) => (
-              <tr key={category.id}>
-                <td>{category.name}</td>
-                <td>{category.description}</td>
-                <td>{category.total}</td>
-                <td>{category.inUse}</td>
-                <td>{category.available}</td>
-                <td>{category.underRepair}</td>
-                <td>{category.retired}</td>
-              </tr>
-            ))}
-            {!loading && filteredCategories.length === 0 && (
-              <tr>
-                <td colSpan="7" style={{ textAlign: "center", padding: "20px" }}>
-                  No categories found.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
+            </thead>
+            <tbody>
+              {loading && (
+                <tr>
+                  <td colSpan="7" className="table-empty-cell">
+                    Loading categories...
+                  </td>
+                </tr>
+              )}
+              {!loading && filteredCategories.map((category) => (
+                <tr key={category.id}>
+                  <td>{category.name}</td>
+                  <td>{category.description}</td>
+                  <td>{category.total}</td>
+                  <td>{category.inUse}</td>
+                  <td>{category.available}</td>
+                  <td>{category.underRepair}</td>
+                  <td>{category.retired}</td>
+                </tr>
+              ))}
+              {!loading && filteredCategories.length === 0 && (
+                <tr>
+                  <td colSpan="7" className="table-empty-cell">
+                    No categories found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </PageLayout.Content>
+    </PageLayout>
   );
 }

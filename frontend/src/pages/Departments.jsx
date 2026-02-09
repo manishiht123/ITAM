@@ -2,11 +2,14 @@ import { useState, useEffect, useMemo } from "react";
 import "./Assets.css";
 import api from "../services/api";
 import { useEntity } from "../context/EntityContext";
+import { Button } from "../components/ui";
+import { useToast } from "../context/ToastContext";
 
 export default function Departments() {
     const [departments, setDepartments] = useState([]);
     const [loading, setLoading] = useState(true);
     const { entity } = useEntity();
+    const toast = useToast();
 
     const [showModal, setShowModal] = useState(false);
     const [editingDept, setEditingDept] = useState(null);
@@ -58,7 +61,7 @@ export default function Departments() {
     const handleAddDept = async (e) => {
         e.preventDefault();
         if (!newDept.name || !newDept.location) {
-            alert("Department name and location are required.");
+            toast.warning("Department name and location are required");
             return;
         }
 
@@ -66,15 +69,17 @@ export default function Departments() {
             if (editingDept) {
                 const updated = await api.updateDepartmentCommon(editingDept.id, newDept);
                 setDepartments(prev => prev.map(dept => (dept.id === editingDept.id ? updated : dept)));
+                toast.success("Department updated successfully");
             } else {
                 const added = await api.addDepartmentCommon(newDept);
                 setDepartments(prev => [...prev, added]);
+                toast.success("Department added successfully");
             }
             setShowModal(false);
             setEditingDept(null);
             setNewDept({ name: "", location: "" });
         } catch (error) {
-            alert(error.message);
+            toast.error(error.message || "Failed to save department");
         }
     };
 
@@ -96,12 +101,12 @@ export default function Departments() {
                     <p className="assets-subtitle">Manage organizational structure</p>
                 </div>
                 <div className="asset-actions">
-                    <button
+                    <Button
+                        variant="primary"
                         onClick={() => setShowModal(true)}
-                        className="asset-action-btn primary"
                     >
                         + Add Department
-                    </button>
+                    </Button>
                 </div>
             </div>
 
@@ -132,8 +137,9 @@ export default function Departments() {
                                     </span>
                                 </td>
                                 <td>
-                                    <button
-                                        className="asset-action-btn secondary"
+                                    <Button
+                                        variant="secondary"
+                                        size="sm"
                                         onClick={() => {
                                             setEditingDept(dept);
                                             setNewDept({ name: dept.name || "", location: dept.location || "" });
@@ -141,7 +147,7 @@ export default function Departments() {
                                         }}
                                     >
                                         Edit
-                                    </button>
+                                    </Button>
                                 </td>
                             </tr>
                         ))}
@@ -194,23 +200,22 @@ export default function Departments() {
                             </div>
 
                             <div className="flex justify-end gap-3 mt-6">
-                                <button
-                                    type="button"
+                                <Button
+                                    variant="secondary"
                                     onClick={() => {
                                         setShowModal(false);
                                         setEditingDept(null);
                                         setNewDept({ name: "", location: "" });
                                     }}
-                                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm font-medium transition-colors"
                                 >
                                     Cancel
-                                </button>
-                                <button
+                                </Button>
+                                <Button
+                                    variant="primary"
                                     type="submit"
-                                    className="asset-action-btn primary"
                                 >
                                     {editingDept ? "Save Changes" : "Add Department"}
-                                </button>
+                                </Button>
                             </div>
                         </form>
                     </div>

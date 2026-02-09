@@ -184,47 +184,9 @@ td {
 }
 
 /* ============================
-   LEGACY BUTTON STYLES
-   (To be replaced with Button component)
+   BUTTON STYLES
+   (Handled by Button component CSS)
    ============================ */
-
-.asset-action-btn,
-.btn-primary,
-.btn-secondary {
-  padding: 0 var(--space-lg);
-  height: var(--button-height);
-  border-radius: var(--radius-sm);
-  font-size: var(--text-base);
-  font-weight: var(--font-weight-semibold);
-  border: 1px solid var(--border);
-  background: var(--bg-elevated);
-  color: var(--text-primary);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.asset-action-btn.primary,
-.btn-primary {
-  background: linear-gradient(135deg, var(--primary), var(--primary-700));
-  color: #ffffff;
-  border: none;
-  box-shadow: 0 6px 16px rgba(124, 58, 237, 0.28);
-}
-
-.asset-action-btn.primary:hover,
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 22px rgba(124, 58, 237, 0.35);
-}
-
-.asset-action-btn.secondary:hover,
-.btn-secondary:hover {
-  background: var(--bg-muted);
-  box-shadow: var(--shadow-md);
-}
 
 /* ============================
    UTILITY CLASSES

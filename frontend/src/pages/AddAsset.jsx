@@ -3,10 +3,13 @@ import "./AddAsset.css";
 import api from "../services/api";
 import { useNavigate } from "react-router-dom";
 import { useEntity } from "../context/EntityContext";
+import { Button } from "../components/ui";
+import { useToast } from "../context/ToastContext";
 
 export default function AddAsset() {
   const navigate = useNavigate();
   const { entity: contextEntity } = useEntity();
+  const toast = useToast();
 
   const [assetId, setAssetId] = useState("");
   const [purchaseDate, setPurchaseDate] = useState("");
@@ -129,11 +132,11 @@ export default function AddAsset() {
 
       // Pass entity code for correct database routing
       await api.addAsset(assetPayload, formData.entity);
-      alert("Asset created successfully!");
+      toast.success("Asset created successfully!");
       navigate("/assets");
     } catch (err) {
       console.error(err);
-      alert("Failed to create asset. Check console.");
+      toast.error(err.message || "Failed to create asset");
     }
   };
 
@@ -310,8 +313,8 @@ export default function AddAsset() {
 
       {/* ACTIONS */}
       <div className="form-actions">
-        <button className="btn-secondary" onClick={() => navigate("/assets")}>Cancel</button>
-        <button className="btn-primary" onClick={handleSave}>Save Asset</button>
+        <Button variant="secondary" onClick={() => navigate("/assets")}>Cancel</Button>
+        <Button variant="primary" onClick={handleSave}>Save Asset</Button>
       </div>
     </div>
   );

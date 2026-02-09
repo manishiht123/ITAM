@@ -1,10 +1,13 @@
 import { useState, useEffect } from "react";
 import "./Assets.css";
 import api from "../services/api";
+import { Button } from "../components/ui";
+import { useToast } from "../context/ToastContext";
 
 export default function Locations() {
     const [locations, setLocations] = useState([]);
     const [loading, setLoading] = useState(true);
+    const toast = useToast();
 
     const [showModal, setShowModal] = useState(false);
     const [editingLocation, setEditingLocation] = useState(null);
@@ -37,7 +40,7 @@ export default function Locations() {
     const handleAddLocation = async (e) => {
         e.preventDefault();
         if (!newLocation.city) {
-            alert("City is required.");
+            toast.warning("City is required");
             return;
         }
 
@@ -46,15 +49,17 @@ export default function Locations() {
             if (editingLocation) {
                 const updated = await api.updateLocationCommon(editingLocation.id, payload);
                 setLocations(prev => prev.map(loc => (loc.id === editingLocation.id ? updated : loc)));
+                toast.success("Location updated successfully");
             } else {
                 const added = await api.addLocationCommon(payload);
                 setLocations(prev => [...prev, added]);
+                toast.success("Location added successfully");
             }
             setShowModal(false);
             setEditingLocation(null);
             setNewLocation({ city: "", country: "", address: "" });
         } catch (error) {
-            alert(error.message);
+            toast.error(error.message || "Failed to save location");
         }
     };
 
@@ -66,12 +71,12 @@ export default function Locations() {
                     <p className="assets-subtitle">Manage physical offices and sites</p>
                 </div>
                 <div className="asset-actions">
-                    <button
+                    <Button
+                        variant="primary"
                         onClick={() => setShowModal(true)}
-                        className="asset-action-btn primary"
                     >
                         + Add Location
-                    </button>
+                    </Button>
                 </div>
             </div>
 
@@ -104,8 +109,9 @@ export default function Locations() {
                                     </span>
                                 </td>
                                 <td>
-                                    <button
-                                        className="asset-action-btn secondary"
+                                    <Button
+                                        variant="secondary"
+                                        size="sm"
                                         onClick={() => {
                                             setEditingLocation(loc);
                                             setNewLocation({
@@ -117,7 +123,7 @@ export default function Locations() {
                                         }}
                                     >
                                         Edit
-                                    </button>
+                                    </Button>
                                 </td>
                             </tr>
                         ))}
@@ -180,23 +186,22 @@ export default function Locations() {
                             </div>
 
                             <div className="flex justify-end gap-3 mt-6">
-                                <button
-                                    type="button"
+                                <Button
+                                    variant="secondary"
                                     onClick={() => {
                                         setShowModal(false);
                                         setEditingLocation(null);
                                         setNewLocation({ city: "", country: "", address: "" });
                                     }}
-                                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm font-medium transition-colors"
                                 >
                                     Cancel
-                                </button>
-                                <button
+                                </Button>
+                                <Button
+                                    variant="primary"
                                     type="submit"
-                                    className="asset-action-btn primary"
                                 >
                                     {editingLocation ? "Save Changes" : "Add Location"}
-                                </button>
+                                </Button>
                             </div>
                         </form>
                     </div>

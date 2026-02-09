@@ -3,12 +3,15 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import "./AddAsset.css";
 import api from "../services/api";
 import { useEntity } from "../context/EntityContext";
+import { Button } from "../components/ui";
+import { useToast } from "../context/ToastContext";
 
 export default function EditAsset() {
   const navigate = useNavigate();
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const { entity: contextEntity } = useEntity();
+  const toast = useToast();
 
   const [locations, setLocations] = useState([]);
   const [departments, setDepartments] = useState([]);
@@ -74,7 +77,7 @@ export default function EditAsset() {
         }
         const asset = assets.find((a) => String(a.id) === String(id) || String(a.assetId) === String(id));
         if (!asset) {
-          alert("Asset not found.");
+          toast.error("Asset not found");
           navigate("/assets");
           return;
         }
@@ -102,7 +105,7 @@ export default function EditAsset() {
           comments: asset.comments || ""
         });
       } catch (err) {
-        alert("Failed to load asset.");
+        toast.error(err.message || "Failed to load asset");
       } finally {
         setLoading(false);
       }
@@ -119,10 +122,10 @@ export default function EditAsset() {
     e.preventDefault();
     try {
       await api.updateAsset(id, formData, resolvedEntity || formData.entity);
-      alert("Asset updated successfully!");
+      toast.success("Asset updated successfully!");
       navigate("/assets");
     } catch (err) {
-      alert(err.message || "Failed to update asset");
+      toast.error(err.message || "Failed to update asset");
     }
   };
 
@@ -270,8 +273,8 @@ export default function EditAsset() {
       </section>
 
       <div className="form-actions">
-        <button className="btn-secondary" onClick={() => navigate("/assets")}>Cancel</button>
-        <button className="btn-primary" onClick={handleSave}>Save Changes</button>
+        <Button variant="secondary" onClick={() => navigate("/assets")}>Cancel</Button>
+        <Button variant="primary" onClick={handleSave}>Save Changes</Button>
       </div>
     </div>
   );

@@ -3,6 +3,7 @@
 /* Import custom styles */
 @import './styles/animations.css';
 @import './styles/breakpoints.css';
+@import './styles/micro-interactions.css';
 
 @tailwind base;
 @tailwind components;
