@@ -18,7 +18,7 @@ export default function LicenseUsagePie({ data }) {
           safeData.length === 1 && safeData[0].name === "No Data"
             ? ["#e5e7eb"]
             : [
-                "#7c3aed", // Used
+                "#19cda5", // Used
                 "#16a34a", // Available
                 "#dc2626", // Over-allocated
               ],

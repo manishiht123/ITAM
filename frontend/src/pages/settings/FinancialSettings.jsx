@@ -1,7 +1,10 @@
 import { useState } from "react";
+import { useToast } from "../../context/ToastContext";
+import { Button } from "../../components/ui";
 import "./FinancialSettings.css";
 
 export default function FinancialSettings() {
+  const toast = useToast();
   const [settings, setSettings] = useState({
     fiscalYearStart: "April",
     currency: "INR",
@@ -19,15 +22,15 @@ export default function FinancialSettings() {
           <p>Configure depreciation, capitalization, and reporting preferences.</p>
         </div>
         <div className="actions">
-          <button
-            className="asset-action-btn primary"
+          <Button
+            variant="primary"
             onClick={() => {
               localStorage.setItem("financialSettings", JSON.stringify(settings));
-              alert("Financial settings saved.");
+              toast.success("Financial settings saved.");
             }}
           >
             Save Settings
-          </button>
+          </Button>
         </div>
       </div>
 

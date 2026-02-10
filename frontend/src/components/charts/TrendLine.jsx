@@ -9,8 +9,8 @@ export default function AssetGrowthLine({ data }) {
       {
         label: "Asset Growth Over Time",
         data: data.map((d) => d.count),
-        borderColor: "#7c3aed",
-        backgroundColor: "rgba(124, 58, 237, 0.2)",
+        borderColor: "#19cbbf",
+        backgroundColor: "rgba(25, 203, 191, 0.2)",
         tension: 0.3,
         fill: true,
       },
@@ -36,11 +36,9 @@ export default function AssetGrowthLine({ data }) {
   };
 
   return (
-    <div className="bg-white rounded shadow p-4">
-      <h3 className="font-semibold mb-2">Asset Growth Over Time</h3>
-
-      {/* 👇 HEIGHT CONSTRAINT (CRITICAL) */}
-      <div className="relative h-[320px] w-full">
+    <div className="chart-card">
+      <h3>Asset Growth Over Time</h3>
+      <div style={{ position: "relative", height: "320px", width: "100%" }}>
         <Line data={chartData} options={options} redraw />
       </div>
     </div>

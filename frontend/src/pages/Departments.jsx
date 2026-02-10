@@ -48,6 +48,7 @@ export default function Departments() {
             }
         } catch (error) {
             console.error("Error loading data:", error);
+            toast.error("Failed to load departments data");
         } finally {
             setLoading(false);
         }
@@ -127,8 +128,8 @@ export default function Departments() {
                                 <td>{dept.location}</td>
                                 <td>
                                     <span className="status-badge" style={{
-                                        backgroundColor: "#eff6ff",
-                                        color: "#1d4ed8",
+                                        backgroundColor: "var(--primary-soft)",
+                                        color: "var(--primary-700)",
                                         padding: "4px 8px",
                                         borderRadius: "4px",
                                         fontWeight: 600
@@ -164,33 +165,36 @@ export default function Departments() {
 
             {/* MODAL */}
             {showModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
-                        <h2 className="text-xl font-bold text-gray-800 mb-4">
-                            {editingDept ? "Edit Department" : "Add New Department"}
-                        </h2>
-
-                        <form onSubmit={handleAddDept} className="space-y-4">
+                <div className="page-modal-overlay">
+                    <div className="page-modal page-modal-md">
+                        <div className="page-modal-header">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Department Name</label>
+                                <h2>{editingDept ? "Edit Department" : "Add New Department"}</h2>
+                            </div>
+                            <button className="page-modal-close" onClick={() => { setShowModal(false); setEditingDept(null); setNewDept({ name: "", location: "" }); }}>✕</button>
+                        </div>
+
+                        <form onSubmit={handleAddDept} className="page-modal-body">
+                            <div style={{ marginBottom: "var(--space-lg)" }}>
+                                <label className="page-modal-label">Department Name</label>
                                 <input
                                     type="text"
                                     name="name"
                                     value={newDept.name}
                                     onChange={handleInputChange}
-                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none"
+                                    className="page-modal-input"
                                     placeholder="e.g. Marketing"
                                     required
                                 />
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                            <div style={{ marginBottom: "var(--space-lg)" }}>
+                                <label className="page-modal-label">Location</label>
                                 <select
                                     name="location"
                                     value={newDept.location}
                                     onChange={handleInputChange}
-                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none"
+                                    className="page-modal-input"
                                 >
                                     <option value="">Select Location...</option>
                                     {locations.map(loc => (
@@ -199,7 +203,7 @@ export default function Departments() {
                                 </select>
                             </div>
 
-                            <div className="flex justify-end gap-3 mt-6">
+                            <div className="page-modal-footer">
                                 <Button
                                     variant="secondary"
                                     onClick={() => {

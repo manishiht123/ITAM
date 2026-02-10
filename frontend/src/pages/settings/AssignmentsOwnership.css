@@ -35,14 +35,6 @@
   gap: 18px;
 }
 
-.card {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 16px 18px;
-  box-shadow: var(--shadow-md);
-}
-
 .card-title {
   font-size: 14px;
   font-weight: 600;
@@ -103,26 +95,6 @@
   font-size: 13px;
 }
 
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-
-.table th,
-.table td {
-  text-align: left;
-  padding: 10px 8px;
-  border-bottom: 1px solid var(--border);
-}
-
-.table th {
-  color: var(--text-secondary);
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
 .muted {
   font-size: 11px;
   color: var(--text-muted);
@@ -140,13 +112,13 @@
 }
 
 .status-chip.good {
-  background: #dcfce7;
-  color: #166534;
+  background: var(--feedback-success-bg);
+  color: var(--feedback-success-text);
 }
 
 .status-chip.watch {
-  background: #fef3c7;
-  color: #b45309;
+  background: var(--feedback-warning-bg);
+  color: var(--feedback-warning-text);
 }
 
 .action-link {

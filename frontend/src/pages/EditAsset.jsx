@@ -3,7 +3,7 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import "./AddAsset.css";
 import api from "../services/api";
 import { useEntity } from "../context/EntityContext";
-import { Button } from "../components/ui";
+import { Button, LoadingOverlay } from "../components/ui";
 import { useToast } from "../context/ToastContext";
 
 export default function EditAsset() {
@@ -52,14 +52,21 @@ export default function EditAsset() {
         setEntities(ents);
       } catch (err) {
         console.error("Failed to load entities", err);
+        toast.error("Failed to load entities");
       }
     };
     loadEntities();
   }, []);
 
   useEffect(() => {
-    api.getLocationsCommon().then(setLocations).catch(console.error);
-    api.getDepartmentsCommon().then(setDepartments).catch(console.error);
+    api.getLocationsCommon().then(setLocations).catch((err) => {
+      console.error(err);
+      toast.error("Failed to load locations");
+    });
+    api.getDepartmentsCommon().then(setDepartments).catch((err) => {
+      console.error(err);
+      toast.error("Failed to load departments");
+    });
   }, []);
 
   useEffect(() => {
@@ -129,7 +136,7 @@ export default function EditAsset() {
     }
   };
 
-  if (loading) return <div className="p-6">Loading asset…</div>;
+  if (loading) return <LoadingOverlay visible />;
 
   return (
     <div className="add-asset-page">

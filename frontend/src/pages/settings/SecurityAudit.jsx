@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../../services/api";
+import { useToast } from "../../context/ToastContext";
+import { Button, LoadingOverlay } from "../../components/ui";
 import "./SecurityAudit.css";
 
 const toDate = (value) => {
@@ -25,6 +27,7 @@ const getModule = (log) => {
 };
 
 export default function SecurityAudit() {
+  const toast = useToast();
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
@@ -48,7 +51,7 @@ export default function SecurityAudit() {
     });
 
     if (!rows.length) {
-      alert("No audit logs available for export.");
+      toast.warning("No audit logs available for export.");
       return;
     }
 
@@ -120,10 +123,10 @@ export default function SecurityAudit() {
           <p>Monitor system activity, security posture, and compliance trails.</p>
         </div>
         <div className="security-actions">
-          <button className="asset-action-btn secondary" onClick={handleDownload}>
+          <Button variant="secondary" onClick={handleDownload}>
             Download Audit Logs
-          </button>
-          <button className="asset-action-btn primary">Create Alert Rule</button>
+          </Button>
+          <Button variant="primary">Create Alert Rule</Button>
         </div>
       </div>
 
@@ -173,7 +176,7 @@ export default function SecurityAudit() {
         <div className="card">
           <div className="card-title">Security Alerts</div>
           {loading ? (
-            <div style={{ padding: "12px 0", color: "#64748b" }}>Loading audit logs…</div>
+            <LoadingOverlay visible message="Loading audit logs..." />
           ) : (
           <table className="table">
             <thead>
@@ -207,7 +210,7 @@ export default function SecurityAudit() {
               })}
               {!filteredLogs.length && (
                 <tr>
-                  <td colSpan={6} style={{ textAlign: "center", color: "#64748b", padding: "16px" }}>
+                  <td colSpan={6} style={{ textAlign: "center", color: "var(--text-secondary)", padding: "16px" }}>
                     No audit logs found for the selected filters.
                   </td>
                 </tr>
@@ -226,7 +229,7 @@ export default function SecurityAudit() {
               </div>
             ))}
             {!filteredLogs.length && (
-              <div style={{ color: "#64748b", fontSize: 12 }}>No recent activity.</div>
+              <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>No recent activity.</div>
             )}
           </div>
         </div>

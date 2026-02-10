@@ -19,7 +19,7 @@ export default function AssetCategoryBar({ data }) {
         label: "Assets",
         data: normalized.map((entry) => entry.value),
         backgroundColor: normalized.map((entry, idx) => {
-          const palette = ["#f0bad9", "#9306d4", "#6da316", "#f97316", "#978c8c", "#0ea5e9"];
+          const palette = ["#19cbbf", "#16a9e8", "#186df2", "#f97316", "#16a34a", "#0ea5e9"];
           return palette[idx % palette.length];
         }),
         borderRadius: 8,

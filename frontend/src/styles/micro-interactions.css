@@ -26,13 +26,13 @@ textarea:focus {
 
 @keyframes inputFocusGlow {
   0% {
-    box-shadow: 0 0 0 0 rgba(124, 58, 237, 0);
+    box-shadow: 0 0 0 0 rgba(22, 169, 232, 0);
   }
   50% {
-    box-shadow: 0 0 0 6px rgba(124, 58, 237, 0.15);
+    box-shadow: 0 0 0 6px rgba(22, 169, 232, 0.15);
   }
   100% {
-    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.18);
+    box-shadow: 0 0 0 3px rgba(22, 169, 232, 0.18);
   }
 }
 
@@ -152,7 +152,7 @@ input[type="radio"] {
 
 input[type="checkbox"]:checked,
 input[type="radio"]:checked {
-  background: linear-gradient(135deg, var(--primary), var(--primary-700));
+  background: var(--brand-gradient-diagonal);
   border-color: var(--primary);
   animation: checkboxBounce 0.3s ease;
 }
@@ -203,7 +203,7 @@ input[type="radio"]:checked::after {
 
 .progress-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--primary), var(--primary-600));
+  background: var(--brand-gradient);
   border-radius: 999px;
   transition: width 0.5s ease;
   position: relative;
@@ -333,7 +333,7 @@ input[type="radio"]:checked::after {
 }
 
 .toggle-switch input:focus + .toggle-slider {
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.18);
+  box-shadow: 0 0 0 3px rgba(22, 169, 232, 0.18);
 }
 
 /* ============================
@@ -505,7 +505,7 @@ input[type="radio"]:checked::after {
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, var(--primary), var(--primary-600));
+  background: var(--brand-gradient);
   transform-origin: 0%;
   z-index: 9999;
   animation: smoothPulse 2s ease-in-out infinite;
@@ -550,10 +550,10 @@ input[type="radio"]:checked::after {
 
 @keyframes glow {
   0%, 100% {
-    box-shadow: 0 0 10px rgba(124, 58, 237, 0.3);
+    box-shadow: 0 0 10px rgba(22, 169, 232, 0.3);
   }
   50% {
-    box-shadow: 0 0 20px rgba(124, 58, 237, 0.6);
+    box-shadow: 0 0 20px rgba(22, 169, 232, 0.6);
   }
 }
 

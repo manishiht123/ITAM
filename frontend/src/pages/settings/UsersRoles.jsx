@@ -1,8 +1,11 @@
 import { useState, useEffect } from "react";
 import api from "../../services/api";
+import { Button, LoadingOverlay } from "../../components/ui";
+import { useToast } from "../../context/ToastContext";
 import "./UsersRoles.css";
 
 export default function UsersRoles() {
+    const toast = useToast();
     const rolesCatalog = [
         {
             id: "admin",
@@ -72,6 +75,7 @@ export default function UsersRoles() {
             setUsers(data);
         } catch (error) {
             console.error("Error fetching users:", error);
+            toast.error("Failed to load users");
         } finally {
             setLoading(false);
         }
@@ -83,6 +87,7 @@ export default function UsersRoles() {
             setEntities(data);
         } catch (error) {
             console.error("Error fetching entities:", error);
+            toast.error("Failed to load entities");
         }
     };
 
@@ -92,6 +97,7 @@ export default function UsersRoles() {
             setCustomRoles(data || []);
         } catch (error) {
             console.error("Error fetching roles:", error);
+            toast.error("Failed to load roles");
         }
     };
 
@@ -132,7 +138,7 @@ export default function UsersRoles() {
     const handleSave = async () => {
         try {
             if (!formData.name || !formData.email || !formData.role) {
-                alert("Name, Email, and Role are required.");
+                toast.warning("Name, Email, and Role are required.");
                 return;
             }
 
@@ -142,7 +148,7 @@ export default function UsersRoles() {
                 await api.updateUser(editingUser.id, payload);
             } else {
                 if (!formData.password) {
-                    alert("Password is required for new users.");
+                    toast.warning("Password is required for new users.");
                     return;
                 }
                 await api.addUser(formData);
@@ -151,7 +157,7 @@ export default function UsersRoles() {
             setDrawerOpen(false);
             loadUsers();
         } catch (error) {
-            alert(error?.message || "Failed to save user.");
+            toast.error(error?.message || "Failed to save user.");
         }
     };
 
@@ -241,7 +247,7 @@ export default function UsersRoles() {
     const handleSaveRole = async () => {
         try {
             if (!roleForm.name.trim()) {
-                alert("Role name is required.");
+                toast.warning("Role name is required.");
                 return;
             }
             await api.addRole({
@@ -252,11 +258,11 @@ export default function UsersRoles() {
             setRoleDrawerOpen(false);
             loadRoles();
         } catch (error) {
-            alert(error?.message || "Failed to create role.");
+            toast.error(error?.message || "Failed to create role.");
         }
     };
 
-    if (loading) return <div className="p-8">Loading users...</div>;
+    if (loading) return <LoadingOverlay visible message="Loading users..." />;
 
     return (
         <div className="users-roles-page">
@@ -265,9 +271,9 @@ export default function UsersRoles() {
                     <h1>Users & Roles</h1>
                     <p className="users-roles-subtitle">Manage access, roles, and permissions for the ITAM platform.</p>
                 </div>
-                <button className="asset-action-btn primary" onClick={openAdd}>
+                <Button variant="primary" onClick={openAdd}>
                     + Add User
-                </button>
+                </Button>
             </div>
 
             <div className="users-roles-grid">
@@ -303,7 +309,7 @@ export default function UsersRoles() {
                                             </div>
                                             <div>
                                                 <div>{user.name}</div>
-                                                <div style={{ fontSize: 11, color: "#6b7280" }}>
+                                                <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
                                                     ID #{user.id}
                                                 </div>
                                             </div>
@@ -328,7 +334,7 @@ export default function UsersRoles() {
                                                 ))}
                                             </div>
                                         ) : (
-                                            <span style={{ color: "#9ca3af", fontSize: 12 }}>All</span>
+                                            <span style={{ color: "var(--text-muted)", fontSize: 12 }}>All</span>
                                         )}
                                     </td>
                                     <td>
@@ -340,7 +346,7 @@ export default function UsersRoles() {
                             ))}
                             {filteredUsers.length === 0 && (
                                 <tr>
-                                    <td colSpan={6} style={{ textAlign: "center", color: "#6b7280", padding: "16px" }}>
+                                    <td colSpan={6} style={{ textAlign: "center", color: "var(--text-muted)", padding: "16px" }}>
                                         No users found.
                                     </td>
                                 </tr>
@@ -352,9 +358,9 @@ export default function UsersRoles() {
                 <div className="panel-card">
                     <div className="panel-header">
                         <h3 className="panel-title">Roles & Permissions</h3>
-                        <button className="asset-action-btn primary compact" onClick={openAddRole}>
+                        <Button variant="primary" onClick={openAddRole}>
                             + Add Role
-                        </button>
+                        </Button>
                     </div>
                     <div className="roles-list">
                         {rolesCatalog.map((role) => (
@@ -447,7 +453,7 @@ export default function UsersRoles() {
                                         </label>
                                     ))}
                                     {entities.length === 0 && (
-                                        <span style={{ color: "#9ca3af", fontSize: 12 }}>
+                                        <span style={{ color: "var(--text-muted)", fontSize: 12 }}>
                                             No entities available.
                                         </span>
                                     )}

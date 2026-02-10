@@ -1,7 +1,10 @@
 import { useMemo, useState } from "react";
+import { useToast } from "../context/ToastContext";
+import { Button } from "../components/ui";
 import "./Profile.css";
 
 export default function Profile() {
+  const toast = useToast();
   const storedUser = useMemo(() => {
     try {
       return JSON.parse(localStorage.getItem("authUser") || "{}");
@@ -25,11 +28,11 @@ export default function Profile() {
   const update = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
   const handleSaveProfile = () => {
     if (!form.firstName || !form.lastName || !form.email || !form.confirmEmail) {
-      alert("Please complete required fields.");
+      toast.warning("Please complete required fields.");
       return;
     }
     if (form.email !== form.confirmEmail) {
-      alert("Email and Confirm Email do not match.");
+      toast.warning("Email and Confirm Email do not match.");
       return;
     }
     const name = `${form.firstName} ${form.lastName}`.trim();
@@ -40,7 +43,7 @@ export default function Profile() {
     };
     localStorage.setItem("authUser", JSON.stringify(updatedUser));
     window.dispatchEvent(new Event("authUserUpdated"));
-    alert("Profile updated.");
+    toast.success("Profile updated.");
   };
 
   return (
@@ -117,15 +120,15 @@ export default function Profile() {
         <div className="photo-drop">Click to upload image</div>
         <div className="photo-note">Only (JPG, GIF, PNG) are allowed</div>
         <div className="profile-actions">
-          <button className="asset-action-btn primary" onClick={handleSaveProfile}>
+          <Button variant="primary" onClick={handleSaveProfile}>
             Save
-          </button>
-          <button
-            className="asset-action-btn secondary"
+          </Button>
+          <Button
+            variant="secondary"
             onClick={() => window.location.reload()}
           >
             Cancel
-          </button>
+          </Button>
         </div>
       </section>
 

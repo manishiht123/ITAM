@@ -1,15 +1,23 @@
 export default function AlertCard({ title, count, severity }) {
   const colorMap = {
-    high: "border-red-500 text-red-600",
-    medium: "border-yellow-500 text-yellow-600",
-    low: "border-gray-300 text-gray-600",
+    high: { borderColor: "var(--danger)", color: "var(--danger)" },
+    medium: { borderColor: "var(--warning)", color: "var(--warning)" },
+    low: { borderColor: "var(--border)", color: "var(--text-secondary)" },
   };
 
+  const styles = colorMap[severity] || colorMap.low;
+
   return (
-    <div className={`border-l-4 bg-white p-4 shadow ${colorMap[severity]}`}>
-      <div className="text-sm font-medium">{title}</div>
-      <div className="text-xl font-bold">{count}</div>
+    <div style={{
+      borderLeft: `4px solid ${styles.borderColor}`,
+      background: "var(--bg-elevated)",
+      padding: "var(--space-lg)",
+      boxShadow: "var(--shadow-sm)",
+      borderRadius: "var(--radius-sm)",
+      color: styles.color,
+    }}>
+      <div style={{ fontSize: "var(--text-sm)", fontWeight: "var(--font-weight-medium)" }}>{title}</div>
+      <div style={{ fontSize: "var(--text-xl)", fontWeight: "var(--font-weight-bold)" }}>{count}</div>
     </div>
   );
 }
-

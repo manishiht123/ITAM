@@ -1,8 +1,11 @@
 import { useState } from "react";
 import api from "../services/api";
 import "./ChangePassword.css";
+import { Button } from "../components/ui";
+import { useToast } from "../context/ToastContext";
 
 export default function ChangePassword() {
+  const toast = useToast();
   const [form, setForm] = useState({
     currentPassword: "",
     newPassword: "",
@@ -14,16 +17,16 @@ export default function ChangePassword() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!form.currentPassword || !form.newPassword || !form.confirmPassword) {
-      alert("Please fill all fields.");
+      toast.warning("Please fill all fields.");
       return;
     }
     if (form.newPassword !== form.confirmPassword) {
-      alert("New password and confirm password do not match.");
+      toast.warning("New password and confirm password do not match.");
       return;
     }
     const storedUser = JSON.parse(localStorage.getItem("authUser") || "{}");
     if (!storedUser?.email || !storedUser?.id) {
-      alert("User session not found. Please log in again.");
+      toast.error("User session not found. Please log in again.");
       return;
     }
     try {
@@ -36,9 +39,9 @@ export default function ChangePassword() {
       }
       await api.updateUser(storedUser.id, { password: form.newPassword });
       setForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
-      alert("Password updated.");
+      toast.success("Password updated.");
     } catch (err) {
-      alert(err.message || "Password update failed.");
+      toast.error(err.message || "Password update failed.");
     }
   };
 
@@ -79,18 +82,18 @@ export default function ChangePassword() {
         </div>
 
         <div className="change-password-actions">
-          <button className="asset-action-btn primary" type="submit">
+          <Button variant="primary" type="submit">
             Save Password
-          </button>
-          <button
-            className="asset-action-btn secondary"
+          </Button>
+          <Button
+            variant="secondary"
             type="button"
             onClick={() =>
               setForm({ currentPassword: "", newPassword: "", confirmPassword: "" })
             }
           >
             Cancel
-          </button>
+          </Button>
         </div>
       </form>
     </div>

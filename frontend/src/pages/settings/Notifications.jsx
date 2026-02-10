@@ -1,10 +1,13 @@
 import { useState, useEffect } from "react";
 import api from "../../services/api";
 import { useEntity } from "../../context/EntityContext";
+import { useToast } from "../../context/ToastContext";
+import { LoadingOverlay } from "../../components/ui";
 import "./Notifications.css";
 
 export default function Notifications() {
     const { entity } = useEntity();
+    const toast = useToast();
     const [settings, setSettings] = useState({
         emailAlerts: true,
         weeklyReport: false,
@@ -87,11 +90,11 @@ export default function Notifications() {
         } catch (err) {
             console.error("Failed to update settings", err);
             setSettings(settings); // Revert on failure
-            alert("Failed to save setting");
+            toast.error("Failed to save setting");
         }
     };
 
-    if (loading) return <div className="p-8">Loading settings...</div>;
+    if (loading) return <LoadingOverlay visible message="Loading settings..." />;
 
     return (
         <div className="settings-page">

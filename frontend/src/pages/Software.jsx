@@ -58,6 +58,7 @@ export default function Software() {
         setEntities(data || []);
       } catch (error) {
         console.error("Failed to load entities", error);
+        toast.error("Failed to load entities");
       }
     };
     loadEntities();

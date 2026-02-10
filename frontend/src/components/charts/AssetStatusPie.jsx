@@ -10,11 +10,11 @@ ChartJS.register(ArcElement, Tooltip, Legend);
 
 const STATUS_ORDER = ["In Use", "Available", "Under Repair", "Retired", "Unknown"];
 const STATUS_COLORS = {
-  "In Use": "#7c3aed",
+  "In Use": "#19cda5",
   Available: "#22c55e",
   "Under Repair": "#f97316",
   Retired: "#9ca3af",
-  Unknown: "#cbd5f5"
+  Unknown: "#94a3b8"
 };
 
 export default function AssetStatusPie({ data }) {

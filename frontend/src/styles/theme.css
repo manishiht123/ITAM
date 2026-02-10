@@ -39,24 +39,30 @@
 
   /* ============== COLORS ============== */
   /* Backgrounds */
-  --bg-main: #f5f7fb;
+  --bg-main: #f4f8fd;
   --bg-elevated: #ffffff;
-  --bg-muted: #f1f5f9;
-  --bg-sidebar: #663fa8;
-  --bg-sidebar-strong: #543585;
-  --bg-hover: #111a2c;
+  --bg-muted: #ebf3fc;
+  --bg-sidebar: #1bc7bb;
+  --bg-sidebar-strong: #1778f2;
+  --bg-hover: #1369d8;
 
   /* Text */
   --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #94a3b8;
-  --text-invert: #e2e8f0;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+  --text-invert: #e8f6fb;
 
-  /* Primary Colors */
-  --primary: #7c3aed;
-  --primary-600: #6d28d9;
-  --primary-700: #5b21b6;
-  --primary-soft: #ede9fe;
+  /* Primary Colors — OFBusiness Brand */
+  --brand-1: #19cbbf;
+  --brand-2: #16a9e8;
+  --brand-3: #186df2;
+  --brand-gradient: linear-gradient(90deg, var(--brand-1) 0%, var(--brand-2) 52%, var(--brand-3) 100%);
+  --brand-gradient-vertical: linear-gradient(180deg, var(--brand-1) 0%, var(--brand-2) 52%, var(--brand-3) 100%);
+  --brand-gradient-diagonal: linear-gradient(135deg, var(--brand-1) 0%, var(--brand-2) 52%, var(--brand-3) 100%);
+  --primary: var(--brand-2);
+  --primary-600: #188fee;
+  --primary-700: var(--brand-3);
+  --primary-soft: #e7f2ff;
 
   /* Semantic Colors */
   --success: #16a34a;
@@ -75,12 +81,12 @@
   --feedback-info-text: #075985;
 
   /* Borders */
-  --border: #e2e8f0;
-  --border-strong: #cbd5f5;
+  --border: #d6e3f2;
+  --border-strong: #b8ccdf;
 
   /* Interactive States */
-  --hover-overlay: rgba(124, 58, 237, 0.08);
-  --active-overlay: rgba(124, 58, 237, 0.12);
+  --hover-overlay: rgba(26, 159, 231, 0.1);
+  --active-overlay: rgba(26, 159, 231, 0.15);
 
   /* ============== LAYOUT ============== */
   /* Border Radius */
@@ -115,22 +121,38 @@
 
 [data-theme="dark"] {
   /* Backgrounds */
-  --bg-main: #0b1220;
-  --bg-elevated: #111827;
-  --bg-muted: #0f172a;
-  --bg-sidebar: #0b1220;
-  --bg-sidebar-strong: #0b1220;
-  --bg-hover: #111827;
+  --bg-main: #08131f;
+  --bg-elevated: #0f2034;
+  --bg-muted: #132a43;
+  --bg-sidebar: #0d2a4a;
+  --bg-sidebar-strong: #123d73;
+  --bg-hover: #184a87;
 
   /* Text */
-  --text-primary: #e2e8f0;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
-  --text-invert: #e2e8f0;
+  --text-primary: #e6f4fb;
+  --text-secondary: #9fb8ce;
+  --text-muted: #7f9bb6;
+  --text-invert: #e6f4fb;
+
+  /* Primary Colors — OFBusiness Brand (dark mode tuned) */
+  --brand-1: #18bdb1;
+  --brand-2: #229ce8;
+  --brand-3: #3f7ff7;
+  --brand-gradient: linear-gradient(90deg, var(--brand-1) 0%, var(--brand-2) 52%, var(--brand-3) 100%);
+  --brand-gradient-vertical: linear-gradient(180deg, var(--brand-1) 0%, var(--brand-2) 52%, var(--brand-3) 100%);
+  --brand-gradient-diagonal: linear-gradient(135deg, var(--brand-1) 0%, var(--brand-2) 52%, var(--brand-3) 100%);
+  --primary: var(--brand-2);
+  --primary-600: #2ea8f0;
+  --primary-700: var(--brand-3);
+  --primary-soft: rgba(45, 167, 239, 0.2);
 
   /* Borders */
-  --border: #1f2937;
-  --border-strong: #334155;
+  --border: #1f3a58;
+  --border-strong: #2e537b;
+
+  /* Interactive States */
+  --hover-overlay: rgba(45, 167, 239, 0.16);
+  --active-overlay: rgba(45, 167, 239, 0.22);
 
   /* Shadows - Enhanced for dark mode */
   --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.2);

@@ -21,14 +21,14 @@ export default function AssetsNeedingAttention({ rows }) {
           <tr key={i}>
             <td>{row.item}</td>
             <td>{row.issue}</td>
-            <td style={{ color: row.severity === "High" ? "#dc2626" : "#b45309" }}>
+            <td style={{ color: row.severity === "High" ? "var(--danger)" : "var(--feedback-warning-text)" }}>
               {row.severity}
             </td>
           </tr>
         ))}
         {!data.length && (
           <tr>
-            <td colSpan={3} style={{ color: "#6b7280" }}>
+            <td colSpan={3} style={{ color: "var(--text-muted)" }}>
               No attention items.
             </td>
           </tr>

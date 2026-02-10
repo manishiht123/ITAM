@@ -36,7 +36,7 @@ export default function RecentlyAssignedAssets({ entity, rows }) {
         ))}
         {!filtered.length && (
           <tr>
-            <td colSpan={4} style={{ color: "#6b7280" }}>
+            <td colSpan={4} style={{ color: "var(--text-muted)" }}>
               No recent assignments.
             </td>
           </tr>

@@ -203,7 +203,7 @@ export default function Reports() {
                   alt={`${selectedEntity.code} logo`}
                   style={{ height: 22 }}
                 />
-                <span style={{ fontSize: 14, color: "#64748b" }}>
+                <span style={{ fontSize: 14, color: "var(--text-secondary)" }}>
                   {selectedEntity.name} ({selectedEntity.code})
                 </span>
               </span>

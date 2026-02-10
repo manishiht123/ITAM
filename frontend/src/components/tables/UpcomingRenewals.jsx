@@ -33,7 +33,7 @@ export default function UpcomingRenewals({ rows }) {
         ))}
         {!data.length && (
           <tr>
-            <td colSpan={3} style={{ color: "#6b7280" }}>
+            <td colSpan={3} style={{ color: "var(--text-muted)" }}>
               No upcoming renewals.
             </td>
           </tr>

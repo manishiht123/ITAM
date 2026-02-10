@@ -11,9 +11,9 @@
 
   /* Subtle gradient background */
   background:
-    radial-gradient(ellipse at 20% 50%, rgba(124, 58, 237, 0.08) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 20%, rgba(124, 58, 237, 0.06) 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 100%, rgba(99, 102, 241, 0.05) 0%, transparent 50%),
+    radial-gradient(ellipse at 20% 50%, rgba(22, 169, 232, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(22, 169, 232, 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 100%, rgba(22, 169, 232, 0.05) 0%, transparent 50%),
     var(--bg-main);
 }
 
@@ -30,7 +30,7 @@
   height: 500px;
   top: -180px;
   right: -120px;
-  background: radial-gradient(circle, rgba(124, 58, 237, 0.07) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(22, 169, 232, 0.07) 0%, transparent 70%);
   animation: loginFloat 20s ease-in-out infinite;
 }
 
@@ -39,7 +39,7 @@
   height: 400px;
   bottom: -140px;
   left: -100px;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.06) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(22, 169, 232, 0.06) 0%, transparent 70%);
   animation: loginFloat 25s ease-in-out infinite reverse;
 }
 
@@ -76,7 +76,7 @@
 /* ================= ACCENT BAR ================= */
 .login-accent {
   height: 4px;
-  background: linear-gradient(90deg, var(--primary), var(--primary-600));
+  background: var(--brand-gradient);
 }
 
 /* ================= CARD BODY ================= */
@@ -214,7 +214,7 @@
 .login-input:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+  box-shadow: 0 0 0 3px rgba(22, 169, 232, 0.15);
 }
 
 .login-input:disabled {
@@ -258,7 +258,7 @@
   justify-content: center;
   gap: var(--space-sm);
   margin-top: var(--space-sm);
-  background: linear-gradient(135deg, var(--primary), var(--primary-700));
+  background: var(--brand-gradient-diagonal);
   color: #ffffff;
   border: none;
   border-radius: var(--radius-sm);
@@ -267,7 +267,7 @@
   font-weight: var(--font-weight-semibold);
   cursor: pointer;
   transition: all var(--transition-fast);
-  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.3);
+  box-shadow: 0 4px 14px rgba(22, 169, 232, 0.3);
   position: relative;
   overflow: hidden;
 }
@@ -288,7 +288,7 @@
 
 .login-button:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(124, 58, 237, 0.4);
+  box-shadow: 0 8px 20px rgba(22, 169, 232, 0.4);
 }
 
 .login-button:active:not(:disabled) {
@@ -329,18 +329,18 @@
 /* ================= DARK MODE ================= */
 [data-theme="dark"] .login-page {
   background:
-    radial-gradient(ellipse at 20% 50%, rgba(124, 58, 237, 0.12) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 20%, rgba(124, 58, 237, 0.08) 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 100%, rgba(99, 102, 241, 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 20% 50%, rgba(34, 156, 232, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(34, 156, 232, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 100%, rgba(34, 156, 232, 0.06) 0%, transparent 50%),
     var(--bg-main);
 }
 
 [data-theme="dark"] .login-bg-shape-1 {
-  background: radial-gradient(circle, rgba(124, 58, 237, 0.12) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(34, 156, 232, 0.12) 0%, transparent 70%);
 }
 
 [data-theme="dark"] .login-bg-shape-2 {
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(34, 156, 232, 0.1) 0%, transparent 70%);
 }
 
 /* ================= RESPONSIVE ================= */

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../../services/api";
 import { useEntity } from "../../context/EntityContext";
-import { KpiCard, Card, Badge, Button, PageLayout } from "../../components/ui";
+import { KpiCard, Card, Badge, Button, PageLayout, LoadingOverlay } from "../../components/ui";
 import "./LicensesCompliance.css";
 
 export default function LicensesCompliance() {
@@ -96,7 +96,7 @@ export default function LicensesCompliance() {
         return { active, watch, overused, auditReady };
     }, [licenses]);
 
-    if (loading) return <div className="licenses-page"><p>Loading licenses...</p></div>;
+    if (loading) return <div className="licenses-page"><LoadingOverlay visible message="Loading licenses..." /></div>;
 
     return (
         <div className="licenses-page">

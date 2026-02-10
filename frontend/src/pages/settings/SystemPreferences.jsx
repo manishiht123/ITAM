@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 import { useTheme } from "../../context/ThemeContext";
+import { useToast } from "../../context/ToastContext";
 import api from "../../services/api";
+import { Button } from "../../components/ui";
 import "./SystemPreferences.css";
 
 export default function SystemPreferences() {
   const { theme, setTheme } = useTheme();
+  const toast = useToast();
   const [prefs, setPrefs] = useState({
     timezone: "Asia/Kolkata",
     dateFormat: "DD/MM/YYYY",
@@ -57,8 +60,8 @@ export default function SystemPreferences() {
           <p>Global preferences for localization, backups, and operational controls.</p>
         </div>
         <div className="actions">
-          <button
-            className="asset-action-btn primary"
+          <Button
+            variant="primary"
             onClick={async () => {
               localStorage.setItem("systemPreferences", JSON.stringify(prefs));
               try {
@@ -66,14 +69,14 @@ export default function SystemPreferences() {
                   maxAssetsPerEmployee: prefs.maxAssetsPerEmployee,
                   allocationWarningMessage: prefs.allocationWarningMessage
                 });
-                alert("Preferences saved.");
+                toast.success("Preferences saved.");
               } catch (err) {
-                alert(err.message || "Failed to save preferences.");
+                toast.error(err.message || "Failed to save preferences.");
               }
             }}
           >
             Save Preferences
-          </button>
+          </Button>
         </div>
       </div>
 

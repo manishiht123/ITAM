@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import "./Assets.css";
 import api from "../services/api";
-import { Button } from "../components/ui";
+import { Button, LoadingOverlay } from "../components/ui";
 import { useToast } from "../context/ToastContext";
 
 export default function Locations() {
@@ -27,6 +27,7 @@ export default function Locations() {
             setLocations(data);
         } catch (error) {
             console.error("Error fetching locations:", error);
+            toast.error("Failed to load locations");
         } finally {
             setLoading(false);
         }
@@ -62,6 +63,8 @@ export default function Locations() {
             toast.error(error.message || "Failed to save location");
         }
     };
+
+    if (loading) return <LoadingOverlay visible />;
 
     return (
         <div className="assets-page">
@@ -99,8 +102,8 @@ export default function Locations() {
                                 <td>{loc.address}</td>
                                 <td>
                                     <span className="status-badge" style={{
-                                        backgroundColor: "#f3f4f6",
-                                        color: "#374151",
+                                        backgroundColor: "var(--bg-muted)",
+                                        color: "var(--text-secondary)",
                                         padding: "4px 8px",
                                         borderRadius: "4px",
                                         fontWeight: 600
@@ -138,54 +141,58 @@ export default function Locations() {
                 </table>
             </div>
 
-            {/* MODAL (Keep basic Tailwind for modal as Assets.css doesn't have modal styles yet, or reuse generic) */}
+            {/* MODAL */}
             {showModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
-                        <h2 className="text-xl font-bold text-gray-800 mb-4">
-                            {editingLocation ? "Edit Location" : "Add New Location"}
-                        </h2>
+                <div className="page-modal-overlay">
+                    <div className="page-modal page-modal-md">
+                        <div className="page-modal-header">
+                            <div>
+                                <h2>{editingLocation ? "Edit Location" : "Add New Location"}</h2>
+                            </div>
+                            <button className="page-modal-close" onClick={() => { setShowModal(false); setEditingLocation(null); setNewLocation({ city: "", country: "", address: "" }); }}>✕</button>
+                        </div>
 
-                        <form onSubmit={handleAddLocation} className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
+                        <form onSubmit={handleAddLocation} className="page-modal-body">
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-lg)", marginBottom: "var(--space-lg)" }}>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                                    <label className="page-modal-label">City</label>
                                     <input
                                         type="text"
                                         name="city"
                                         value={newLocation.city}
                                         onChange={handleInputChange}
-                                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none"
+                                        className="page-modal-input"
                                         placeholder="e.g. New York"
                                         required
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                                    <label className="page-modal-label">Country</label>
                                     <input
                                         type="text"
                                         name="country"
                                         value={newLocation.country}
                                         onChange={handleInputChange}
-                                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none"
+                                        className="page-modal-input"
                                         placeholder="e.g. USA"
                                     />
                                 </div>
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                            <div style={{ marginBottom: "var(--space-lg)" }}>
+                                <label className="page-modal-label">Address</label>
                                 <textarea
                                     name="address"
                                     value={newLocation.address}
                                     onChange={handleInputChange}
                                     rows="3"
-                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none resize-none"
+                                    className="page-modal-input"
+                                    style={{ resize: "none" }}
                                     placeholder="Full address..."
                                 />
                             </div>
 
-                            <div className="flex justify-end gap-3 mt-6">
+                            <div className="page-modal-footer">
                                 <Button
                                     variant="secondary"
                                     onClick={() => {

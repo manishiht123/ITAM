@@ -4,12 +4,16 @@ import AllocationHistoryDrawer from "../components/AllocationHistoryDrawer";
 import api from "../services/api";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useEntity } from "../context/EntityContext";
+import { useToast } from "../context/ToastContext";
+import { LoadingOverlay, ConfirmDialog } from "../components/ui";
 
 export default function AssetAllocation() {
   const navigate = useNavigate();
+  const toast = useToast();
   const [searchParams] = useSearchParams();
   const { entity, setEntity } = useEntity();
   const [openHistory, setOpenHistory] = useState(false);
+  const [allocationConfirm, setAllocationConfirm] = useState({ open: false });
 
   // Data State
   const [availableAssets, setAvailableAssets] = useState([]);
@@ -98,16 +102,33 @@ export default function AssetAllocation() {
     }
   };
 
+  const performAllocation = async () => {
+    const emp = employees.find(e => e.id == selectedEmpId);
+    try {
+      const entityCode = entity === "ALL" ? null : entity;
+      await api.updateAsset(selectedAssetId, {
+        status: "In Use",
+        employeeId: emp?.employeeId || emp?.email || "Unknown",
+        department: emp?.department || "Unknown"
+      }, entityCode);
+
+      toast.success("Asset allocated successfully!");
+      navigate("/assets");
+    } catch (err) {
+      toast.error(err.message || "Failed to allocate asset");
+    }
+  };
+
   const handleAllocate = async () => {
     if (!selectedAssetId || !selectedEmpId) {
-      alert("Please select an asset and an employee.");
+      toast.warning("Please select an asset and an employee.");
       return;
     }
 
     const emp = employees.find(e => e.id == selectedEmpId);
     const employeeKey = (emp?.employeeId || emp?.email || "").toString().trim().toLowerCase();
     if (!employeeKey) {
-      alert("Employee details are missing. Please select a valid employee.");
+      toast.warning("Employee details are missing. Please select a valid employee.");
       return;
     }
 
@@ -119,32 +140,16 @@ export default function AssetAllocation() {
 
     const maxAllowed = Math.max(1, allocationLimit || 2);
     if (assignedCount >= maxAllowed) {
-      alert(`This employee already has ${maxAllowed} assets allocated. A new allocation is not allowed.`);
+      toast.error(`This employee already has ${maxAllowed} assets allocated. A new allocation is not allowed.`);
       return;
     }
 
     if (assignedCount === maxAllowed - 1 && maxAllowed > 1) {
-      const ok = window.confirm(allocationWarningMessage || "This employee already has 1 asset allocated. Do you want to allow a second asset?");
-      if (!ok) return;
+      setAllocationConfirm({ open: true });
+      return;
     }
 
-    try {
-      const entityCode = entity === "ALL" ? null : entity;
-      // Verify asset ID format. The dropdown value should be the database ID (integer) or AssetID string?
-      // Let's assume we used the database PK `id` for the value in dropdown.
-
-      await api.updateAsset(selectedAssetId, {
-        status: "In Use",
-        employeeId: emp?.employeeId || emp?.email || "Unknown",
-        department: emp?.department || "Unknown"
-        // Add other fields if backend supports them (allocatedDate etc)
-      }, entityCode);
-
-      alert("Asset allocated successfully!");
-      navigate("/assets");
-    } catch (err) {
-      alert(err.message);
-    }
+    await performAllocation();
   };
 
   const getSelectedAssetDetails = () => availableAssets.find(a => a.id == selectedAssetId) || {};
@@ -169,7 +174,7 @@ export default function AssetAllocation() {
       };
     });
 
-  if (loading) return <div className="p-8">Loading available assets...</div>;
+  if (loading) return <LoadingOverlay visible message="Loading available assets..." />;
 
   return (
     <div className="assets-page">
@@ -331,6 +336,20 @@ export default function AssetAllocation() {
           Allocate Asset
         </button>
       </div>
+
+      {/* ALLOCATION WARNING CONFIRM */}
+      <ConfirmDialog
+        open={allocationConfirm.open}
+        title="Multiple Asset Allocation"
+        message={allocationWarningMessage || "This employee already has 1 asset allocated. Do you want to allow a second asset?"}
+        confirmText="Proceed"
+        variant="primary"
+        onConfirm={() => {
+          setAllocationConfirm({ open: false });
+          performAllocation();
+        }}
+        onCancel={() => setAllocationConfirm({ open: false })}
+      />
     </div>
   );
 }

@@ -13,6 +13,7 @@ export { default as Drawer } from './Drawer/Drawer';
 export { default as KpiCard } from './KpiCard/KpiCard';
 export { default as Spinner, LoadingOverlay } from './Spinner/Spinner';
 export { default as Toast } from './Toast/Toast';
+export { default as ConfirmDialog } from './ConfirmDialog/ConfirmDialog';
 
 // Layout components
 export { default as Grid } from '../layout/Grid';

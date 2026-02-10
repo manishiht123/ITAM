@@ -35,14 +35,6 @@
   gap: 18px;
 }
 
-.card {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 16px 18px;
-  box-shadow: var(--shadow-md);
-}
-
 .card-title {
   font-size: 14px;
   font-weight: 600;
@@ -57,7 +49,7 @@
 }
 
 .kpi {
-  background: linear-gradient(135deg, var(--bg-muted), #e0f2f1);
+  background: linear-gradient(135deg, var(--bg-muted), var(--primary-soft));
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: 14px;
@@ -92,26 +84,6 @@
   font-size: 13px;
 }
 
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-
-.table th,
-.table td {
-  text-align: left;
-  padding: 10px 8px;
-  border-bottom: 1px solid var(--border);
-}
-
-.table th {
-  color: var(--text-secondary);
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
 .tag {
   display: inline-flex;
   align-items: center;
@@ -123,18 +95,18 @@
 }
 
 .tag.high {
-  background: #fee2e2;
-  color: #b91c1c;
+  background: var(--feedback-danger-bg);
+  color: var(--feedback-danger-text);
 }
 
 .tag.medium {
-  background: #fef3c7;
-  color: #b45309;
+  background: var(--feedback-warning-bg);
+  color: var(--feedback-warning-text);
 }
 
 .tag.low {
-  background: #dcfce7;
-  color: #15803d;
+  background: var(--feedback-success-bg);
+  color: var(--feedback-success-text);
 }
 
 .pill {

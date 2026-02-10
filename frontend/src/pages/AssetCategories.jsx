@@ -3,11 +3,13 @@ import "./Assets.css";
 import api from "../services/api";
 import { useEntity } from "../context/EntityContext";
 import { useNavigate } from "react-router-dom";
-import { Button, Badge, PageLayout } from "../components/ui";
+import { Button, Badge, PageLayout, LoadingOverlay } from "../components/ui";
+import { useToast } from "../context/ToastContext";
 
 export default function AssetCategories() {
   const { entity } = useEntity();
   const navigate = useNavigate();
+  const toast = useToast();
   const [assets, setAssets] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,6 +27,7 @@ export default function AssetCategories() {
         setCategories(categoryData);
       } catch (error) {
         console.error("Error fetching asset categories:", error);
+        toast.error("Failed to load asset categories");
       } finally {
         setLoading(false);
       }
@@ -124,7 +127,7 @@ export default function AssetCategories() {
               {loading && (
                 <tr>
                   <td colSpan="7" className="table-empty-cell">
-                    Loading categories...
+                    <LoadingOverlay visible />
                   </td>
                 </tr>
               )}

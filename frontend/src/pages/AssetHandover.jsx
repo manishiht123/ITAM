@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import "./AssetHandover.css";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useToast } from "../context/ToastContext";
 
 export default function AssetHandover() {
   const navigate = useNavigate();
+  const toast = useToast();
   const location = useLocation();
 
   const params = new URLSearchParams(location.search);
@@ -22,7 +24,7 @@ export default function AssetHandover() {
     };
 
     console.log("Handover Payload:", payload);
-    alert("Asset handed over successfully (mock)");
+    toast.success("Asset handed over successfully");
     navigate("/assets");
   };
 

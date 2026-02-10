@@ -1,7 +1,7 @@
 const fallbackItems = [
-  { title: "License Compliance", status: "Compliant", color: "#dcfce7" },
-  { title: "Audit Readiness", status: "Audit Ready", color: "#dcfce7" },
-  { title: "Shadow IT Risk", status: "Low Risk", color: "#e0f2fe" }
+  { title: "License Compliance", status: "Compliant", color: "var(--feedback-success-bg)" },
+  { title: "Audit Readiness", status: "Audit Ready", color: "var(--feedback-success-bg)" },
+  { title: "Shadow IT Risk", status: "Low Risk", color: "var(--feedback-info-bg)" }
 ];
 
 export default function ComplianceSummary({ items }) {
@@ -30,7 +30,7 @@ function ComplianceCard({ title, status, color }) {
   return (
     <div
       style={{
-        border: "1px solid #e5e7eb",
+        border: "1px solid var(--border)",
         borderRadius: 8,
         padding: 16,
         background: color

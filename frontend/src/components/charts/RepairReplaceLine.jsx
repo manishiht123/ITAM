@@ -9,8 +9,8 @@ export default function RepairReplaceLine({ data }) {
       {
         label: "Repair",
         data: data.map((d) => d.repair),
-        borderColor: "#7c3aed",
-        backgroundColor: "rgba(124,58,237,0.2)",
+        borderColor: "#19cbbf",
+        backgroundColor: "rgba(25, 203, 191, 0.2)",
         pointRadius: 5,
         pointHoverRadius: 7,
         borderWidth: 2,
@@ -19,7 +19,7 @@ export default function RepairReplaceLine({ data }) {
       {
         label: "Replace",
         data: data.map((d) => d.replace),
-        borderColor: "#dc2626",          // red
+        borderColor: "#dc2626",
         backgroundColor: "rgba(220,38,38,0.2)",
         pointRadius: 5,
         pointHoverRadius: 7,
@@ -58,18 +58,16 @@ export default function RepairReplaceLine({ data }) {
           precision: 0,
         },
         grid: {
-          color: "#e2e8f0",
+          color: "rgba(0,0,0,0.06)",
         },
       },
     },
   };
 
   return (
-    <div className="bg-white rounded shadow p-4">
-      <h3 className="font-semibold mb-2">Repair vs Replace Trend</h3>
-
-      {/* 👇 HEIGHT CONTROL */}
-      <div className="relative h-[320px] w-full">
+    <div className="chart-card">
+      <h3>Repair vs Replace Trend</h3>
+      <div style={{ position: "relative", height: "320px", width: "100%" }}>
         <Line data={chartData} options={options} redraw />
       </div>
     </div>

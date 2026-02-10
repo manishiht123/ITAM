@@ -1,41 +1,8 @@
 /* =========================================================
-   ITAM DASHBOARD – ENTERPRISE UI (V2)
-   UX POLISH – NO JSX CHANGES
+   ITAM DASHBOARD – STYLES
    ========================================================= */
 
-/* ---------------- GLOBAL ---------------- */
-body {
-  background: var(--bg-main);
-  font-family: var(--font-sans);
-  color: var(--text-primary);
-}
-
-/* ---------------- PAGE ---------------- */
-.page-container,
-div[style*="padding: 24px"] {
-  padding: 28px !important;
-}
-
-/* ---------------- HEADINGS ---------------- */
-h1 {
-  font-size: 28px;
-  font-weight: 700;
-  margin-bottom: 20px;
-}
-
-h2 {
-  font-size: 20px;
-  font-weight: 600;
-  margin: 48px 0 16px;
-  padding-left: 10px;
-  border-left: 4px solid var(--primary);
-}
-
-h4 {
-  font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 12px;
-}
+/* Body, headings, and base typography are in global.css */
 
 /* ---------------- SECTION SEPARATION ---------------- */
 .section-divider {
@@ -44,45 +11,7 @@ h4 {
   margin: 40px 0;
 }
 
-/* ---------------- KPI CARDS ---------------- */
-.kpi-card,
-div[style*="Total Assets"],
-div[style*="Allocated"] {
-  background: linear-gradient(180deg, var(--bg-elevated), #f8fafc);
-  border-radius: var(--radius-md);
-  padding: 10px;
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-sm);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-  text-align: center;
-}
-
-.kpi-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-}
-
-.kpi-title {
-  font-size: 13px;
-  color: var(--text-secondary);
-}
-
-.kpi-value {
-  font-size: 30px;
-  font-weight: 800;
-  margin-top: 6px;
-  color: var(--text-primary);
-}
-
-/* ---------------- CARDS (CHARTS / TABLES) ---------------- */
-.card,
-div[style*="background: #fff"] {
-  background: var(--bg-elevated);
-  border-radius: var(--radius-lg);
-  padding: 18px;
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-md);
-}
+/* KPI cards styled by KpiCard component CSS */
 
 /* ---------------- CHARTS ---------------- */
 .chart-card {
@@ -101,74 +30,48 @@ canvas {
 }
 
 .alert-critical {
-  background: linear-gradient(135deg, #fee2e2, #fecaca);
+  background: var(--feedback-danger-bg);
   border-left: 6px solid var(--danger);
 }
 
 .alert-warning {
-  background: linear-gradient(135deg, #fef9c3, #fde68a);
+  background: var(--feedback-warning-bg);
   border-left: 6px solid var(--warning);
 }
 
 .alert-ok {
-  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+  background: var(--feedback-success-bg);
   border-left: 6px solid var(--success);
 }
 
 .alert-title {
   font-size: 14px;
   font-weight: 600;
+  color: var(--text-primary);
 }
 
 .alert-value {
   font-size: 26px;
   font-weight: 800;
   margin-top: 6px;
+  color: var(--text-primary);
 }
 
 /* ---------------- COMPLIANCE ---------------- */
 .compliance-card {
-  background: linear-gradient(135deg, #ecfeff, #cffafe);
+  background: var(--feedback-info-bg);
   border-left: 6px solid var(--info);
 }
 
 .compliance-good {
-  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+  background: var(--feedback-success-bg);
   border-left: 6px solid var(--success);
-}
-
-/* ---------------- TABLES ---------------- */
-.table-wrapper {
-  background: var(--bg-elevated);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-sm);
-}
-
-thead {
-  background: var(--bg-muted);
-}
-
-th {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  padding: 14px;
-}
-
-td {
-  padding: 14px;
-  font-size: 13px;
-}
-
-tr:hover {
-  background: #eef2f7;
 }
 
 /* ---------------- STATUS BADGES ---------------- */
 .status-assigned {
-  background: #dcfce7;
-  color: #166534;
+  background: var(--feedback-success-bg);
+  color: var(--feedback-success-text);
   padding: 4px 10px;
   border-radius: 999px;
   font-size: 11px;
@@ -176,38 +79,12 @@ tr:hover {
 }
 
 .status-unassigned {
-  background: #ffedd5;
-  color: #9a3412;
+  background: var(--feedback-warning-bg);
+  color: var(--feedback-warning-text);
   padding: 4px 10px;
   border-radius: 999px;
   font-size: 11px;
   font-weight: 700;
-}
-
-/* ---------------- BUTTONS ---------------- */
-/* Button styles handled by Button component CSS */
-
-/* ---------------- SIDEBAR ---------------- */
-.sidebar {
-  background: var(--bg-sidebar);
-  color: var(--text-invert);
-}
-
-.sidebar-item {
-  padding: 12px 18px;
-  font-size: 14px;
-}
-
-.sidebar-item.active {
-  background: rgba(14, 165, 164, 0.2);
-  border-left: 4px solid var(--primary);
-}
-
-/* ---------------- TOPBAR ---------------- */
-.topbar {
-  background: var(--bg-elevated);
-  border-bottom: 1px solid var(--border);
-  box-shadow: var(--shadow-sm);
 }
 
 /* ---------------- RESPONSIVE ---------------- */
@@ -215,10 +92,4 @@ tr:hover {
   .alert-grid {
     grid-template-columns: 1fr;
   }
-}
-
-.card {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  color: var(--text-primary);
 }

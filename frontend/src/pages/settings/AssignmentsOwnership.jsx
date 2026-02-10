@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import { useEntity } from "../../context/EntityContext";
-import { Button } from "../../components/ui";
+import { Button, LoadingOverlay } from "../../components/ui";
 import { useToast } from "../../context/ToastContext";
 import "./AssignmentsOwnership.css";
 
@@ -197,9 +197,7 @@ export default function AssignmentsOwnership() {
           </div>
 
           {loading ? (
-            <div style={{ padding: "12px 0", color: "#64748b" }}>
-              Loading assignments…
-            </div>
+            <LoadingOverlay visible message="Loading assignments..." />
           ) : (
           <table className="table">
             <thead>

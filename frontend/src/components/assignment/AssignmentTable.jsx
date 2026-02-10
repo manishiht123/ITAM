@@ -59,7 +59,7 @@ export default function AssignmentTable({ entity, rows }) {
           marginBottom: 12,
           width: "100%",
           borderRadius: 6,
-          border: "1px solid #d1d5db"
+          border: "1px solid var(--border)"
         }}
       />
 
@@ -72,7 +72,7 @@ export default function AssignmentTable({ entity, rows }) {
         }}
       >
         <thead>
-          <tr style={{ background: "#f9fafb", textAlign: "left" }}>
+          <tr style={{ background: "var(--bg-muted)", textAlign: "left" }}>
             <th style={th}>Asset Tag</th>
             <th style={th}>Type</th>
             <th style={th}>User</th>
@@ -86,7 +86,7 @@ export default function AssignmentTable({ entity, rows }) {
         <tbody>
           {filtered.length ? (
             filtered.map((row, idx) => (
-              <tr key={idx} style={{ borderBottom: "1px solid #e5e7eb" }}>
+              <tr key={idx} style={{ borderBottom: "1px solid var(--border)" }}>
                 <td style={td}>{row.assetTag}</td>
                 <td style={td}>{row.assetType}</td>
                 <td style={td}>{row.user}</td>
@@ -127,7 +127,7 @@ export default function AssignmentTable({ entity, rows }) {
             ))
           ) : (
             <tr>
-              <td style={{ ...td, color: "#6b7280" }} colSpan={7}>
+              <td style={{ ...td, color: "var(--text-muted)" }} colSpan={7}>
                 No assignments found.
               </td>
             </tr>
@@ -145,17 +145,24 @@ export default function AssignmentTable({ entity, rows }) {
 function StatusBadge({ status }) {
   const color =
     status === "Assigned"
-      ? "#16a34a"
+      ? "var(--success)"
       : status === "Unassigned"
-      ? "#f59e0b"
-      : "#6b7280";
+      ? "var(--warning)"
+      : "var(--text-muted)";
+
+  const bg =
+    status === "Assigned"
+      ? "var(--feedback-success-bg)"
+      : status === "Unassigned"
+      ? "var(--feedback-warning-bg)"
+      : "var(--bg-muted)";
 
   return (
     <span
       style={{
         padding: "4px 8px",
         borderRadius: 12,
-        background: `${color}20`,
+        background: bg,
         color,
         fontSize: 12
       }}
@@ -167,7 +174,7 @@ function StatusBadge({ status }) {
 
 const th = {
   padding: 12,
-  borderBottom: "1px solid #e5e7eb"
+  borderBottom: "1px solid var(--border)"
 };
 
 const td = {
@@ -178,7 +185,7 @@ const btn = {
   padding: "6px 10px",
   fontSize: 12,
   borderRadius: 6,
-  border: "1px solid #d1d5db",
-  background: "#fff",
+  border: "1px solid var(--border)",
+  background: "var(--bg-primary)",
   cursor: "pointer"
 };

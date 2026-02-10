@@ -19,7 +19,7 @@ export default function AssetOSBar({ data }) {
         label: "Assets",
         data: normalized.map((entry) => entry.value),
         backgroundColor: normalized.map((entry, idx) => {
-          const palette = ["#7c3aed", "#06b6d4", "#16a34a", "#f97316", "#22c55e", "#0ea5e9"];
+          const palette = ["#19cda5", "#06b6d4", "#16a34a", "#f97316", "#22c55e", "#0ea5e9"];
           return palette[idx % palette.length];
         }),
         borderRadius: 8,

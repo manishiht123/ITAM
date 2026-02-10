@@ -37,14 +37,14 @@
 
 /* ============== VARIANTS ============== */
 .btn-primary {
-  background: linear-gradient(135deg, var(--primary), var(--primary-700));
+  background: var(--brand-gradient-diagonal);
   color: #ffffff;
-  box-shadow: 0 6px 16px rgba(124, 58, 237, 0.28);
+  box-shadow: 0 6px 16px rgba(22, 169, 232, 0.28);
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 22px rgba(124, 58, 237, 0.35);
+  box-shadow: 0 10px 22px rgba(22, 169, 232, 0.35);
   filter: brightness(1.1);
 }
 

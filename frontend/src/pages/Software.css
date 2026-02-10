@@ -75,26 +75,6 @@
   color: var(--text-secondary);
 }
 
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-
-.table th,
-.table td {
-  text-align: left;
-  padding: 10px 8px;
-  border-bottom: 1px solid var(--border);
-}
-
-.table th {
-  color: var(--text-secondary);
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
 .drawer-overlay {
   position: fixed;
   inset: 0;

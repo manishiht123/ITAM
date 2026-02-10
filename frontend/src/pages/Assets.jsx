@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useEntity } from "../context/EntityContext";
 import "./Assets.css";
-import { KpiCard, Card, Button, Badge } from "../components/ui";
+import { KpiCard, Card, Button, Badge, ConfirmDialog } from "../components/ui";
 import ChartCard from "../components/ChartCard";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import api from "../services/api";
@@ -31,6 +31,7 @@ export default function Assets() {
   const [showAllocateModal, setShowAllocateModal] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [allocationData, setAllocationData] = useState({ employeeId: "" });
+  const [returnConfirm, setReturnConfirm] = useState({ open: false, asset: null });
 
   useEffect(() => {
     loadEntities();
@@ -151,8 +152,8 @@ export default function Assets() {
   };
 
   const STATUS_COLORS = {
-    "In Use": "#7c3aed",
-    "Allocated": "#7c3aed",
+    "In Use": "#19cda5",
+    "Allocated": "#19cda5",
     Available: "#22c55e",
     "In Stock": "#22c55e",
     "Under Repair": "#f97316",
@@ -163,8 +164,13 @@ export default function Assets() {
 
   // --- ACTIONS ---
 
-  const handleReturn = async (asset) => {
-    if (!window.confirm(`Confirm return for ${asset.name}?`)) return;
+  const handleReturn = (asset) => {
+    setReturnConfirm({ open: true, asset });
+  };
+
+  const confirmReturn = async () => {
+    const asset = returnConfirm.asset;
+    setReturnConfirm({ open: false, asset: null });
     try {
       const entityCode = selectedEntityCode || asset.entity || null;
       await api.updateAsset(asset.id, {
@@ -174,7 +180,7 @@ export default function Assets() {
         location: null
       }, entityCode);
       toast.success(`Asset ${asset.name} returned successfully`);
-      loadData(); // Reload to refresh UI
+      loadData();
     } catch (err) {
       toast.error(err.message || "Failed to return asset");
     }
@@ -553,16 +559,20 @@ export default function Assets() {
 
       {/* ================= ALLOCATE MODAL ================= */}
       {showAllocateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Allocate Asset</h2>
-            <p className="mb-4 text-gray-600">Allocate <strong>{selectedAsset?.name}</strong> to an employee.</p>
+        <div className="page-modal-overlay">
+          <div className="page-modal page-modal-md">
+            <div className="page-modal-header">
+              <div><h2>Allocate Asset</h2></div>
+              <button className="page-modal-close" onClick={() => setShowAllocateModal(false)}>✕</button>
+            </div>
 
-            <form onSubmit={handleAllocateSubmit}>
-              <div className="mb-4">
-                <label className="block text-sm font-medium mb-1">Select Employee</label>
+            <form onSubmit={handleAllocateSubmit} className="page-modal-body">
+              <p style={{ marginBottom: "var(--space-lg)", color: "var(--text-secondary)" }}>Allocate <strong>{selectedAsset?.name}</strong> to an employee.</p>
+
+              <div style={{ marginBottom: "var(--space-lg)" }}>
+                <label className="page-modal-label">Select Employee</label>
                 <select
-                  className="w-full border p-2 rounded"
+                  className="page-modal-input"
                   value={allocationData.employeeId}
                   onChange={e => setAllocationData({ ...allocationData, employeeId: e.target.value })}
                   required
@@ -574,7 +584,7 @@ export default function Assets() {
                 </select>
               </div>
 
-              <div className="flex justify-end gap-3">
+              <div className="page-modal-footer">
                 <Button
                   variant="secondary"
                   onClick={() => setShowAllocateModal(false)}
@@ -592,6 +602,17 @@ export default function Assets() {
           </div>
         </div>
       )}
+
+      {/* ================= RETURN CONFIRM ================= */}
+      <ConfirmDialog
+        open={returnConfirm.open}
+        title="Return Asset"
+        message={`Are you sure you want to return "${returnConfirm.asset?.name}"? It will be marked as Available.`}
+        confirmText="Return Asset"
+        variant="danger"
+        onConfirm={confirmReturn}
+        onCancel={() => setReturnConfirm({ open: false, asset: null })}
+      />
 
     </div>
   );

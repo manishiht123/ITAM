@@ -1,7 +1,10 @@
 import { useState } from "react";
+import { useToast } from "../../context/ToastContext";
+import { Button } from "../../components/ui";
 import "./PasswordPolicy.css";
 
 export default function PasswordPolicy() {
+  const toast = useToast();
   const [policy, setPolicy] = useState({
     minLength: 10,
     requireUpper: true,
@@ -21,15 +24,15 @@ export default function PasswordPolicy() {
           <p>Define credential complexity, rotation, and lockout controls.</p>
         </div>
         <div className="actions">
-          <button
-            className="asset-action-btn primary"
+          <Button
+            variant="primary"
             onClick={() => {
               localStorage.setItem("passwordPolicy", JSON.stringify(policy));
-              alert("Password policy saved.");
+              toast.success("Password policy saved.");
             }}
           >
             Save Policy
-          </button>
+          </Button>
         </div>
       </div>
 
