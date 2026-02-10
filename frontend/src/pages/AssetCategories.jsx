@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import "./Assets.css";
+import "./AssetCategories.css";
 import api from "../services/api";
 import { useEntity } from "../context/EntityContext";
 import { useNavigate } from "react-router-dom";
@@ -124,6 +125,7 @@ export default function AssetCategories() {
   return (
     <PageLayout>
       <PageLayout.Header
+        className="asset-categories-page-header"
         title={
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
             Asset Categories

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Button } from "../ui";
 
 /**
  * PHASE 3 – Assignment & Ownership
@@ -79,7 +80,7 @@ export default function AssignmentTable({ entity, rows }) {
             <th style={th}>Department</th>
             <th style={th}>Entity</th>
             <th style={th}>Status</th>
-            <th style={th}>Actions</th>
+            <th style={thActions}>Actions</th>
           </tr>
         </thead>
 
@@ -95,33 +96,37 @@ export default function AssignmentTable({ entity, rows }) {
                 <td style={td}>
                   <StatusBadge status={row.status} />
                 </td>
-                <td style={td}>
-                  <button
-                    style={btn}
-                    onClick={() => {
-                      const targetEntity = row.entity || entity;
-                      navigate(
-                        `/assets/allocate?asset=${encodeURIComponent(
-                          row.assetTag
-                        )}&entity=${encodeURIComponent(targetEntity)}`
-                      );
-                    }}
-                  >
-                    Reassign
-                  </button>
-                  <button
-                    style={{ ...btn, marginLeft: 8 }}
-                    onClick={() => {
-                      const targetEntity = row.entity || entity;
-                      navigate(
-                        `/assets/allocate?history=1&entity=${encodeURIComponent(
-                          targetEntity
-                        )}`
-                      );
-                    }}
-                  >
-                    History
-                  </button>
+                <td style={tdActions}>
+                  <div style={actionGroup}>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => {
+                        const targetEntity = row.entity || entity;
+                        navigate(
+                          `/assets/allocate?asset=${encodeURIComponent(
+                            row.assetTag
+                          )}&entity=${encodeURIComponent(targetEntity)}`
+                        );
+                      }}
+                    >
+                      Reassign
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => {
+                        const targetEntity = row.entity || entity;
+                        navigate(
+                          `/assets/allocate?history=1&entity=${encodeURIComponent(
+                            targetEntity
+                          )}`
+                        );
+                      }}
+                    >
+                      History
+                    </Button>
+                  </div>
                 </td>
               </tr>
             ))
@@ -181,11 +186,21 @@ const td = {
   padding: 12
 };
 
-const btn = {
-  padding: "6px 10px",
-  fontSize: 12,
-  borderRadius: 6,
-  border: "1px solid var(--border)",
-  background: "var(--bg-primary)",
-  cursor: "pointer"
+const thActions = {
+  ...th,
+  width: 180,
+  minWidth: 180
+};
+
+const tdActions = {
+  ...td,
+  width: 180,
+  minWidth: 180
+};
+
+const actionGroup = {
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
+  whiteSpace: "nowrap"
 };

@@ -17,6 +17,9 @@ const sortByDateDesc = (a, b) => {
 const getEntityFilter = (entityCode) =>
   !entityCode || entityCode === "ALL" ? null : entityCode;
 
+const normalizeEntityCode = (value) =>
+  value && String(value).trim() ? String(value).trim().toUpperCase() : "";
+
 const safeLabel = (value, fallback) =>
   value && String(value).trim() ? String(value).trim() : fallback;
 
@@ -41,9 +44,22 @@ const buildBreakdown = (items, keyGetter, fallbackLabel = "Unknown") => {
 
 const buildDashboardData = (assets, employees, licenses, entityCode) => {
   const entityFilter = getEntityFilter(entityCode);
+  const normalizedFilter = normalizeEntityCode(entityFilter);
   const scopedAssets = entityFilter
-    ? assets.filter((asset) => asset.entity === entityFilter)
+    ? assets.filter((asset) => normalizeEntityCode(asset.entity) === normalizedFilter)
     : assets;
+
+  const scopedLicenses = entityFilter
+    ? (licenses || []).filter((license) => {
+        const licenseEntity =
+          normalizeEntityCode(license._entityCode) ||
+          normalizeEntityCode(license.entity);
+        // Single-entity inventory responses often don't include entity on each row.
+        // In that case, treat rows as already scoped to the selected entity.
+        if (!licenseEntity) return true;
+        return licenseEntity === normalizedFilter;
+      })
+    : licenses || [];
 
   const statusBreakdown = scopedAssets.length
     ? buildBreakdown(scopedAssets, (asset) => asset.status, "Unknown")
@@ -135,7 +151,7 @@ const buildDashboardData = (assets, employees, licenses, entityCode) => {
     underRepair: statusCounts["Under Repair"] || 0
   };
 
-  const licenseTotals = (licenses || []).reduce(
+  const licenseTotals = scopedLicenses.reduce(
     (acc, row) => {
       const owned = Number(row.seatsOwned || 0);
       const used = Number(row.seatsUsed || 0);
@@ -147,7 +163,7 @@ const buildDashboardData = (assets, employees, licenses, entityCode) => {
     { used: 0, owned: 0, overused: 0 }
   );
 
-  const licenseUsage = licenses?.length
+  const licenseUsage = scopedLicenses.length
     ? [
         { name: "Used Seats", value: licenseTotals.used },
         { name: "Available Seats", value: Math.max(licenseTotals.owned - licenseTotals.used, 0) },
@@ -185,7 +201,7 @@ const buildDashboardData = (assets, employees, licenses, entityCode) => {
   return {
     kpis,
     licenseKpis: {
-      totalLicenses: licenses?.length || 0,
+      totalLicenses: scopedLicenses.length || 0,
       overusedSeats: licenseTotals.overused || 0
     },
     statusBreakdown,
@@ -198,7 +214,7 @@ const buildDashboardData = (assets, employees, licenses, entityCode) => {
     recentlyAdded,
     recentlyAssigned,
     attentionItems,
-    upcomingRenewals: (licenses || [])
+    upcomingRenewals: scopedLicenses
       .filter((row) => row.renewalDate)
       .sort((a, b) => sortByDateDesc(a.renewalDate, b.renewalDate))
       .slice(0, 6)
@@ -221,22 +237,28 @@ export async function getDashboardData(entityCode) {
     const employeeResults = await Promise.allSettled(
       codes.map((code) => api.getEmployees(code))
     );
-    const licenseResults = await Promise.allSettled(
-      codes.map((code) => api.getLicenses(code))
+    const softwareResults = await Promise.allSettled(
+      codes.map(async (code) => {
+        const inventory = await api.getSoftwareInventory(code);
+        const licenses = inventory?.licenses || [];
+        return licenses.map((license) => ({
+          ...license,
+          _entityCode: code
+        }));
+      })
     );
     const assets = assetResults.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
     const employees = employeeResults.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
-    const licenses = licenseResults.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
-    const defaultLicenses = await api.getLicenses(null).catch(() => []);
-    const allLicenses = [...licenses, ...(defaultLicenses || [])];
-    return buildDashboardData(assets || [], employees || [], allLicenses || [], "ALL");
+    const licenses = softwareResults.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
+    return buildDashboardData(assets || [], employees || [], licenses || [], "ALL");
   }
 
-  const [assets, employees, licenses] = await Promise.all([
+  const [assets, employees, softwareInventory] = await Promise.all([
     api.getAssets(entityFilter),
     api.getEmployees(entityFilter),
-    api.getLicenses(entityFilter)
+    api.getSoftwareInventory(entityFilter)
   ]);
 
+  const licenses = softwareInventory?.licenses || [];
   return buildDashboardData(assets || [], employees || [], licenses || [], entityFilter);
 }

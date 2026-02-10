@@ -5,6 +5,7 @@ import { useToast } from "../context/ToastContext";
 import api from "../services/api";
 import EmployeeTable from "../components/employees/EmployeeTable";
 import AddEmployeeDrawer from "../components/employees/AddEmployeeDrawer";
+import "./Employees.css";
 
 export default function Employees() {
   const { entity } = useEntity();
@@ -44,6 +45,7 @@ export default function Employees() {
   return (
     <PageLayout>
       <PageLayout.Header
+        className="employees-page-header"
         title={
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
             Employees

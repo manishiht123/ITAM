@@ -353,6 +353,7 @@ export default function Software() {
       <LoadingOverlay visible={loading} message="Loading software inventory..." />
 
       <PageLayout.Header
+        className="software-page-header"
         title={
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
             Software Inventory

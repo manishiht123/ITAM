@@ -1,4 +1,5 @@
 import AlertCard from "./AlertCard";
+import "./alerts.css";
 
 const fallbackAlerts = [
   {
@@ -36,13 +37,7 @@ const fallbackAlerts = [
 export default function AlertsPanel({ alerts }) {
   const items = Array.isArray(alerts) && alerts.length ? alerts : fallbackAlerts;
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(3, 1fr)",
-        gap: 16
-      }}
-    >
+    <div className="alerts-grid">
       {items.map((item, idx) => (
         <AlertCard
           key={`${item.title}-${idx}`}
