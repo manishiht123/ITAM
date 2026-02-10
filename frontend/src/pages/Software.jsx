@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import api from "../services/api";
 import { useEntity } from "../context/EntityContext";
 import { useToast } from "../context/ToastContext";
+import { FaPen, FaTrash } from "react-icons/fa";
 import {
   Button,
   Card,
@@ -13,7 +14,8 @@ import {
   Drawer,
   LoadingOverlay,
   PageLayout,
-  Grid
+  Grid,
+  ConfirmDialog
 } from "../components/ui";
 import "./Software.css";
 
@@ -28,6 +30,7 @@ export default function Software() {
   const [entities, setEntities] = useState([]);
   const [targetEntity, setTargetEntity] = useState("");
   const [editingLicense, setEditingLicense] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, type: null, item: null });
   const [editingAssignment, setEditingAssignment] = useState(null);
   const [licenseForm, setLicenseForm] = useState({
     product: "",
@@ -197,6 +200,24 @@ export default function Software() {
     }
   };
 
+  const confirmDelete = async () => {
+    const { type, item } = deleteConfirm;
+    setDeleteConfirm({ open: false, type: null, item: null });
+    try {
+      const resolvedEntity = entity === "ALL" ? item._entityCode : entity;
+      if (type === "license") {
+        await api.deleteSoftwareLicense(item.id, resolvedEntity);
+        toast.success(`License "${item.product}" deleted successfully`);
+      } else {
+        await api.deleteSoftwareAssignment(item.id, resolvedEntity);
+        toast.success("Assignment deleted successfully");
+      }
+      await loadInventory();
+    } catch (error) {
+      toast.error(error?.message || `Failed to delete ${type}`);
+    }
+  };
+
   // Table columns for licenses
   const licenseColumns = [
     { key: 'product', label: 'Product' },
@@ -217,32 +238,43 @@ export default function Software() {
       key: 'action',
       label: 'Action',
       render: (_, row) => (
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => {
-            const resolvedEntity = entity === "ALL" ? row._entityCode : entity;
-            if (entity === "ALL" && !resolvedEntity) {
-              toast.error("Entity not available for this license.");
-              return;
-            }
-            setEditingLicense(row);
-            setTargetEntity(resolvedEntity || "");
-            setLicenseForm({
-              product: row.product || "",
-              vendor: row.vendor || "",
-              version: row.version || "",
-              licenseKey: row.licenseKey || "",
-              seatsOwned: Number(row.seatsOwned || 0),
-              seatsUsed: Number(row.seatsUsed || 0),
-              renewalDate: row.renewalDate || "",
-              status: row.status || "Active"
-            });
-            setOpenLicense(true);
-          }}
-        >
-          Edit
-        </Button>
+        <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
+            icon={<FaPen />}
+            title="Edit"
+            onClick={() => {
+              const resolvedEntity = entity === "ALL" ? row._entityCode : entity;
+              if (entity === "ALL" && !resolvedEntity) {
+                toast.error("Entity not available for this license.");
+                return;
+              }
+              setEditingLicense(row);
+              setTargetEntity(resolvedEntity || "");
+              setLicenseForm({
+                product: row.product || "",
+                vendor: row.vendor || "",
+                version: row.version || "",
+                licenseKey: row.licenseKey || "",
+                seatsOwned: Number(row.seatsOwned || 0),
+                seatsUsed: Number(row.seatsUsed || 0),
+                renewalDate: row.renewalDate || "",
+                status: row.status || "Active"
+              });
+              setOpenLicense(true);
+            }}
+          />
+          <Button
+            variant="danger"
+            size="sm"
+            iconOnly
+            icon={<FaTrash />}
+            title="Delete"
+            onClick={() => setDeleteConfirm({ open: true, type: "license", item: row })}
+          />
+        </div>
       )
     }
   ];
@@ -278,29 +310,40 @@ export default function Software() {
       key: 'action',
       label: 'Action',
       render: (_, row) => (
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => {
-            const resolvedEntity = entity === "ALL" ? row._entityCode : entity;
-            if (entity === "ALL" && !resolvedEntity) {
-              toast.error("Entity not available for this assignment.");
-              return;
-            }
-            setEditingAssignment(row);
-            setTargetEntity(resolvedEntity || "");
-            setAssignForm({
-              softwareLicenseId: row.softwareLicenseId || row.license?.id || "",
-              employeeId: row.employeeId || "",
-              employeeName: row.employeeName || "",
-              employeeEmail: row.employeeEmail || "",
-              notes: row.notes || ""
-            });
-            setOpenAssign(true);
-          }}
-        >
-          Edit
-        </Button>
+        <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
+            icon={<FaPen />}
+            title="Edit"
+            onClick={() => {
+              const resolvedEntity = entity === "ALL" ? row._entityCode : entity;
+              if (entity === "ALL" && !resolvedEntity) {
+                toast.error("Entity not available for this assignment.");
+                return;
+              }
+              setEditingAssignment(row);
+              setTargetEntity(resolvedEntity || "");
+              setAssignForm({
+                softwareLicenseId: row.softwareLicenseId || row.license?.id || "",
+                employeeId: row.employeeId || "",
+                employeeName: row.employeeName || "",
+                employeeEmail: row.employeeEmail || "",
+                notes: row.notes || ""
+              });
+              setOpenAssign(true);
+            }}
+          />
+          <Button
+            variant="danger"
+            size="sm"
+            iconOnly
+            icon={<FaTrash />}
+            title="Delete"
+            onClick={() => setDeleteConfirm({ open: true, type: "assignment", item: row })}
+          />
+        </div>
       )
     }
   ];
@@ -571,6 +614,21 @@ export default function Software() {
           </Button>
         </Drawer.Footer>
       </Drawer>
+
+      {/* Delete Confirmation */}
+      <ConfirmDialog
+        open={deleteConfirm.open}
+        title={deleteConfirm.type === "license" ? "Delete License" : "Delete Assignment"}
+        message={
+          deleteConfirm.type === "license"
+            ? `Are you sure you want to delete the license "${deleteConfirm.item?.product}"? All associated assignments will also be removed.`
+            : `Are you sure you want to remove the assignment for "${deleteConfirm.item?.employeeName || deleteConfirm.item?.employeeId}"?`
+        }
+        confirmText="Delete"
+        variant="danger"
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteConfirm({ open: false, type: null, item: null })}
+      />
     </PageLayout>
   );
 }

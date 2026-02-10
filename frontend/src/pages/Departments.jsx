@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo } from "react";
 import "./Assets.css";
 import api from "../services/api";
 import { useEntity } from "../context/EntityContext";
-import { Button } from "../components/ui";
+import { Button, ConfirmDialog } from "../components/ui";
+import { FaPen, FaTrash } from "react-icons/fa";
 import { useToast } from "../context/ToastContext";
 
 export default function Departments() {
@@ -20,6 +21,7 @@ export default function Departments() {
 
     const [locations, setLocations] = useState([]);
     const [employees, setEmployees] = useState([]);
+    const [deleteConfirm, setDeleteConfirm] = useState({ open: false, item: null });
 
     useEffect(() => {
         loadData();
@@ -84,6 +86,18 @@ export default function Departments() {
         }
     };
 
+    const confirmDelete = async () => {
+        const { item } = deleteConfirm;
+        setDeleteConfirm({ open: false, item: null });
+        try {
+            await api.deleteDepartmentCommon(item.id);
+            setDepartments(prev => prev.filter(d => d.id !== item.id));
+            toast.success(`Department "${item.name}" deleted successfully`);
+        } catch (error) {
+            toast.error(error?.message || "Failed to delete department");
+        }
+    };
+
     const employeeCounts = useMemo(() => {
         const counts = {};
         (employees || []).forEach((emp) => {
@@ -138,17 +152,28 @@ export default function Departments() {
                                     </span>
                                 </td>
                                 <td>
-                                    <Button
-                                        variant="secondary"
-                                        size="sm"
-                                        onClick={() => {
-                                            setEditingDept(dept);
-                                            setNewDept({ name: dept.name || "", location: dept.location || "" });
-                                            setShowModal(true);
-                                        }}
-                                    >
-                                        Edit
-                                    </Button>
+                                    <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            iconOnly
+                                            icon={<FaPen />}
+                                            title="Edit"
+                                            onClick={() => {
+                                                setEditingDept(dept);
+                                                setNewDept({ name: dept.name || "", location: dept.location || "" });
+                                                setShowModal(true);
+                                            }}
+                                        />
+                                        <Button
+                                            variant="danger"
+                                            size="sm"
+                                            iconOnly
+                                            icon={<FaTrash />}
+                                            title="Delete"
+                                            onClick={() => setDeleteConfirm({ open: true, item: dept })}
+                                        />
+                                    </div>
                                 </td>
                             </tr>
                         ))}
@@ -162,6 +187,16 @@ export default function Departments() {
                     </tbody>
                 </table>
             </div>
+
+            <ConfirmDialog
+                open={deleteConfirm.open}
+                title="Delete Department"
+                message={`Are you sure you want to delete "${deleteConfirm.item?.name || ""}"? This action cannot be undone.`}
+                confirmText="Delete"
+                variant="danger"
+                onConfirm={confirmDelete}
+                onCancel={() => setDeleteConfirm({ open: false, item: null })}
+            />
 
             {/* MODAL */}
             {showModal && (

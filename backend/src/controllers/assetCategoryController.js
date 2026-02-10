@@ -34,6 +34,20 @@ exports.createAssetCategory = async (req, res) => {
     }
 };
 
+exports.updateAssetCategory = async (req, res) => {
+    try {
+        const AssetCategory = await getAssetCategoryModel(req);
+        const category = await AssetCategory.findByPk(req.params.id);
+        if (!category) {
+            return res.status(404).json({ error: "Asset category not found" });
+        }
+        await category.update(req.body);
+        res.json(category);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 exports.deleteAssetCategory = async (req, res) => {
     try {
         const AssetCategory = await getAssetCategoryModel(req);

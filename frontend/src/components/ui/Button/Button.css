@@ -119,3 +119,25 @@
   align-items: center;
   font-size: 18px;
 }
+
+/* ============== ICON-ONLY ============== */
+.btn-icon-only {
+  padding: 0;
+  aspect-ratio: 1;
+}
+
+.btn-icon-only .btn-icon {
+  font-size: 14px;
+}
+
+.btn-icon-only.btn-sm {
+  width: 32px;
+}
+
+.btn-icon-only.btn-md {
+  width: var(--button-height);
+}
+
+.btn-icon-only.btn-lg {
+  width: 44px;
+}

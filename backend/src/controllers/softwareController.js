@@ -103,6 +103,54 @@ exports.updateSoftwareLicense = async (req, res) => {
   }
 };
 
+exports.deleteSoftwareLicense = async (req, res) => {
+  try {
+    const { SoftwareLicense, SoftwareAssignment } = await getModels(req);
+    const license = await SoftwareLicense.findByPk(req.params.id);
+    if (!license) {
+      return res.status(404).json({ error: "Software license not found." });
+    }
+    // Remove all assignments linked to this license
+    await SoftwareAssignment.destroy({ where: { softwareLicenseId: license.id } });
+    const product = license.product;
+    const vendor = license.vendor;
+    await license.destroy();
+    await logAudit(
+      req,
+      "Software license deleted",
+      `Product: ${product || "Unknown"}, Vendor: ${vendor || "Unknown"}`
+    );
+    res.json({ message: "License and associated assignments deleted." });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+exports.deleteSoftwareAssignment = async (req, res) => {
+  try {
+    const { SoftwareLicense, SoftwareAssignment } = await getModels(req);
+    const assignment = await SoftwareAssignment.findByPk(req.params.id);
+    if (!assignment) {
+      return res.status(404).json({ error: "Software assignment not found." });
+    }
+    // Decrement seatsUsed on the associated license
+    const license = await SoftwareLicense.findByPk(assignment.softwareLicenseId);
+    if (license) {
+      await license.update({ seatsUsed: Math.max(0, (license.seatsUsed || 0) - 1) });
+    }
+    const employeeId = assignment.employeeId;
+    await assignment.destroy();
+    await logAudit(
+      req,
+      "Software assignment deleted",
+      `Employee: ${employeeId || "Unknown"}`
+    );
+    res.json({ message: "Assignment deleted." });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 exports.updateSoftwareAssignment = async (req, res) => {
   try {
     const { SoftwareLicense, SoftwareAssignment } = await getModels(req);

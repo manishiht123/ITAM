@@ -64,6 +64,12 @@ const api = {
             body: JSON.stringify(location),
         }));
     },
+    deleteLocationCommon: async (id) => {
+        return handleResponse(await fetch(`${BASE_URL}/locations/${id}`, {
+            method: "DELETE",
+            headers: buildHeaders()
+        }));
+    },
 
     // --- DEPARTMENTS ---
     getDepartments: async (entityCode) => handleResponse(await fetch(`${BASE_URL}/departments`, {
@@ -91,6 +97,12 @@ const api = {
             method: "PUT",
             headers: buildHeaders(null, { "Content-Type": "application/json" }),
             body: JSON.stringify(department),
+        }));
+    },
+    deleteDepartmentCommon: async (id) => {
+        return handleResponse(await fetch(`${BASE_URL}/departments/${id}`, {
+            method: "DELETE",
+            headers: buildHeaders()
         }));
     },
 
@@ -160,6 +172,19 @@ const api = {
             body: JSON.stringify(category),
         }));
     },
+    updateAssetCategoryCommon: async (id, category) => {
+        return handleResponse(await fetch(`${BASE_URL}/asset-categories/${id}`, {
+            method: "PUT",
+            headers: buildHeaders(null, { "Content-Type": "application/json" }),
+            body: JSON.stringify(category),
+        }));
+    },
+    deleteAssetCategoryCommon: async (id) => {
+        return handleResponse(await fetch(`${BASE_URL}/asset-categories/${id}`, {
+            method: "DELETE",
+            headers: buildHeaders()
+        }));
+    },
 
     // --- USERS ---
     getUsers: async () => handleResponse(await fetch(`${BASE_URL}/users`, {
@@ -221,6 +246,12 @@ const api = {
             method: "PUT",
             headers: buildHeaders(entityCode, { "Content-Type": "application/json" }),
             body: JSON.stringify(updates),
+        }));
+    },
+    deleteEmployee: async (id, entityCode) => {
+        return handleResponse(await fetch(`${BASE_URL}/employees/${id}`, {
+            method: "DELETE",
+            headers: buildHeaders(entityCode)
         }));
     },
 
@@ -344,6 +375,18 @@ const api = {
             method: "PUT",
             headers: buildHeaders(entityCode, { "Content-Type": "application/json" }),
             body: JSON.stringify(payload),
+        }));
+    },
+    deleteSoftwareLicense: async (id, entityCode) => {
+        return handleResponse(await fetch(`${BASE_URL}/software/licenses/${id}`, {
+            method: "DELETE",
+            headers: buildHeaders(entityCode)
+        }));
+    },
+    deleteSoftwareAssignment: async (id, entityCode) => {
+        return handleResponse(await fetch(`${BASE_URL}/software/assignments/${id}`, {
+            method: "DELETE",
+            headers: buildHeaders(entityCode)
         }));
     },
 

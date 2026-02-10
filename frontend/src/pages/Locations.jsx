@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import "./Assets.css";
 import api from "../services/api";
-import { Button, LoadingOverlay } from "../components/ui";
+import { Button, LoadingOverlay, ConfirmDialog } from "../components/ui";
+import { FaPen, FaTrash } from "react-icons/fa";
 import { useToast } from "../context/ToastContext";
 
 export default function Locations() {
@@ -16,6 +17,7 @@ export default function Locations() {
         country: "",
         address: "",
     });
+    const [deleteConfirm, setDeleteConfirm] = useState({ open: false, item: null });
 
     useEffect(() => {
         loadLocations();
@@ -61,6 +63,18 @@ export default function Locations() {
             setNewLocation({ city: "", country: "", address: "" });
         } catch (error) {
             toast.error(error.message || "Failed to save location");
+        }
+    };
+
+    const confirmDelete = async () => {
+        const { item } = deleteConfirm;
+        setDeleteConfirm({ open: false, item: null });
+        try {
+            await api.deleteLocationCommon(item.id);
+            setLocations(prev => prev.filter(l => l.id !== item.id));
+            toast.success(`Location "${item.city}" deleted successfully`);
+        } catch (error) {
+            toast.error(error?.message || "Failed to delete location");
         }
     };
 
@@ -112,21 +126,32 @@ export default function Locations() {
                                     </span>
                                 </td>
                                 <td>
-                                    <Button
-                                        variant="secondary"
-                                        size="sm"
-                                        onClick={() => {
-                                            setEditingLocation(loc);
-                                            setNewLocation({
-                                                city: loc.city || "",
-                                                country: loc.country || "",
-                                                address: loc.address || ""
-                                            });
-                                            setShowModal(true);
-                                        }}
-                                    >
-                                        Edit
-                                    </Button>
+                                    <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            iconOnly
+                                            icon={<FaPen />}
+                                            title="Edit"
+                                            onClick={() => {
+                                                setEditingLocation(loc);
+                                                setNewLocation({
+                                                    city: loc.city || "",
+                                                    country: loc.country || "",
+                                                    address: loc.address || ""
+                                                });
+                                                setShowModal(true);
+                                            }}
+                                        />
+                                        <Button
+                                            variant="danger"
+                                            size="sm"
+                                            iconOnly
+                                            icon={<FaTrash />}
+                                            title="Delete"
+                                            onClick={() => setDeleteConfirm({ open: true, item: loc })}
+                                        />
+                                    </div>
                                 </td>
                             </tr>
                         ))}
@@ -140,6 +165,16 @@ export default function Locations() {
                     </tbody>
                 </table>
             </div>
+
+            <ConfirmDialog
+                open={deleteConfirm.open}
+                title="Delete Location"
+                message={`Are you sure you want to delete "${deleteConfirm.item?.city || ""}"? This action cannot be undone.`}
+                confirmText="Delete"
+                variant="danger"
+                onConfirm={confirmDelete}
+                onCancel={() => setDeleteConfirm({ open: false, item: null })}
+            />
 
             {/* MODAL */}
             {showModal && (
