@@ -184,14 +184,15 @@
 
 .menu-item.active,
 .menu-item.active:hover {
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.18);
   color: #ffffff;
-  border-left: 3px solid #ffffff;
+  border-left-color: #ffffff;
   font-weight: var(--font-weight-semibold);
+  backdrop-filter: blur(4px);
 }
 
 .menu-item.active::before {
-  opacity: 1;
+  opacity: 0;
 }
 
 .menu-item svg {
@@ -235,6 +236,7 @@
     max-height: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     max-height: 600px;
@@ -336,8 +338,11 @@
   background: rgba(34, 156, 232, 0.18);
 }
 
-[data-theme="dark"] .menu-item.active {
-  box-shadow: 0 6px 16px rgba(34, 156, 232, 0.4);
+[data-theme="dark"] .menu-item.active,
+[data-theme="dark"] .menu-item.active:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-left-color: #60b8f0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 [data-theme="dark"] .submenu a:hover {
@@ -378,4 +383,42 @@
   .sidebar.collapsed {
     transform: translateX(-100%);
   }
+}
+
+/* ============================
+   AI INTELLIGENCE MENU ITEM
+   ============================ */
+
+.ai-menu-item {
+  margin-top: var(--space-sm);
+  position: relative;
+}
+
+.ai-menu-item::after {
+  content: 'AI';
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--brand-gradient);
+  color: white;
+  letter-spacing: 0.06em;
+}
+
+.sidebar.collapsed .ai-menu-item::after {
+  display: none;
+}
+
+.ai-menu-item.active,
+.ai-menu-item.active:hover {
+  background: rgba(22, 169, 232, 0.2) !important;
+  border-left-color: var(--primary) !important;
+}
+
+.ai-menu-item:hover {
+  background: rgba(22, 169, 232, 0.12) !important;
 }

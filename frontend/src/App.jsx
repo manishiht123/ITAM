@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { LoadingOverlay } from "./components/ui";
+import RoleGuard from "./components/RoleGuard";
 
 // Eager load critical components (needed immediately)
 import Layout from "./components/Layout";
@@ -37,6 +38,7 @@ const FinancialSettings = lazy(() => import("./pages/settings/FinancialSettings"
 const SystemPreferences = lazy(() => import("./pages/settings/SystemPreferences"));
 const PasswordPolicy = lazy(() => import("./pages/settings/PasswordPolicy"));
 const Reports = lazy(() => import("./pages/settings/Reports"));
+const AIIntelligence = lazy(() => import("./pages/AIIntelligence"));
 
 // Loading fallback component
 const PageLoader = () => <LoadingOverlay visible={true} message="Loading page..." />;
@@ -51,7 +53,7 @@ export default function App() {
       <Route path="/" element={<Layout />}>
         <Route index element={<Navigate to="/dashboard" />} />
 
-        {/* Main Routes */}
+        {/* Dashboard — available to all */}
         <Route
           path="dashboard"
           element={
@@ -60,11 +62,13 @@ export default function App() {
             </Suspense>
           }
         />
+
+        {/* Asset routes — requires assets access */}
         <Route
           path="/assets"
           element={
             <Suspense fallback={<PageLoader />}>
-              <Assets />
+              <RoleGuard module="assets"><Assets /></RoleGuard>
             </Suspense>
           }
         />
@@ -72,7 +76,7 @@ export default function App() {
           path="/assets/add"
           element={
             <Suspense fallback={<PageLoader />}>
-              <AddAsset />
+              <RoleGuard module="assets"><AddAsset /></RoleGuard>
             </Suspense>
           }
         />
@@ -80,7 +84,7 @@ export default function App() {
           path="/assets/edit/:id"
           element={
             <Suspense fallback={<PageLoader />}>
-              <EditAsset />
+              <RoleGuard module="assets"><EditAsset /></RoleGuard>
             </Suspense>
           }
         />
@@ -88,7 +92,7 @@ export default function App() {
           path="/assets/allocate"
           element={
             <Suspense fallback={<PageLoader />}>
-              <AssetAllocation />
+              <RoleGuard module="assets"><AssetAllocation /></RoleGuard>
             </Suspense>
           }
         />
@@ -96,26 +100,42 @@ export default function App() {
           path="/assets/handover"
           element={
             <Suspense fallback={<PageLoader />}>
-              <AssetHandover />
+              <RoleGuard module="assets"><AssetHandover /></RoleGuard>
             </Suspense>
           }
         />
+
+        {/* Employees — requires employees access */}
         <Route
           path="employees"
           element={
             <Suspense fallback={<PageLoader />}>
-              <Employees />
+              <RoleGuard module="employees"><Employees /></RoleGuard>
             </Suspense>
           }
         />
+
+        {/* Software — requires assets access */}
         <Route
           path="software"
           element={
             <Suspense fallback={<PageLoader />}>
-              <Software />
+              <RoleGuard module="assets"><Software /></RoleGuard>
             </Suspense>
           }
         />
+
+        {/* AI Intelligence — available to all */}
+        <Route
+          path="ai-intelligence"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <AIIntelligence />
+            </Suspense>
+          }
+        />
+
+        {/* Profile — available to all */}
         <Route
           path="profile"
           element={
@@ -133,12 +153,12 @@ export default function App() {
           }
         />
 
-        {/* Organization Pages */}
+        {/* Organization Pages — requires assets access */}
         <Route
           path="locations"
           element={
             <Suspense fallback={<PageLoader />}>
-              <Locations />
+              <RoleGuard module="assets"><Locations /></RoleGuard>
             </Suspense>
           }
         />
@@ -146,7 +166,7 @@ export default function App() {
           path="departments"
           element={
             <Suspense fallback={<PageLoader />}>
-              <Departments />
+              <RoleGuard module="assets"><Departments /></RoleGuard>
             </Suspense>
           }
         />
@@ -154,7 +174,7 @@ export default function App() {
           path="asset-categories"
           element={
             <Suspense fallback={<PageLoader />}>
-              <AssetCategories />
+              <RoleGuard module="assets"><AssetCategories /></RoleGuard>
             </Suspense>
           }
         />
@@ -162,17 +182,17 @@ export default function App() {
           path="asset-categories/add"
           element={
             <Suspense fallback={<PageLoader />}>
-              <AddAssetCategory />
+              <RoleGuard module="assets"><AddAssetCategory /></RoleGuard>
             </Suspense>
           }
         />
 
-        {/* Settings Routes */}
+        {/* Settings Routes — admin only */}
         <Route
           path="settings/entities"
           element={
             <Suspense fallback={<PageLoader />}>
-              <OrganizationEntities />
+              <RoleGuard adminOnly><OrganizationEntities /></RoleGuard>
             </Suspense>
           }
         />
@@ -180,7 +200,7 @@ export default function App() {
           path="settings/users"
           element={
             <Suspense fallback={<PageLoader />}>
-              <UsersRoles />
+              <RoleGuard adminOnly><UsersRoles /></RoleGuard>
             </Suspense>
           }
         />
@@ -188,7 +208,7 @@ export default function App() {
           path="settings/asset-config"
           element={
             <Suspense fallback={<PageLoader />}>
-              <AssetConfiguration />
+              <RoleGuard adminOnly><AssetConfiguration /></RoleGuard>
             </Suspense>
           }
         />
@@ -196,7 +216,7 @@ export default function App() {
           path="settings/licenses"
           element={
             <Suspense fallback={<PageLoader />}>
-              <LicensesCompliance />
+              <RoleGuard adminOnly><LicensesCompliance /></RoleGuard>
             </Suspense>
           }
         />
@@ -204,7 +224,7 @@ export default function App() {
           path="settings/assignments"
           element={
             <Suspense fallback={<PageLoader />}>
-              <AssignmentsOwnership />
+              <RoleGuard adminOnly><AssignmentsOwnership /></RoleGuard>
             </Suspense>
           }
         />
@@ -212,7 +232,7 @@ export default function App() {
           path="settings/notifications"
           element={
             <Suspense fallback={<PageLoader />}>
-              <Notifications />
+              <RoleGuard adminOnly><Notifications /></RoleGuard>
             </Suspense>
           }
         />
@@ -220,7 +240,7 @@ export default function App() {
           path="settings/security"
           element={
             <Suspense fallback={<PageLoader />}>
-              <SecurityAudit />
+              <RoleGuard adminOnly><SecurityAudit /></RoleGuard>
             </Suspense>
           }
         />
@@ -228,7 +248,7 @@ export default function App() {
           path="settings/finance"
           element={
             <Suspense fallback={<PageLoader />}>
-              <FinancialSettings />
+              <RoleGuard adminOnly><FinancialSettings /></RoleGuard>
             </Suspense>
           }
         />
@@ -236,7 +256,7 @@ export default function App() {
           path="settings/reports"
           element={
             <Suspense fallback={<PageLoader />}>
-              <Reports />
+              <RoleGuard module="reports"><Reports /></RoleGuard>
             </Suspense>
           }
         />
@@ -244,7 +264,7 @@ export default function App() {
           path="settings/system"
           element={
             <Suspense fallback={<PageLoader />}>
-              <SystemPreferences />
+              <RoleGuard adminOnly><SystemPreferences /></RoleGuard>
             </Suspense>
           }
         />
@@ -252,7 +272,7 @@ export default function App() {
           path="settings/password"
           element={
             <Suspense fallback={<PageLoader />}>
-              <PasswordPolicy />
+              <RoleGuard adminOnly><PasswordPolicy /></RoleGuard>
             </Suspense>
           }
         />

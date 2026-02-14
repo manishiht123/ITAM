@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import Sidebar from "./sidebar/Sidebar";
 import Topbar from "./topbar/Topbar";
+import AISmartSearch from "./ai/AISmartSearch";
 
 export default function Layout() {
   const navigate = useNavigate();
@@ -21,6 +22,9 @@ export default function Layout() {
       <main className="app-main">
         <Outlet />
       </main>
+
+      {/* Global AI Chat Widget */}
+      <AISmartSearch />
     </>
   );
 }

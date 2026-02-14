@@ -17,9 +17,16 @@ import {
 import "./Reports.css";
 
 export default function Reports() {
-  const { entity, setEntity } = useEntity();
+  const { entity } = useEntity();
   const toast = useToast();
   const [entities, setEntities] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [reportData, setReportData] = useState({
+    assets: [],
+    licenses: [],
+    assignments: [],
+    activity: []
+  });
   const [openCustom, setOpenCustom] = useState(false);
   const [customReport, setCustomReport] = useState({
     name: "Custom Report",
@@ -40,13 +47,6 @@ export default function Reports() {
     loadEntities();
   }, []);
 
-  const kpis = [
-    { label: "Assets Tracked", value: "4,820" },
-    { label: "Compliance Score", value: "92%" },
-    { label: "Licenses Overused", value: "13" },
-    { label: "Upcoming Renewals", value: "28" }
-  ];
-
   const templates = [
     {
       title: "Asset Inventory Summary",
@@ -62,17 +62,38 @@ export default function Reports() {
     }
   ];
 
-  const recentExports = [
-    { id: 1, name: "Monthly Asset Inventory", owner: "Admin", date: "2026-01-22", status: "Completed" },
-    { id: 2, name: "License Compliance Q4", owner: "IT Ops", date: "2026-01-15", status: "Completed" },
-    { id: 3, name: "Upcoming Renewals", owner: "Audit", date: "2026-01-10", status: "Scheduled" }
-  ];
-
   const selectedEntity = useMemo(() => {
     return entity === "ALL"
       ? null
       : entities.find((item) => item.code === entity) || null;
   }, [entity, entities]);
+
+  const normalizeCompliance = (row) => {
+    const owned = Number(row?.seatsOwned || 0);
+    const used = Number(row?.seatsUsed || 0);
+    if (owned <= 0) return used > 0 ? "Critical" : "Good";
+    if (used > owned) return "Critical";
+    if (used / owned >= 0.9) return "Watch";
+    return "Good";
+  };
+
+  const isUpcomingRenewal = (dateValue, days = 30) => {
+    if (!dateValue) return false;
+    const dt = new Date(dateValue);
+    if (Number.isNaN(dt.getTime())) return false;
+    const today = new Date();
+    const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const end = new Date(start);
+    end.setDate(end.getDate() + days);
+    return dt >= start && dt <= end;
+  };
+
+  const formatDateTime = (value) => {
+    if (!value) return "-";
+    const dt = new Date(value);
+    if (Number.isNaN(dt.getTime())) return String(value);
+    return dt.toLocaleString();
+  };
 
   const downloadCsv = (rows, filename) => {
     if (!rows.length) {
@@ -117,13 +138,19 @@ export default function Reports() {
 
   const loadSoftwareData = async () => {
     if (entity === "ALL") {
-      const codes = (entities || []).map((e) => e.code).filter(Boolean);
+      let scopedEntities = entities || [];
+      if (!scopedEntities.length) {
+        scopedEntities = await api.getEntities().catch(() => []);
+      }
+
+      const codes = scopedEntities.map((e) => e.code).filter(Boolean);
       const results = await Promise.allSettled(
         codes.map(async (code) => ({
           code,
           data: await api.getSoftwareInventory(code)
         }))
       );
+
       const licenses = results.flatMap((r) =>
         r.status === "fulfilled"
           ? (r.value?.data?.licenses || []).map((lic) => ({
@@ -132,6 +159,7 @@ export default function Reports() {
             }))
           : []
       );
+
       const assignments = results.flatMap((r) =>
         r.status === "fulfilled"
           ? (r.value?.data?.assignments || []).map((assign) => ({
@@ -140,10 +168,90 @@ export default function Reports() {
             }))
           : []
       );
-      return { licenses, assignments };
+
+      const defaultData = await api.getSoftwareInventory(null).catch(() => null);
+      return {
+        licenses: [...licenses, ...(defaultData?.licenses || [])],
+        assignments: [...assignments, ...(defaultData?.assignments || [])]
+      };
     }
+
     return api.getSoftwareInventory(entity);
   };
+
+  useEffect(() => {
+    let active = true;
+
+    const loadLiveData = async () => {
+      setLoading(true);
+      try {
+        const [assetsRes, softwareRes, auditRes] = await Promise.all([
+          api.getAssets(entity === "ALL" ? null : entity).catch(() => []),
+          loadSoftwareData().catch(() => ({ licenses: [], assignments: [] })),
+          api.getAuditLogs().catch(() => [])
+        ]);
+
+        if (!active) return;
+
+        setReportData({
+          assets: Array.isArray(assetsRes) ? assetsRes : [],
+          licenses: softwareRes?.licenses || [],
+          assignments: softwareRes?.assignments || [],
+          activity: Array.isArray(auditRes) ? auditRes : []
+        });
+      } catch (err) {
+        if (active) {
+          toast.error("Failed to load live report data.");
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+
+    loadLiveData();
+    return () => {
+      active = false;
+    };
+  }, [entity, entities, toast]);
+
+  const kpis = useMemo(() => {
+    const licenses = reportData.licenses || [];
+    const overused = licenses.filter((row) => normalizeCompliance(row) === "Critical").length;
+    const totalLicenses = licenses.length || 1;
+    const compliance = Math.round(((totalLicenses - overused) / totalLicenses) * 100);
+    const upcomingRenewals = licenses.filter((row) => isUpcomingRenewal(row.renewalDate, 30)).length;
+
+    return [
+      { label: "Assets Tracked", value: reportData.assets.length },
+      { label: "Compliance Score", value: `${compliance}%` },
+      { label: "Licenses Overused", value: overused },
+      { label: "Upcoming Renewals", value: upcomingRenewals }
+    ];
+  }, [reportData.assets, reportData.licenses]);
+
+  const recentActivity = useMemo(() => {
+    return (reportData.activity || []).slice(0, 8).map((row) => ({
+      name: row.action || "System activity",
+      owner: row.user || "System",
+      date: formatDateTime(row.timestamp),
+      status: /fail|error|denied/i.test(String(row.action || "")) ? "Attention" : "Completed"
+    }));
+  }, [reportData.activity]);
+
+  const recentExportsColumns = [
+    { key: "name", label: "Activity" },
+    { key: "owner", label: "User" },
+    { key: "date", label: "Timestamp" },
+    {
+      key: "status",
+      label: "Status",
+      render: (value) => (
+        <Badge variant={value === "Attention" ? "warning" : "success"}>
+          {value}
+        </Badge>
+      )
+    }
+  ];
 
   const exportLicenseReport = async () => {
     const data = await loadSoftwareData();
@@ -174,21 +282,6 @@ export default function Reports() {
     }));
     downloadCsv(rows, "assignment_report.csv");
   };
-
-  const recentExportsColumns = [
-    { key: 'name', label: 'Report' },
-    { key: 'owner', label: 'Owner' },
-    { key: 'date', label: 'Date' },
-    {
-      key: 'status',
-      label: 'Status',
-      render: (value) => (
-        <Badge variant={value === "Scheduled" ? "warning" : "success"}>
-          {value}
-        </Badge>
-      )
-    }
-  ];
 
   return (
     <div className="reports-page">
@@ -236,6 +329,7 @@ export default function Reports() {
                 label={kpi.label}
                 value={kpi.value}
                 size="sm"
+                loading={loading}
               />
             ))}
           </div>
@@ -272,57 +366,15 @@ export default function Reports() {
           </Card.Body>
         </Card>
 
-        <Card>
-          <Card.Header>
-            <Card.Title>Filters</Card.Title>
-          </Card.Header>
-          <Card.Body>
-            <div className="filters">
-              <Input placeholder="Search reports..." fullWidth />
-              <Select
-                value={entity}
-                onChange={(e) => setEntity(e.target.value)}
-                options={[
-                  { value: "ALL", label: "All entities" },
-                  ...entities.map((ent) => ({
-                    value: ent.code,
-                    label: `${ent.name} (${ent.code})`
-                  }))
-                ]}
-                fullWidth
-              />
-              <Select
-                value={customReport.range}
-                onChange={(e) => setCustomReport((prev) => ({ ...prev, range: e.target.value }))}
-                options={[
-                  { value: "30", label: "Last 30 days" },
-                  { value: "7", label: "Last 7 days" },
-                  { value: "90", label: "Quarter to date" },
-                  { value: "365", label: "Year to date" }
-                ]}
-                fullWidth
-              />
-              <Select
-                options={[
-                  { value: "all", label: "All types" },
-                  { value: "inventory", label: "Inventory" },
-                  { value: "compliance", label: "Compliance" },
-                  { value: "audit", label: "Audit" }
-                ]}
-                fullWidth
-              />
-            </div>
-          </Card.Body>
-        </Card>
-
         <Card padding="none">
           <Card.Header>
-            <Card.Title>Recent Exports</Card.Title>
+            <Card.Title>Recent Activity</Card.Title>
           </Card.Header>
           <Table
-            data={recentExports}
+            data={recentActivity}
             columns={recentExportsColumns}
-            emptyMessage="No recent exports."
+            loading={loading}
+            emptyMessage="No recent activity."
           />
         </Card>
       </div>

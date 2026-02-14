@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   FaTachometerAlt,
@@ -10,31 +10,34 @@ import {
   FaSignOutAlt,
   FaBars,
   FaBuilding,
-  FaLayerGroup
+  FaLayerGroup,
+  FaRobot
 } from "react-icons/fa";
 
 import "../../styles/sidebar.css";
 import { FaLocationPin } from "react-icons/fa6";
+import { useAuth } from "../../context/AuthContext";
 
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const navigate = useNavigate();
-  const userName = useMemo(() => {
-    try {
-      const stored = localStorage.getItem("authUser");
-      if (!stored) return "User";
-      const user = JSON.parse(stored);
-      return user.name || user.email || "User";
-    } catch (err) {
-      return "User";
-    }
-  }, []);
+  const { user, isAdmin, canAccess } = useAuth();
+
+  const userName = user?.name || user?.email || "User";
+  const roleLabel = isAdmin
+    ? "Administrator"
+    : (user?.role || "User").charAt(0).toUpperCase() + (user?.role || "user").slice(1);
 
   const handleLogout = () => {
     localStorage.clear();
     navigate("/login");
   };
+
+  const showAssets = isAdmin || canAccess("assets");
+  const showEmployees = isAdmin || canAccess("employees");
+  const showReports = isAdmin || canAccess("reports");
+  const showSettings = isAdmin;
 
   return (
     <aside className={`sidebar ${collapsed ? "collapsed" : ""}`}>
@@ -59,7 +62,7 @@ export default function Sidebar() {
           </span>
           <div className="sidebar-user-details">
             <span className="sidebar-user-name">{userName}</span>
-            <span className="sidebar-user-role">Administrator</span>
+            <span className="sidebar-user-role">{roleLabel}</span>
           </div>
         </div>
       )}
@@ -71,60 +74,88 @@ export default function Sidebar() {
           {!collapsed && <span>Dashboard</span>}
         </NavLink>
 
-        <NavLink to="/assets" className="menu-item">
-          <FaBoxOpen />
-          {!collapsed && <span>Assets</span>}
+        {showAssets && (
+          <NavLink to="/assets" className="menu-item">
+            <FaBoxOpen />
+            {!collapsed && <span>Assets</span>}
+          </NavLink>
+        )}
+
+        {showAssets && (
+          <NavLink to="/software" className="menu-item">
+            <FaLayerGroup />
+            {!collapsed && <span>Software</span>}
+          </NavLink>
+        )}
+
+        {showEmployees && (
+          <NavLink to="/employees" className="menu-item">
+            <FaUsers />
+            {!collapsed && <span>Employees</span>}
+          </NavLink>
+        )}
+
+        {showAssets && (
+          <NavLink to="/departments" className="menu-item">
+            <FaBuilding />
+            {!collapsed && <span>Department</span>}
+          </NavLink>
+        )}
+
+        {showAssets && (
+          <NavLink to="/locations" className="menu-item">
+            <FaLocationPin />
+            {!collapsed && <span>Locations</span>}
+          </NavLink>
+        )}
+
+        {showAssets && (
+          <NavLink to="/asset-categories" className="menu-item">
+            <FaTags />
+            {!collapsed && <span>Asset Category</span>}
+          </NavLink>
+        )}
+
+        <NavLink to="/ai-intelligence" className="menu-item ai-menu-item">
+          <FaRobot />
+          {!collapsed && <span>AI Intelligence</span>}
         </NavLink>
 
-        <NavLink to="/software" className="menu-item">
-          <FaLayerGroup />
-          {!collapsed && <span>Software</span>}
-        </NavLink>
+        {/* ========== SETTINGS (admin only) ========== */}
+        {showSettings && (
+          <>
+            <div
+              className={`menu-item settings ${settingsOpen ? "open" : ""}`}
+              onClick={() => setSettingsOpen(!settingsOpen)}
+            >
+              <FaCog />
+              {!collapsed && <span>Settings</span>}
+              {!collapsed && <FaChevronDown className="chevron" />}
+            </div>
 
-        <NavLink to="/employees" className="menu-item">
-          <FaUsers />
-          {!collapsed && <span>Employees</span>}
-        </NavLink>
+            {!collapsed && settingsOpen && (
+              <div className="submenu">
+                <NavLink to="/settings/entities">Organization & Entities</NavLink>
+                <NavLink to="/settings/users">Users & Roles</NavLink>
+                <NavLink to="/settings/licenses">Licenses & Compliance</NavLink>
+                <NavLink to="/settings/assignments">Assignments & Ownership</NavLink>
+                <NavLink to="/settings/notifications">Notifications</NavLink>
+                <NavLink to="/settings/security">Security & Audit</NavLink>
+                <NavLink to="/settings/reports">Reports</NavLink>
+                <NavLink to="/settings/finance">Financial Settings</NavLink>
+                <NavLink to="/settings/system">System Preferences</NavLink>
+                <NavLink to="/settings/password">Password Policy</NavLink>
+              </div>
+            )}
+          </>
+        )}
 
-        <NavLink to="/departments" className="menu-item">
-          <FaBuilding />
-          {!collapsed && <span>Department</span>}
-        </NavLink>
-
-        <NavLink to="/locations" className="menu-item">
-          <FaLocationPin />
-          {!collapsed && <span>Locations</span>}
-        </NavLink>
-
-        <NavLink to="/asset-categories" className="menu-item">
-          <FaTags />
-          {!collapsed && <span>Asset Category</span>}
-        </NavLink>  
-
-        {/* ========== SETTINGS ========== */}
-        <div
-          className={`menu-item settings ${settingsOpen ? "open" : ""
-            }`}
-          onClick={() => setSettingsOpen(!settingsOpen)}
-        >
-          <FaCog />
-          {!collapsed && <span>Settings</span>}
-          {!collapsed && <FaChevronDown className="chevron" />}
-        </div>
-
-        {!collapsed && settingsOpen && (
-          <div className="submenu">
-            <NavLink to="/settings/entities">Organization & Entities</NavLink>
-            <NavLink to="/settings/users">Users & Roles</NavLink>
-            <NavLink to="/settings/licenses">Licenses & Compliance</NavLink>
-            <NavLink to="/settings/assignments">Assignments & Ownership</NavLink>
-            <NavLink to="/settings/notifications">Notifications</NavLink>
-            <NavLink to="/settings/security">Security & Audit</NavLink>
-            <NavLink to="/settings/reports">Reports</NavLink>
-            <NavLink to="/settings/finance">Financial Settings</NavLink>
-            <NavLink to="/settings/system">System Preferences</NavLink>
-            <NavLink to="/settings/password">Password Policy</NavLink>
-          </div>
+        {/* Reports link for managers/auditors (non-admin) */}
+        {!isAdmin && showReports && (
+          <NavLink to="/settings/reports" className="menu-item">
+            <FaCog />
+            {!collapsed && <span>Reports</span>}
+          </NavLink>
         )}
       </nav>
 

@@ -42,7 +42,8 @@ const getAssetModel = async (req) => {
 const logAudit = async (req, action, details = "") => {
     try {
         const user = req.user?.email || req.user?.name || "System";
-        const ip = req.headers["x-forwarded-for"] || req.ip || req.connection?.remoteAddress;
+        const rawIp = req.headers["x-forwarded-for"] || req.ip || req.connection?.remoteAddress;
+        const ip = rawIp ? rawIp.replace(/^::ffff:/, "") : rawIp;
         await AuditLog.create({
             user,
             action,

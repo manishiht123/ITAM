@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import api from "../../services/api";
 import { useToast } from "../../context/ToastContext";
-import { Button } from "../../components/ui";
+import { Button, LoadingOverlay } from "../../components/ui";
 import "./PasswordPolicy.css";
 
 export default function PasswordPolicy() {
   const toast = useToast();
+  const [loading, setLoading] = useState(true);
   const [policy, setPolicy] = useState({
     minLength: 10,
     requireUpper: true,
@@ -16,6 +18,56 @@ export default function PasswordPolicy() {
     lockoutAttempts: 5
   });
 
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const prefs = await api.getSystemPreferences();
+        setPolicy((prev) => ({
+          ...prev,
+          minLength: prefs.passwordMinLength ?? prev.minLength,
+          requireUpper: prefs.passwordRequireUpper ?? prev.requireUpper,
+          requireLower: prefs.passwordRequireLower ?? prev.requireLower,
+          requireNumber: prefs.passwordRequireNumber ?? prev.requireNumber,
+          requireSpecial: prefs.passwordRequireSpecial ?? prev.requireSpecial,
+          expiryDays: prefs.passwordExpiryDays ?? prev.expiryDays,
+          reuseLimit: prefs.passwordReuseLimit ?? prev.reuseLimit,
+          lockoutAttempts: prefs.passwordLockoutAttempts ?? prev.lockoutAttempts
+        }));
+      } catch {
+        // use defaults
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  const handleSave = async () => {
+    try {
+      await api.updateSystemPreferences({
+        passwordMinLength: policy.minLength,
+        passwordRequireUpper: policy.requireUpper,
+        passwordRequireLower: policy.requireLower,
+        passwordRequireNumber: policy.requireNumber,
+        passwordRequireSpecial: policy.requireSpecial,
+        passwordExpiryDays: policy.expiryDays,
+        passwordReuseLimit: policy.reuseLimit,
+        passwordLockoutAttempts: policy.lockoutAttempts
+      });
+      toast.success("Password policy saved.");
+    } catch (err) {
+      toast.error(err.message || "Failed to save password policy.");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="password-page">
+        <LoadingOverlay visible message="Loading password policy..." />
+      </div>
+    );
+  }
+
   return (
     <div className="password-page">
       <div className="password-header">
@@ -24,13 +76,7 @@ export default function PasswordPolicy() {
           <p>Define credential complexity, rotation, and lockout controls.</p>
         </div>
         <div className="actions">
-          <Button
-            variant="primary"
-            onClick={() => {
-              localStorage.setItem("passwordPolicy", JSON.stringify(policy));
-              toast.success("Password policy saved.");
-            }}
-          >
+          <Button variant="primary" onClick={handleSave}>
             Save Policy
           </Button>
         </div>

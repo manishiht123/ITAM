@@ -15,6 +15,7 @@ const EmailSettings = require("./models/EmailSettings");
 const NotificationSettings = require("./models/NotificationSettings");
 const SystemPreference = require("./models/SystemPreference");
 const Role = require("./models/Role");
+const AlertRule = require("./models/AlertRule");
 require("./models/Entity");
 require("./models/Organization");
 const bcrypt = require("bcryptjs");
@@ -79,6 +80,7 @@ const startServer = async () => {
     await NotificationSettings.sync({ alter: true });
     await SystemPreference.sync({ alter: true });
     await Role.sync({ alter: true });
+    await AlertRule.sync({ alter: true });
     await ensureUserPermissionColumns();
     await ensureEntityLogoColumn();
     await ensureAssetStatusEnum(sequelize);

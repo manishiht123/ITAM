@@ -229,8 +229,28 @@ const buildDashboardData = (assets, employees, licenses, entityCode) => {
 export async function getDashboardData(entityCode) {
   const entityFilter = getEntityFilter(entityCode);
   if (!entityFilter) {
-    const entities = await api.getEntities();
-    const codes = (entities || []).map((e) => e.code).filter(Boolean);
+    // Determine which entities the current user can access
+    let codes = [];
+    try {
+      const stored = localStorage.getItem("authUser");
+      const user = stored ? JSON.parse(stored) : null;
+      const role = String(user?.role || "").trim().toLowerCase();
+      const isAdmin = ["admin", "superadmin", "administrator"].includes(role);
+      const allowed = Array.isArray(user?.allowedEntities) ? user.allowedEntities.filter(Boolean) : [];
+
+      if (isAdmin || !allowed.length) {
+        // Admin or no entity restrictions — fetch all entities
+        const entities = await api.getEntities();
+        codes = (entities || []).map((e) => e.code).filter(Boolean);
+      } else {
+        // Non-admin with specific entities — only fetch their allowed entities
+        codes = allowed;
+      }
+    } catch {
+      const entities = await api.getEntities();
+      codes = (entities || []).map((e) => e.code).filter(Boolean);
+    }
+
     const assetResults = await Promise.allSettled(
       codes.map((code) => api.getAssets(code))
     );

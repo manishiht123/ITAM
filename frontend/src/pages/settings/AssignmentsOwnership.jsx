@@ -29,14 +29,17 @@ export default function AssignmentsOwnership() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const stored = localStorage.getItem("assignmentsPolicy");
-    if (stored) {
+    const loadServerPrefs = async () => {
       try {
-        setPolicy(JSON.parse(stored));
-      } catch (err) {
-        // ignore corrupted storage
+        const prefs = await api.getSystemPreferences();
+        if (prefs.maxAssetsPerEmployee) {
+          setPolicy((prev) => ({ ...prev, maxAssetsPerUser: prefs.maxAssetsPerEmployee }));
+        }
+      } catch {
+        // use defaults
       }
-    }
+    };
+    loadServerPrefs();
   }, []);
 
   useEffect(() => {
@@ -83,8 +86,23 @@ export default function AssignmentsOwnership() {
           assigned.map((row) => row.user).filter((name) => name && name !== "—")
         );
 
+        let avgAge = "—";
+        if (assigned.length) {
+          const now = Date.now();
+          const ages = assigned
+            .map((row) => {
+              const d = new Date(row.assignedOn);
+              return isNaN(d.getTime()) ? null : (now - d.getTime()) / (1000 * 60 * 60 * 24 * 30);
+            })
+            .filter(Boolean);
+          if (ages.length) {
+            const avg = ages.reduce((s, v) => s + v, 0) / ages.length;
+            avgAge = `${avg.toFixed(1)} months`;
+          }
+        }
+
         setMetrics({
-          avgAge: assigned.length ? "8.7 months" : "—",
+          avgAge,
           assetsPerEmployee: uniqueEmployees.size
             ? (assigned.length / uniqueEmployees.size).toFixed(1)
             : "—",
@@ -121,9 +139,15 @@ export default function AssignmentsOwnership() {
         <div className="assignments-actions">
           <Button
             variant="primary"
-            onClick={() => {
-              localStorage.setItem("assignmentsPolicy", JSON.stringify(policy));
-              toast.success("Policy saved successfully");
+            onClick={async () => {
+              try {
+                await api.updateSystemPreferences({
+                  maxAssetsPerEmployee: policy.maxAssetsPerUser
+                });
+                toast.success("Policy saved successfully");
+              } catch (err) {
+                toast.error(err.message || "Failed to save policy");
+              }
             }}
           >
             Save Policy

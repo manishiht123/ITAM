@@ -10,7 +10,7 @@
   align-items: flex-end;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 18px;
+  margin-bottom: 24px;
 }
 
 .system-header h1 {
@@ -27,46 +27,64 @@
 
 .system-grid {
   display: grid;
-  gap: 18px;
+  gap: 20px;
 }
 
-.card-title {
-  font-size: 14px;
-  font-weight: 600;
+/* Card padding scoped to this page */
+.system-page .card {
+  padding: 20px 24px;
+}
+
+/* Section titles inside cards */
+.system-page .card-title {
+  font-size: 16px;
+  font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: 10px;
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
 }
 
-.form-grid {
+.system-page .form-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px 16px;
+  gap: 14px 18px;
 }
 
-.form-group {
+.system-page .form-group {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.form-group label {
+.system-page .form-group label {
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
-.form-group input,
-.form-group select {
-  height: 38px;
+.system-page .form-group input,
+.system-page .form-group select {
+  height: 40px;
   border-radius: 10px;
   border: 1px solid var(--border);
   padding: 6px 12px;
   font-size: 13px;
   background: var(--bg-elevated);
   color: var(--text-primary);
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.form-group textarea {
+.system-page .form-group input:focus,
+.system-page .form-group select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-soft);
+}
+
+.system-page .form-group textarea {
   border-radius: 10px;
   border: 1px solid var(--border);
   padding: 8px 12px;
@@ -74,34 +92,59 @@
   resize: vertical;
   background: var(--bg-elevated);
   color: var(--text-primary);
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.form-grid.two-col {
+.system-page .form-group textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-soft);
+}
+
+.system-page .form-grid.two-col {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.system-page .form-grid.three-col {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .card-hint {
-  margin-top: 10px;
+  margin-top: 12px;
   font-size: 12px;
   color: var(--text-muted);
 }
 
-.toggles {
+.system-page .toggles {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
 
-.toggle-row {
+.system-page .toggle-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  border: 1px dashed var(--border);
-  padding: 10px 12px;
+  border: 1px solid var(--border);
+  padding: 12px 14px;
   border-radius: 12px;
   font-size: 13px;
-  color: var(--text-secondary);
+  color: var(--text-primary);
+  background: var(--bg-muted);
+  transition: border-color 0.2s;
+  cursor: pointer;
+}
+
+.system-page .toggle-row:hover {
+  border-color: var(--primary);
+}
+
+.system-page .toggle-row input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+  cursor: pointer;
 }
 
 .actions {
@@ -110,38 +153,114 @@
   gap: 10px;
 }
 
-/* Dark mode polish */
-[data-theme="dark"] .system-header p,
-[data-theme="dark"] .card-hint,
-[data-theme="dark"] .toggle-row {
-  color: var(--text-secondary);
+/* Backup actions row */
+.backup-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
 }
 
-[data-theme="dark"] .form-group input,
-[data-theme="dark"] .form-group select,
-[data-theme="dark"] .form-group textarea {
+/* Backup history table */
+.backup-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.backup-table th,
+.backup-table td {
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+
+.backup-table thead tr {
+  background: var(--bg-muted);
+}
+
+.backup-table th {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.backup-table tbody tr {
+  transition: background 0.15s;
+}
+
+.backup-table tbody tr:hover {
+  background: var(--hover-overlay, rgba(0, 0, 0, 0.02));
+}
+
+.backup-type-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.backup-type-badge.database {
+  background: var(--primary-soft);
+  color: var(--primary-700);
+}
+
+.backup-type-badge.csv {
+  background: var(--feedback-success-bg);
+  color: var(--feedback-success-text);
+}
+
+.action-link {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.action-link.danger {
+  color: var(--danger, #ef4444);
+}
+
+.action-link.danger:hover {
+  text-decoration: underline;
+}
+
+/* Dark mode polish */
+[data-theme="dark"] .system-page .form-group input,
+[data-theme="dark"] .system-page .form-group select,
+[data-theme="dark"] .system-page .form-group textarea {
   background: var(--bg-muted);
   border-color: var(--border);
   color: var(--text-primary);
 }
 
-[data-theme="dark"] .form-group input::placeholder,
-[data-theme="dark"] .form-group textarea::placeholder {
+[data-theme="dark"] .system-page .form-group input::placeholder,
+[data-theme="dark"] .system-page .form-group textarea::placeholder {
   color: var(--text-muted);
 }
 
-[data-theme="dark"] .toggle-row {
+[data-theme="dark"] .system-page .toggle-row {
   border-color: var(--border);
+  background: var(--bg-elevated);
 }
 
 @media (max-width: 1100px) {
-  .form-grid {
+  .system-page .form-grid {
     grid-template-columns: 1fr;
   }
-  .form-grid.two-col {
+  .system-page .form-grid.two-col,
+  .system-page .form-grid.three-col {
     grid-template-columns: 1fr;
   }
-  .toggles {
+  .system-page .toggles {
     grid-template-columns: 1fr;
   }
 }

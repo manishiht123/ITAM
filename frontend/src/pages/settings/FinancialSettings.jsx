@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import api from "../../services/api";
 import { useToast } from "../../context/ToastContext";
-import { Button } from "../../components/ui";
+import { Button, LoadingOverlay } from "../../components/ui";
 import "./FinancialSettings.css";
 
 export default function FinancialSettings() {
   const toast = useToast();
+  const [loading, setLoading] = useState(true);
   const [settings, setSettings] = useState({
     fiscalYearStart: "April",
     currency: "INR",
@@ -14,6 +16,50 @@ export default function FinancialSettings() {
     capexThreshold: 50000
   });
 
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const prefs = await api.getSystemPreferences();
+        setSettings((prev) => ({
+          ...prev,
+          fiscalYearStart: prefs.fiscalYearStart || prev.fiscalYearStart,
+          depreciationMethod: prefs.depreciationMethod || prev.depreciationMethod,
+          defaultUsefulLife: prefs.defaultUsefulLife ?? prev.defaultUsefulLife,
+          salvageValuePercent: prefs.salvageValuePercent ?? prev.salvageValuePercent,
+          capexThreshold: prefs.capexThreshold ?? prev.capexThreshold
+        }));
+      } catch {
+        // use defaults
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  const handleSave = async () => {
+    try {
+      await api.updateSystemPreferences({
+        fiscalYearStart: settings.fiscalYearStart,
+        depreciationMethod: settings.depreciationMethod,
+        defaultUsefulLife: settings.defaultUsefulLife,
+        salvageValuePercent: settings.salvageValuePercent,
+        capexThreshold: settings.capexThreshold
+      });
+      toast.success("Financial settings saved.");
+    } catch (err) {
+      toast.error(err.message || "Failed to save financial settings.");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="finance-page">
+        <LoadingOverlay visible message="Loading financial settings..." />
+      </div>
+    );
+  }
+
   return (
     <div className="finance-page">
       <div className="finance-header">
@@ -22,13 +68,7 @@ export default function FinancialSettings() {
           <p>Configure depreciation, capitalization, and reporting preferences.</p>
         </div>
         <div className="actions">
-          <Button
-            variant="primary"
-            onClick={() => {
-              localStorage.setItem("financialSettings", JSON.stringify(settings));
-              toast.success("Financial settings saved.");
-            }}
-          >
+          <Button variant="primary" onClick={handleSave}>
             Save Settings
           </Button>
         </div>
@@ -54,17 +94,7 @@ export default function FinancialSettings() {
             </div>
             <div className="form-group">
               <label>Currency</label>
-              <select
-                value={settings.currency}
-                onChange={(e) =>
-                  setSettings((prev) => ({ ...prev, currency: e.target.value }))
-                }
-              >
-                <option>INR</option>
-                <option>USD</option>
-                <option>EUR</option>
-                <option>GBP</option>
-              </select>
+              <input type="text" value="INR" disabled />
             </div>
             <div className="form-group">
               <label>Depreciation Method</label>
@@ -111,24 +141,6 @@ export default function FinancialSettings() {
                   setSettings((prev) => ({ ...prev, capexThreshold: Number(e.target.value) }))
                 }
               />
-            </div>
-          </div>
-        </div>
-
-        <div className="card">
-          <div className="card-title">Budget Snapshot</div>
-          <div className="metrics-grid">
-            <div className="metric">
-              <span>Total Asset Capex (YTD)</span>
-              <strong>₹ 4.8 Cr</strong>
-            </div>
-            <div className="metric">
-              <span>Planned Refresh Budget</span>
-              <strong>₹ 1.2 Cr</strong>
-            </div>
-            <div className="metric">
-              <span>Variance</span>
-              <strong>+6%</strong>
             </div>
           </div>
         </div>

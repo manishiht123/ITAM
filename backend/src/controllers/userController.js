@@ -52,6 +52,29 @@ exports.createUser = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+exports.updateProfile = async (req, res) => {
+    try {
+        const userId = req.user?.id;
+        if (!userId) return res.status(401).json({ message: "Unauthorized" });
+        const { name, email, phone, title } = req.body;
+        const updates = {};
+        if (name !== undefined) updates.name = String(name);
+        if (email !== undefined) updates.email = String(email);
+        if (phone !== undefined) updates.phone = String(phone);
+        if (title !== undefined) updates.title = String(title);
+        await User.update(updates, { where: { id: userId } });
+        const updated = await User.findByPk(userId, { attributes: { exclude: ["password"] } });
+        const data = updated.toJSON();
+        res.json({
+            ...data,
+            allowedEntities: parseJsonField(data.allowedEntities, []),
+            entityPermissions: parseJsonField(data.entityPermissions, {})
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 exports.updateUser = async (req, res) => {
     try {
         const { name, email, role, status, password, allowedEntities, entityPermissions } = req.body;

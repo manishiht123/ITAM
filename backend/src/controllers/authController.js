@@ -15,7 +15,8 @@ const parseField = (value, fallback) => {
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const ip = req.headers["x-forwarded-for"] || req.ip || req.connection?.remoteAddress;
+    const rawIp = req.headers["x-forwarded-for"] || req.ip || req.connection?.remoteAddress;
+    const ip = rawIp ? rawIp.replace(/^::ffff:/, "") : rawIp;
 
     const user = await User.findOne({ where: { email } });
     if (!user) {
@@ -67,6 +68,8 @@ exports.login = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        phone: user.phone || "",
+        title: user.title || "",
         allowedEntities: parseField(user.allowedEntities, []),
         entityPermissions: parseField(user.entityPermissions, {})
       }

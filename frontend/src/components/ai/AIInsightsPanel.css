@@ -1,0 +1,403 @@
+/* ═══════════════════════════════════════════════════════
+   AI Insights Panel Styles
+   Proper dark/light theme support using theme variables
+   ═══════════════════════════════════════════════════════ */
+
+.ai-insights-panel {
+    background: var(--bg-elevated);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-xs);
+    overflow: hidden;
+    margin-bottom: 24px;
+    transition: all 0.3s ease;
+}
+
+.ai-insights-panel:hover {
+    box-shadow: var(--shadow-md);
+    border-color: rgba(124, 58, 237, 0.3);
+}
+
+.ai-insights-panel.loading {
+    padding: 20px;
+    min-height: 120px;
+}
+
+/* Header */
+.ai-insights-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    cursor: pointer;
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.04), rgba(167, 139, 250, 0.02));
+    border-bottom: 1px solid var(--border);
+    transition: background 0.2s;
+}
+
+[data-theme="dark"] .ai-insights-header {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(167, 139, 250, 0.05));
+}
+
+.ai-insights-header:hover {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.08), rgba(167, 139, 250, 0.04));
+}
+
+[data-theme="dark"] .ai-insights-header:hover {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.15), rgba(167, 139, 250, 0.08));
+}
+
+.ai-insights-header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.ai-insights-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(167, 139, 250, 0.05));
+    border: 1px solid rgba(124, 58, 237, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+}
+
+[data-theme="dark"] .ai-insights-icon {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.2), rgba(167, 139, 250, 0.1));
+    border-color: rgba(124, 58, 237, 0.3);
+}
+
+.ai-insights-header h3 {
+    margin: 0;
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-bold);
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.ai-insights-subtitle {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    font-weight: var(--font-weight-medium);
+}
+
+.ai-expand-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--bg-elevated);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.ai-expand-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+    border-color: #7c3aed;
+}
+
+.ai-expand-btn.expanded {
+    transform: rotate(180deg);
+    background: #7c3aed;
+    color: white;
+    border-color: #7c3aed;
+}
+
+/* Grid Cards */
+.ai-insights-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    padding: 20px;
+    background: var(--bg-main);
+}
+
+.ai-insight-card {
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid transparent;
+    transition: transform 0.2s;
+}
+
+.ai-insight-card:hover {
+    transform: translateY(-2px);
+}
+
+.ai-insight-card.good {
+    background: var(--feedback-success-bg);
+    border-color: #bbf7d0;
+}
+
+.ai-insight-card.good .ai-insight-value,
+.ai-insight-card.good .ai-insight-title {
+    color: var(--feedback-success-text);
+}
+
+.ai-insight-card.warning {
+    background: var(--feedback-warning-bg);
+    border-color: #fde68a;
+}
+
+.ai-insight-card.warning .ai-insight-value,
+.ai-insight-card.warning .ai-insight-title {
+    color: var(--feedback-warning-text);
+}
+
+.ai-insight-card.critical {
+    background: var(--feedback-danger-bg);
+    border-color: #fecaca;
+}
+
+.ai-insight-card.critical .ai-insight-value,
+.ai-insight-card.critical .ai-insight-title {
+    color: var(--feedback-danger-text);
+}
+
+/* Dark Mode Overrides for Cards */
+[data-theme="dark"] .ai-insight-card.good {
+    background: rgba(34, 197, 94, 0.15);
+    border-color: rgba(34, 197, 94, 0.3);
+}
+
+[data-theme="dark"] .ai-insight-card.good .ai-insight-value,
+[data-theme="dark"] .ai-insight-card.good .ai-insight-title {
+    color: #86efac;
+}
+
+[data-theme="dark"] .ai-insight-card.warning {
+    background: rgba(234, 179, 8, 0.15);
+    border-color: rgba(234, 179, 8, 0.3);
+}
+
+[data-theme="dark"] .ai-insight-card.warning .ai-insight-value,
+[data-theme="dark"] .ai-insight-card.warning .ai-insight-title {
+    color: #fde047;
+}
+
+[data-theme="dark"] .ai-insight-card.critical {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+[data-theme="dark"] .ai-insight-card.critical .ai-insight-value,
+[data-theme="dark"] .ai-insight-card.critical .ai-insight-title {
+    color: #fca5a5;
+}
+
+.ai-insight-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.ai-insight-emoji {
+    font-size: 20px;
+}
+
+.ai-insight-value {
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.ai-insight-title {
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.ai-insight-desc {
+    font-size: 12px;
+    color: var(--text-secondary);
+    /* This will be overridden by specificty if needed, but secondary text usually should be muted */
+    line-height: 1.4;
+}
+
+/* Ensure secondary text is visible on colored backgrounds */
+.ai-insight-card.good .ai-insight-desc {
+    color: #166534;
+}
+
+.ai-insight-card.warning .ai-insight-desc {
+    color: #92400e;
+}
+
+.ai-insight-card.critical .ai-insight-desc {
+    color: #991b1b;
+}
+
+[data-theme="dark"] .ai-insight-card.good .ai-insight-desc {
+    color: #bbf7d0;
+}
+
+[data-theme="dark"] .ai-insight-card.warning .ai-insight-desc {
+    color: #fef08a;
+}
+
+[data-theme="dark"] .ai-insight-card.critical .ai-insight-desc {
+    color: #fca5a5;
+}
+
+
+/* Anomalies Section */
+.ai-anomalies-section {
+    padding: 20px;
+    border-top: 1px solid var(--border);
+    animation: ai-slide-down 0.3s ease-out;
+    background: var(--bg-elevated);
+}
+
+@keyframes ai-slide-down {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.ai-anomalies-title {
+    margin: 0 0 16px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.ai-anomaly-count {
+    display: flex;
+    gap: 8px;
+}
+
+.ai-anomaly-count .badge {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.ai-anomaly-count .badge.critical {
+    background: var(--feedback-danger-bg);
+    color: var(--feedback-danger-text);
+}
+
+.ai-anomaly-count .badge.warning {
+    background: var(--feedback-warning-bg);
+    color: var(--feedback-warning-text);
+}
+
+.ai-anomalies-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.ai-anomaly-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px;
+    background: var(--bg-muted);
+    border-radius: 8px;
+    border: 1px solid transparent;
+}
+
+.ai-anomaly-item.critical {
+    background: rgba(239, 68, 68, 0.05);
+    border-color: rgba(239, 68, 68, 0.2);
+}
+
+[data-theme="dark"] .ai-anomaly-item.critical {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.ai-anomaly-item.warning {
+    background: rgba(234, 179, 8, 0.05);
+    border-color: rgba(234, 179, 8, 0.2);
+}
+
+[data-theme="dark"] .ai-anomaly-item.warning {
+    background: rgba(234, 179, 8, 0.1);
+    border-color: rgba(234, 179, 8, 0.3);
+}
+
+.ai-anomaly-icon {
+    font-size: 18px;
+    margin-top: 2px;
+}
+
+.ai-anomaly-content strong {
+    display: block;
+    font-size: 13px;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+}
+
+.ai-anomaly-content p {
+    margin: 0;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.ai-no-anomalies {
+    text-align: center;
+    color: var(--text-secondary);
+    padding: 20px;
+}
+
+.ai-no-anomalies span {
+    font-size: 24px;
+    display: block;
+    margin-bottom: 8px;
+}
+
+/* Loading Shimmer */
+.ai-insights-loading {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.ai-shimmer {
+    height: 16px;
+    background: linear-gradient(90deg, var(--bg-muted) 25%, var(--bg-elevated) 50%, var(--bg-muted) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+}
+
+.ai-shimmer.short {
+    width: 60%;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* Response for small screens */
+@media (max-width: 600px) {
+    .ai-insights-grid {
+        grid-template-columns: 1fr;
+    }
+}

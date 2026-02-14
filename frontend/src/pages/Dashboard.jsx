@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useEntity } from "../context/EntityContext";
+import { useAuth } from "../context/AuthContext";
 import { getDashboardData } from "../services/dashboardService";
 
 /* =========================
@@ -38,12 +39,14 @@ import RecentlyAddedAssets from "../components/tables/RecentlyAddedAssets";
 import RecentlyAssignedAssets from "../components/tables/RecentlyAssignedAssets";
 import AssetsNeedingAttention from "../components/tables/AssetsNeedingAttention";
 import UpcomingRenewals from "../components/tables/UpcomingRenewals";
+import AIInsightsPanel from "../components/ai/AIInsightsPanel";
 
 import "./Dashboard.css";
 
 export default function Dashboard() {
   const { entity } = useEntity();
   const navigate = useNavigate();
+  const { isAdmin, canAccess } = useAuth();
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -114,47 +117,54 @@ export default function Dashboard() {
       />
 
       <PageLayout.Content>
+        {/* AI INSIGHTS */}
+        <AIInsightsPanel entityCode={entity} />
+
         {/* KPI ROW */}
         <div className="dashboard-kpi-grid">
           <KpiCard
             label="Total Assets"
             value={dashboardData?.kpis?.totalAssets ?? "—"}
             size="sm"
-            onClick={() => navigate("/assets")}
+            onClick={canAccess("assets") ? () => navigate("/assets") : undefined}
           />
           <KpiCard
             label="Allocated"
             value={dashboardData?.kpis?.allocated ?? "—"}
             size="sm"
-            onClick={() => navigate("/assets?status=In%20Use")}
+            onClick={canAccess("assets") ? () => navigate("/assets?status=In%20Use") : undefined}
             variant="success"
           />
           <KpiCard
             label="Available"
             value={dashboardData?.kpis?.available ?? "—"}
             size="sm"
-            onClick={() => navigate("/assets?status=Available")}
+            onClick={canAccess("assets") ? () => navigate("/assets?status=Available") : undefined}
           />
           <KpiCard
             label="Under Repair"
             value={dashboardData?.kpis?.underRepair ?? "—"}
             size="sm"
-            onClick={() => navigate("/assets?status=Under%20Repair")}
+            onClick={canAccess("assets") ? () => navigate("/assets?status=Under%20Repair") : undefined}
             variant="warning"
           />
-          <KpiCard
-            label="Total Licenses"
-            value={dashboardData?.licenseKpis?.totalLicenses ?? "—"}
-            size="sm"
-            onClick={() => navigate("/settings/licenses")}
-          />
-          <KpiCard
-            label="Overused Seats"
-            value={dashboardData?.licenseKpis?.overusedSeats ?? "—"}
-            size="sm"
-            onClick={() => navigate("/settings/licenses")}
-            variant="danger"
-          />
+          {isAdmin && (
+            <KpiCard
+              label="Total Licenses"
+              value={dashboardData?.licenseKpis?.totalLicenses ?? "—"}
+              size="sm"
+              onClick={() => navigate("/settings/licenses")}
+            />
+          )}
+          {isAdmin && (
+            <KpiCard
+              label="Overused Seats"
+              value={dashboardData?.licenseKpis?.overusedSeats ?? "—"}
+              size="sm"
+              onClick={() => navigate("/settings/licenses")}
+              variant="danger"
+            />
+          )}
         </div>
 
         {/* PIE ROW */}

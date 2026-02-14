@@ -281,7 +281,7 @@ export default function LicensesCompliance() {
                         <div>
                             <h4 className="audit-title">Audit Readiness Checklist</h4>
                             <p className="audit-note">
-                                Last review completed 14 days ago · Next audit in 46 days
+                                {kpis.auditReady}% of licenses are compliant and audit-ready.
                             </p>
                         </div>
                         <Button variant="secondary">Download Checklist</Button>

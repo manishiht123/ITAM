@@ -10,7 +10,7 @@
   align-items: flex-end;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 18px;
+  margin-bottom: 24px;
 }
 
 .assignments-header h1 {
@@ -32,67 +32,144 @@
 
 .assignments-grid {
   display: grid;
-  gap: 18px;
+  gap: 20px;
 }
 
-.card-title {
-  font-size: 14px;
-  font-weight: 600;
+/* Card padding scoped to this page */
+.assignments-page .card {
+  padding: 20px 24px;
+}
+
+/* Section titles inside cards */
+.assignments-page .card-title {
+  font-size: 16px;
+  font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: 10px;
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
 }
 
-.policy-grid {
+.assignments-page .policy-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px 16px;
 }
 
-.switch-row {
+.assignments-page .switch-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   font-size: 13px;
-  color: var(--text-secondary);
-  border: 1px dashed var(--border);
-  padding: 10px 12px;
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  padding: 12px 14px;
   border-radius: 12px;
+  background: var(--bg-muted);
+  transition: border-color 0.2s;
+  cursor: pointer;
 }
 
-.policy-input {
+.assignments-page .switch-row:hover {
+  border-color: var(--primary);
+}
+
+.assignments-page .switch-row input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.assignments-page .policy-input {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 10px 12px;
+  padding: 12px 14px;
   border-radius: 12px;
-  border: 1px dashed var(--border);
+  border: 1px solid var(--border);
+  background: var(--bg-muted);
+  font-size: 13px;
+  color: var(--text-primary);
 }
 
-.policy-input input {
+.assignments-page .policy-input input {
   width: 70px;
-  height: 32px;
+  height: 34px;
   border-radius: 10px;
   border: 1px solid var(--border);
   padding: 4px 8px;
-  font-size: 12px;
+  font-size: 13px;
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.filters-row {
+.assignments-page .policy-input input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-soft);
+}
+
+.assignments-page .filters-row {
   display: grid;
   grid-template-columns: 2fr 1fr;
   gap: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
-.filters-row input,
-.filters-row select {
-  height: 38px;
+.assignments-page .filters-row input,
+.assignments-page .filters-row select {
+  height: 40px;
   border-radius: 10px;
   border: 1px solid var(--border);
   padding: 6px 12px;
   font-size: 13px;
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.assignments-page .filters-row input:focus,
+.assignments-page .filters-row select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-soft);
+}
+
+.assignments-page .table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.assignments-page .table th,
+.assignments-page .table td {
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+
+.assignments-page .table thead tr {
+  background: var(--bg-muted);
+}
+
+.assignments-page .table th {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.assignments-page .table tbody tr {
+  transition: background 0.15s;
+}
+
+.assignments-page .table tbody tr:hover {
+  background: var(--hover-overlay, rgba(0, 0, 0, 0.02));
 }
 
 .muted {
@@ -102,7 +179,7 @@
 }
 
 .status-chip {
-  padding: 4px 8px;
+  padding: 4px 10px;
   border-radius: 999px;
   font-size: 11px;
   font-weight: 600;
@@ -136,39 +213,61 @@
   padding: 16px;
 }
 
-.metrics-grid {
+.assignments-page .metrics-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
 }
 
-.metric {
+.assignments-page .metric {
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 12px;
-  background: var(--bg-muted);
+  border-radius: 14px;
+  padding: 16px;
+  background: linear-gradient(135deg, var(--bg-muted), var(--primary-soft));
 }
 
-.metric span {
+.assignments-page .metric span {
   font-size: 12px;
+  font-weight: 600;
   color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
-.metric strong {
+.assignments-page .metric strong {
   display: block;
-  margin-top: 6px;
-  font-size: 18px;
+  margin-top: 8px;
+  font-size: 20px;
   color: var(--text-primary);
 }
 
+/* Dark mode polish */
+[data-theme="dark"] .assignments-page .policy-input input,
+[data-theme="dark"] .assignments-page .filters-row input,
+[data-theme="dark"] .assignments-page .filters-row select {
+  background: var(--bg-muted);
+  border-color: var(--border);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .assignments-page .filters-row input::placeholder {
+  color: var(--text-muted);
+}
+
+[data-theme="dark"] .assignments-page .switch-row,
+[data-theme="dark"] .assignments-page .policy-input {
+  border-color: var(--border);
+  background: var(--bg-elevated);
+}
+
 @media (max-width: 1100px) {
-  .policy-grid {
+  .assignments-page .policy-grid {
     grid-template-columns: 1fr;
   }
-  .filters-row {
+  .assignments-page .filters-row {
     grid-template-columns: 1fr;
   }
-  .metrics-grid {
+  .assignments-page .metrics-grid {
     grid-template-columns: 1fr;
   }
 }

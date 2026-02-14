@@ -5,8 +5,20 @@ const BASE_URL =
 
 const handleResponse = async (res) => {
     if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || errorData.message || "API request failed");
+        let errorMessage = "API request failed";
+        try {
+            const text = await res.text();
+            try {
+                const json = JSON.parse(text);
+                errorMessage = json.error || json.message || errorMessage;
+            } catch {
+                // Use raw text if not JSON (e.g. HTML error page), truncated
+                errorMessage = `Error ${res.status}: ${text.slice(0, 100).replace(/<[^>]*>/g, "")}`;
+            }
+        } catch {
+            errorMessage = `Error ${res.status}`;
+        }
+        throw new Error(errorMessage);
     }
     return res.json();
 };
@@ -328,10 +340,53 @@ const api = {
         }));
     },
 
+    // --- BACKUPS ---
+    runBackup: async (data) => {
+        return handleResponse(await fetch(`${BASE_URL}/backups/run`, {
+            method: "POST",
+            headers: buildHeaders(null, { "Content-Type": "application/json" }),
+            body: JSON.stringify(data || {}),
+        }));
+    },
+    getBackups: async () => handleResponse(await fetch(`${BASE_URL}/backups`, {
+        headers: buildHeaders()
+    })),
+    deleteBackup: async (filename) => {
+        return handleResponse(await fetch(`${BASE_URL}/backups/${encodeURIComponent(filename)}`, {
+            method: "DELETE",
+            headers: buildHeaders()
+        }));
+    },
+
     // --- AUDIT ---
     getAuditLogs: async () => handleResponse(await fetch(`${BASE_URL}/params/audit`, {
         headers: buildHeaders()
     })),
+
+    // --- ALERT RULES ---
+    getAlertRules: async () => handleResponse(await fetch(`${BASE_URL}/alert-rules`, {
+        headers: buildHeaders()
+    })),
+    createAlertRule: async (data) => {
+        return handleResponse(await fetch(`${BASE_URL}/alert-rules`, {
+            method: "POST",
+            headers: buildHeaders(null, { "Content-Type": "application/json" }),
+            body: JSON.stringify(data),
+        }));
+    },
+    updateAlertRule: async (id, data) => {
+        return handleResponse(await fetch(`${BASE_URL}/alert-rules/${id}`, {
+            method: "PUT",
+            headers: buildHeaders(null, { "Content-Type": "application/json" }),
+            body: JSON.stringify(data),
+        }));
+    },
+    deleteAlertRule: async (id) => {
+        return handleResponse(await fetch(`${BASE_URL}/alert-rules/${id}`, {
+            method: "DELETE",
+            headers: buildHeaders()
+        }));
+    },
 
     // --- LICENSES ---
     getLicenses: async (entityCode) => handleResponse(await fetch(`${BASE_URL}/licenses`, {
@@ -390,11 +445,51 @@ const api = {
         }));
     },
 
+    // --- PROFILE ---
+    updateProfile: async (data) => {
+        return handleResponse(await fetch(`${BASE_URL}/users/profile`, {
+            method: "PUT",
+            headers: buildHeaders(null, { "Content-Type": "application/json" }),
+            body: JSON.stringify(data),
+        }));
+    },
+
     // --- AUTH ---
     login: async (payload) => handleResponse(await fetch(`${BASE_URL}/auth/login`, {
         method: "POST",
         headers: buildHeaders(null, { "Content-Type": "application/json" }),
         body: JSON.stringify(payload),
+    })),
+
+    // --- AI ENGINE ---
+    getAIInsights: async (entityCode) => handleResponse(await fetch(`${BASE_URL}/ai/insights`, {
+        headers: buildHeaders(entityCode)
+    })),
+    getHealthScores: async (entityCode) => handleResponse(await fetch(`${BASE_URL}/ai/health`, {
+        headers: buildHeaders(entityCode)
+    })),
+    smartSearch: async (query, entityCode) => {
+        return handleResponse(await fetch(`${BASE_URL}/ai/search`, {
+            method: "POST",
+            headers: buildHeaders(entityCode, { "Content-Type": "application/json" }),
+            body: JSON.stringify({ query }),
+        }));
+    },
+    getAnomalies: async (entityCode) => handleResponse(await fetch(`${BASE_URL}/ai/anomalies`, {
+        headers: buildHeaders(entityCode)
+    })),
+    getBudgetForecast: async (entityCode) => handleResponse(await fetch(`${BASE_URL}/ai/forecast`, {
+        headers: buildHeaders(entityCode)
+    })),
+    autoCategorizeBulk: async (names, entityCode) => {
+        return handleResponse(await fetch(`${BASE_URL}/ai/categorize`, {
+            method: "POST",
+            headers: buildHeaders(entityCode, { "Content-Type": "application/json" }),
+            body: JSON.stringify({ names }),
+        }));
+    },
+    getAllocationSuggestions: async (employeeId, entityCode) => handleResponse(await fetch(`${BASE_URL}/ai/suggest-allocation/${employeeId}`, {
+        headers: buildHeaders(entityCode)
     }))
 };
 

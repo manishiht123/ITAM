@@ -8,6 +8,8 @@ const User = sequelize.define("User", {
   password: { type: DataTypes.STRING, allowNull: false },
   role: { type: DataTypes.STRING, defaultValue: "employee" },
   status: { type: DataTypes.STRING, defaultValue: "Active" },
+  phone: { type: DataTypes.STRING, allowNull: true },
+  title: { type: DataTypes.STRING, allowNull: true },
   allowedEntities: { type: DataTypes.TEXT, allowNull: true },
   entityPermissions: { type: DataTypes.TEXT, allowNull: true }
 });

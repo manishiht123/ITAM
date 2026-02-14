@@ -20,30 +20,27 @@ exports.getSystemPreferences = async (req, res) => {
 exports.updateSystemPreferences = async (req, res) => {
   try {
     const prefs = await getOrCreatePreferences();
-    const {
-      maxAssetsPerEmployee,
-      allocationWarningMessage,
-      overuseProtectionEnabled,
-      autoRenewalReviewEnabled,
-      auditTrailEnabled
-    } = req.body || {};
-
+    const body = req.body || {};
     const updates = {};
-    if (maxAssetsPerEmployee !== undefined) {
-      updates.maxAssetsPerEmployee = Number(maxAssetsPerEmployee);
-    }
-    if (allocationWarningMessage !== undefined) {
-      updates.allocationWarningMessage = String(allocationWarningMessage);
-    }
-    if (overuseProtectionEnabled !== undefined) {
-      updates.overuseProtectionEnabled = Boolean(overuseProtectionEnabled);
-    }
-    if (autoRenewalReviewEnabled !== undefined) {
-      updates.autoRenewalReviewEnabled = Boolean(autoRenewalReviewEnabled);
-    }
-    if (auditTrailEnabled !== undefined) {
-      updates.auditTrailEnabled = Boolean(auditTrailEnabled);
-    }
+
+    const stringFields = [
+      "allocationWarningMessage", "backupFrequency", "backupTime",
+      "backupType", "backupLocation", "fiscalYearStart", "depreciationMethod"
+    ];
+    const numberFields = [
+      "maxAssetsPerEmployee", "backupRetentionDays", "defaultUsefulLife",
+      "salvageValuePercent", "capexThreshold", "passwordMinLength",
+      "passwordExpiryDays", "passwordReuseLimit", "passwordLockoutAttempts"
+    ];
+    const booleanFields = [
+      "overuseProtectionEnabled", "autoRenewalReviewEnabled", "auditTrailEnabled",
+      "autoBackupEnabled", "passwordRequireUpper", "passwordRequireLower",
+      "passwordRequireNumber", "passwordRequireSpecial"
+    ];
+
+    stringFields.forEach((f) => { if (body[f] !== undefined) updates[f] = String(body[f]); });
+    numberFields.forEach((f) => { if (body[f] !== undefined) updates[f] = Number(body[f]); });
+    booleanFields.forEach((f) => { if (body[f] !== undefined) updates[f] = Boolean(body[f]); });
 
     await prefs.update(updates);
     res.json(prefs);

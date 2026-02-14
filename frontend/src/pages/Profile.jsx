@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import api from "../services/api";
 import { useToast } from "../context/ToastContext";
 import { Button } from "../components/ui";
 import "./Profile.css";
@@ -13,11 +14,12 @@ export default function Profile() {
     }
   }, []);
 
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     firstName: storedUser?.name?.split(" ")[0] || "",
     lastName: storedUser?.name?.split(" ").slice(1).join(" ") || "",
-    title: "",
-    phone: "",
+    title: storedUser?.title || "",
+    phone: storedUser?.phone || "",
     email: storedUser?.email || "",
     confirmEmail: storedUser?.email || "",
     timezone: "Asia/Kolkata",
@@ -26,7 +28,8 @@ export default function Profile() {
   });
 
   const update = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
-  const handleSaveProfile = () => {
+
+  const handleSaveProfile = async () => {
     if (!form.firstName || !form.lastName || !form.email || !form.confirmEmail) {
       toast.warning("Please complete required fields.");
       return;
@@ -36,14 +39,29 @@ export default function Profile() {
       return;
     }
     const name = `${form.firstName} ${form.lastName}`.trim();
-    const updatedUser = {
-      ...storedUser,
-      name,
-      email: form.email
-    };
-    localStorage.setItem("authUser", JSON.stringify(updatedUser));
-    window.dispatchEvent(new Event("authUserUpdated"));
-    toast.success("Profile updated.");
+    setSaving(true);
+    try {
+      const updated = await api.updateProfile({
+        name,
+        email: form.email,
+        phone: form.phone,
+        title: form.title
+      });
+      const updatedUser = {
+        ...storedUser,
+        name: updated.name || name,
+        email: updated.email || form.email,
+        phone: updated.phone || form.phone,
+        title: updated.title || form.title
+      };
+      localStorage.setItem("authUser", JSON.stringify(updatedUser));
+      window.dispatchEvent(new Event("authUserUpdated"));
+      toast.success("Profile updated.");
+    } catch (err) {
+      toast.error(err.message || "Failed to update profile.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -120,8 +138,8 @@ export default function Profile() {
         <div className="photo-drop">Click to upload image</div>
         <div className="photo-note">Only (JPG, GIF, PNG) are allowed</div>
         <div className="profile-actions">
-          <Button variant="primary" onClick={handleSaveProfile}>
-            Save
+          <Button variant="primary" onClick={handleSaveProfile} disabled={saving}>
+            {saving ? "Saving..." : "Save"}
           </Button>
           <Button
             variant="secondary"
@@ -131,8 +149,6 @@ export default function Profile() {
           </Button>
         </div>
       </section>
-
-      {null}
     </div>
   );
 }

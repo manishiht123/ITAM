@@ -4,9 +4,11 @@ import { FaEnvelope, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
 import "../styles/login.css";
 import CompanyLogo from "../assets/logos/default.svg";
 import api from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
   const navigate = useNavigate();
+  const { refresh } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -25,6 +27,7 @@ export default function Login() {
       const data = await api.login({ email, password });
       localStorage.setItem("authToken", data.token);
       localStorage.setItem("authUser", JSON.stringify(data.user));
+      refresh();
       navigate("/dashboard");
     } catch (err) {
       setError(err?.message || "Invalid email or password. Please try again.");

@@ -1,4 +1,4 @@
-/* Security & Audit Logs - pro layout */
+/* Security & Audit Logs */
 .security-page {
   margin: 0 auto;
   padding: 24px;
@@ -10,7 +10,7 @@
   align-items: flex-end;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 18px;
+  margin-bottom: 24px;
 }
 
 .security-title h1 {
@@ -32,63 +32,114 @@
 
 .security-grid {
   display: grid;
-  gap: 18px;
+  gap: 20px;
 }
 
-.card-title {
-  font-size: 14px;
-  font-weight: 600;
+/* Card padding scoped to this page */
+.security-page .card {
+  padding: 20px 24px;
+}
+
+/* Section titles inside cards */
+.security-page .card-title {
+  font-size: 16px;
+  font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: 10px;
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
 }
 
-.kpi-row {
+.security-page .kpi-row {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
 }
 
-.kpi {
+.security-page .kpi {
   background: linear-gradient(135deg, var(--bg-muted), var(--primary-soft));
   border: 1px solid var(--border);
   border-radius: 14px;
-  padding: 14px;
+  padding: 16px;
 }
 
-.kpi h3 {
-  margin: 0 0 6px;
-  font-size: 12px;
+.security-page .kpi h3 {
+  margin: 0 0 8px;
+  font-size: 11px;
   color: var(--text-secondary);
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
 }
 
-.kpi strong {
-  font-size: 22px;
+.security-page .kpi strong {
+  font-size: 24px;
   color: var(--text-primary);
 }
 
-.filters {
+.security-page .filters {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr 1fr;
   gap: 12px;
 }
 
-.filters input,
-.filters select {
-  height: 38px;
+.security-page .filters input,
+.security-page .filters select {
+  height: 40px;
   border-radius: 10px;
   border: 1px solid var(--border);
   padding: 6px 12px;
   font-size: 13px;
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.security-page .filters input:focus,
+.security-page .filters select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-soft);
+}
+
+.security-page .table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.security-page .table th,
+.security-page .table td {
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+
+.security-page .table thead tr {
+  background: var(--bg-muted);
+}
+
+.security-page .table th {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.security-page .table tbody tr {
+  transition: background 0.15s;
+}
+
+.security-page .table tbody tr:hover {
+  background: var(--hover-overlay, rgba(0, 0, 0, 0.02));
 }
 
 .tag {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 8px;
+  padding: 4px 10px;
   border-radius: 999px;
   font-size: 11px;
   font-weight: 600;
@@ -110,7 +161,7 @@
 }
 
 .pill {
-  padding: 4px 8px;
+  padding: 4px 10px;
   border-radius: 999px;
   font-size: 11px;
   font-weight: 600;
@@ -120,12 +171,12 @@
 
 .timeline {
   display: grid;
-  gap: 10px;
+  gap: 12px;
 }
 
 .timeline-item {
-  border-left: 2px solid var(--border);
-  padding-left: 12px;
+  border-left: 3px solid var(--primary);
+  padding-left: 14px;
 }
 
 .timeline-item h4 {
@@ -139,11 +190,123 @@
   font-size: 12px;
 }
 
+/* Alert rule form */
+.rule-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.rule-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rule-form .form-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.rule-form .form-group input,
+.rule-form .form-group select {
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+  font-size: 13px;
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.rule-form .form-group input:focus,
+.rule-form .form-group select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-soft);
+}
+
+.rule-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+/* Alert rule table elements */
+.rule-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.rule-toggle input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.rule-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: var(--bg-muted);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  font-size: 13px;
+}
+
+.icon-btn:hover {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.icon-btn.danger:hover {
+  background: var(--feedback-danger-bg);
+  color: var(--feedback-danger-text);
+}
+
+.empty-rules {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 13px;
+  padding: 24px 0;
+}
+
+/* Dark mode polish */
+[data-theme="dark"] .security-page .filters input,
+[data-theme="dark"] .security-page .filters select {
+  background: var(--bg-muted);
+  border-color: var(--border);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .security-page .filters input::placeholder {
+  color: var(--text-muted);
+}
+
 @media (max-width: 1100px) {
-  .kpi-row {
+  .security-page .kpi-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .filters {
+  .security-page .filters {
     grid-template-columns: 1fr;
   }
 }

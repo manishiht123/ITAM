@@ -72,9 +72,10 @@ export default function AssetAllocation() {
       ]);
       setAllAssets(assetsData);
       // Filter only available assets
-      const available = assetsData.filter(
-        (asset) => asset.status === "Available" || asset.status === "In Stock"
-      );
+      const available = assetsData.filter((asset) => {
+        const status = String(asset.status || "").trim().toLowerCase();
+        return status === "available" || status === "in stock" || status === "new";
+      });
       setAvailableAssets(available);
       setEmployees(empsData);
 
