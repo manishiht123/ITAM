@@ -1,19 +1,24 @@
 const Entity = require("../models/Entity");
+const TenantManager = require("../utils/TenantManager");
 
 exports.getEntities = async (req, res) => {
     try {
         const entities = await Entity.findAll();
-        if (req.user && Array.isArray(req.user.allowedEntities) && req.user.allowedEntities.length) {
+
+        // Filter based on user allowedEntities if they are not an admin
+        const isAdmin = req.user && ["admin", "superadmin", "administrator"].includes(String(req.user.role).toLowerCase());
+
+        if (!isAdmin && req.user && Array.isArray(req.user.allowedEntities) && req.user.allowedEntities.length > 0) {
             const allowed = req.user.allowedEntities;
-            return res.json(entities.filter((entity) => allowed.includes(entity.code)));
+            const filtered = entities.filter((entity) => allowed.includes(entity.code));
+            return res.json(filtered);
         }
+
         res.json(entities);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 };
-
-const TenantManager = require("../utils/TenantManager");
 
 exports.createEntity = async (req, res) => {
     try {

@@ -9,46 +9,14 @@ const EmailSettings = require("../models/EmailSettings");
 const License = require("../models/License");
 const SoftwareLicense = require("../models/SoftwareLicense");
 const SoftwareAssignment = require("../models/SoftwareAssignment");
+const ensureAssetColumns = require("./ensureAssetColumns");
 const ensureAssetStatusEnum = require("./ensureAssetStatusEnum");
 
-const ensureAssetColumns = async (sequelize) => {
-    const [rows] = await sequelize.query(`
-        SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
-        WHERE TABLE_SCHEMA = DATABASE()
-          AND TABLE_NAME = "Assets"
-    `);
-    const existing = new Set(rows.map((row) => row.COLUMN_NAME));
-    const addColumn = async (sql) => {
-        try {
-            await sequelize.query(sql);
-        } catch (err) {
-            console.error("[TenantManager] Failed to add column:", err.message);
-        }
-    };
-
-    if (!existing.has("comments")) {
-        await addColumn("ALTER TABLE `Assets` ADD COLUMN `comments` TEXT NULL;");
-    }
-    if (!existing.has("additionalItems")) {
-        await addColumn("ALTER TABLE `Assets` ADD COLUMN `additionalItems` VARCHAR(255) NULL;");
-    }
-    if (!existing.has("insuranceStatus")) {
-        await addColumn("ALTER TABLE `Assets` ADD COLUMN `insuranceStatus` VARCHAR(255) NULL;");
-    }
-    if (!existing.has("dateOfPurchase")) {
-        await addColumn("ALTER TABLE `Assets` ADD COLUMN `dateOfPurchase` DATE NULL;");
-    }
-    if (!existing.has("warrantyExpireDate")) {
-        await addColumn("ALTER TABLE `Assets` ADD COLUMN `warrantyExpireDate` DATE NULL;");
-    }
-    if (!existing.has("price")) {
-        await addColumn("ALTER TABLE `Assets` ADD COLUMN `price` VARCHAR(255) NULL;");
-    }
-    if (!existing.has("invoiceNumber")) {
-        await addColumn("ALTER TABLE `Assets` ADD COLUMN `invoiceNumber` VARCHAR(255) NULL;");
-    }
-    if (!existing.has("vendorName")) {
-        await addColumn("ALTER TABLE `Assets` ADD COLUMN `vendorName` VARCHAR(255) NULL;");
+const ensureDepartmentColumns = async (sequelize) => {
+    try {
+        await sequelize.query("ALTER TABLE `Departments` MODIFY COLUMN `location` VARCHAR(255) NULL;");
+    } catch (err) {
+        console.error("[TenantManager] Failed to update Department location column:", err.message);
     }
 };
 
@@ -123,6 +91,7 @@ const getTenantConnection = async (entityCode) => {
         // Sync schema once without altering indexes to avoid MySQL key limits
         await sequelize.sync({ alter: false });
         await ensureAssetColumns(sequelize);
+        await ensureDepartmentColumns(sequelize);
         await ensureAssetStatusEnum(sequelize);
 
         connections[entityCode] = sequelize;

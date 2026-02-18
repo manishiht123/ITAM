@@ -5,7 +5,8 @@ import api from "../services/api";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useEntity } from "../context/EntityContext";
 import { useToast } from "../context/ToastContext";
-import { LoadingOverlay, ConfirmDialog } from "../components/ui";
+import { LoadingOverlay, ConfirmDialog, Button } from "../components/ui";
+import { FaHistory, FaCheckCircle } from "react-icons/fa";
 
 export default function AssetAllocation() {
   const navigate = useNavigate();
@@ -28,6 +29,8 @@ export default function AssetAllocation() {
   // Selection State
   const [selectedAssetId, setSelectedAssetId] = useState("");
   const [selectedEmpId, setSelectedEmpId] = useState("");
+  const [aiSuggestions, setAiSuggestions] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
 
   const today = new Date().toLocaleDateString("en-GB", {
     day: "2-digit",
@@ -63,13 +66,57 @@ export default function AssetAllocation() {
     loadPrefs();
   }, []);
 
+  useEffect(() => {
+    if (!selectedEmpId) {
+      setAiSuggestions(null);
+      return;
+    }
+    const fetchSuggestions = async () => {
+      setAiLoading(true);
+      try {
+        const isAll = entity === "ALL";
+        const entityCode = isAll ? null : entity;
+        const result = await api.getAllocationSuggestions(selectedEmpId, entityCode);
+        setAiSuggestions(result);
+      } catch {
+        setAiSuggestions(null);
+      } finally {
+        setAiLoading(false);
+      }
+    };
+    fetchSuggestions();
+  }, [selectedEmpId, entity]);
+
   const loadData = async () => {
     try {
-      const entityCode = entity === "ALL" ? null : entity;
-      const [assetsData, empsData] = await Promise.all([
-        api.getAssets(entityCode),
-        api.getEmployees(entityCode)
-      ]);
+      const isAll = entity === "ALL";
+      const entityCode = isAll ? null : entity;
+
+      let assetsData = [];
+      let empsData = [];
+
+      if (isAll) {
+        // Fetch assets (backend aggregates across all tenants)
+        assetsData = await api.getAssets(null);
+
+        // Fetch employees per entity (backend needs specific entity code)
+        const entities = await api.getEntities();
+        const entityCodes = (entities || []).map(e => e.code).filter(Boolean);
+        const empResults = await Promise.allSettled(
+          entityCodes.map(code => api.getEmployees(code))
+        );
+        empsData = empResults.flatMap(r =>
+          r.status === "fulfilled" ? r.value : []
+        );
+      } else {
+        const [assets, emps] = await Promise.all([
+          api.getAssets(entityCode),
+          api.getEmployees(entityCode)
+        ]);
+        assetsData = assets;
+        empsData = emps;
+      }
+
       setAllAssets(assetsData);
       // Filter only available assets
       const available = assetsData.filter((asset) => {
@@ -105,8 +152,11 @@ export default function AssetAllocation() {
 
   const performAllocation = async () => {
     const emp = employees.find(e => e.id == selectedEmpId);
+    const selectedAsset = availableAssets.find(a => String(a.id) === String(selectedAssetId));
     try {
-      const entityCode = entity === "ALL" ? null : entity;
+      // Use the asset's own entity code for the correct tenant DB
+      const assetEntity = selectedAsset?.entity || null;
+      const entityCode = entity === "ALL" ? assetEntity : entity;
       await api.updateAsset(selectedAssetId, {
         status: "In Use",
         employeeId: emp?.employeeId || emp?.email || "Unknown",
@@ -162,17 +212,39 @@ export default function AssetAllocation() {
       const emp =
         employees.find((e) => e.employeeId === asset.employeeId || e.email === asset.employeeId) || {};
       const wasReturned = ["Available", "In Stock"].includes(asset.status);
+      const isRetired = asset.status === "Retired";
       const allocatedOn = asset.updatedAt || asset.createdAt || null;
+
       const formatDate = (value) =>
-        value ? new Date(value).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "-";
+        value ? new Date(value).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "—";
+
+      let duration = "—";
+      if (allocatedOn) {
+        const start = new Date(allocatedOn);
+        const end = wasReturned ? new Date(asset.updatedAt || asset.createdAt) : new Date();
+        const days = Math.max(0, Math.round((end - start) / (1000 * 60 * 60 * 24)));
+        duration = `${days} day${days !== 1 ? "s" : ""}`;
+      }
 
       return {
+        assetId: asset.assetId || asset.id || "—",
+        assetName: asset.name || "—",
+        category: asset.category || "—",
+        entity: asset.entity || "—",
         employee: emp.name || asset.employeeId || "—",
+        employeeId: emp.employeeId || asset.employeeId || "—",
         department: emp.department || asset.department || "—",
         allocatedOn: formatDate(allocatedOn),
-        handoverOn: wasReturned ? formatDate(asset.updatedAt || asset.createdAt) : "—",
-        status: wasReturned ? "Returned" : "Allocated",
+        returnedOn: wasReturned ? formatDate(asset.updatedAt) : "—",
+        duration,
+        status: isRetired ? "Retired" : wasReturned ? "Returned" : "Active",
       };
+    })
+    .sort((a, b) => {
+      // Active allocations first, then by assetId
+      if (a.status === "Active" && b.status !== "Active") return -1;
+      if (a.status !== "Active" && b.status === "Active") return 1;
+      return String(a.assetId).localeCompare(String(b.assetId));
     });
 
   if (loading) return <LoadingOverlay visible message="Loading available assets..." />;
@@ -188,12 +260,13 @@ export default function AssetAllocation() {
           </p>
         </div>
 
-        <button
-          className="btn-secondary"
+        <Button
+          variant="secondary"
+          icon={<FaHistory />}
           onClick={() => setOpenHistory(true)}
         >
           Allocation History
-        </button>
+        </Button>
       </div>
 
       {/* DRAWER */}
@@ -236,6 +309,50 @@ export default function AssetAllocation() {
           </div>
         </div>
       </div>
+
+      {/* AI SUGGESTIONS */}
+      {selectedEmpId && (
+        <div className="form-card ai-suggestion-card">
+          <h3>
+            <span style={{ marginRight: 8 }}>AI Asset Recommendations</span>
+            <span style={{ fontSize: 12, fontWeight: 400, color: "var(--text-secondary)" }}>
+              {aiLoading ? "Analysing..." : aiSuggestions?.message || ""}
+            </span>
+          </h3>
+          {aiLoading ? (
+            <p style={{ color: "var(--text-secondary)", fontSize: 13 }}>Generating recommendations...</p>
+          ) : aiSuggestions?.suggestions?.length > 0 ? (
+            <div className="ai-suggestions-list">
+              {aiSuggestions.suggestions.slice(0, 3).map((s, i) => (
+                <div
+                  key={s.asset.id}
+                  className={`ai-suggestion-item${String(selectedAssetId) === String(s.asset.id) ? " selected" : ""}`}
+                  onClick={() => setSelectedAssetId(String(s.asset.id))}
+                  title="Click to select this asset"
+                >
+                  <div className="ai-suggestion-rank">#{i + 1}</div>
+                  <div className="ai-suggestion-info">
+                    <div className="ai-suggestion-name">{s.asset.assetId} — {s.asset.name}</div>
+                    <div className="ai-suggestion-meta">
+                      {s.asset.category} &nbsp;·&nbsp; Health: <strong>{s.asset.healthGrade}</strong>
+                      &nbsp;·&nbsp; Match score: <strong>{s.score}</strong>
+                    </div>
+                    {s.reasons.length > 0 && (
+                      <div className="ai-suggestion-reasons">
+                        {s.reasons.map((r, ri) => (
+                          <span key={ri} className="ai-reason-tag">{r}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p style={{ color: "var(--text-secondary)", fontSize: 13 }}>No recommendations available for this employee.</p>
+          )}
+        </div>
+      )}
 
       {/* EMPLOYEE */}
       <div className="form-card">
@@ -333,9 +450,21 @@ export default function AssetAllocation() {
 
       {/* ACTIONS */}
       <div className="form-actions">
-        <button className="btn-primary" onClick={handleAllocate}>
+        <Button
+          variant="secondary"
+          icon={<FaHistory />}
+          onClick={() => setOpenHistory(true)}
+        >
+          Allocation History
+        </Button>
+        <Button
+          variant="primary"
+          size="md"
+          icon={<FaCheckCircle />}
+          onClick={handleAllocate}
+        >
           Allocate Asset
-        </button>
+        </Button>
       </div>
 
       {/* ALLOCATION WARNING CONFIRM */}

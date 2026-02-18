@@ -1,10 +1,70 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import "./Assets.css";
 import api from "../services/api";
 import { useEntity } from "../context/EntityContext";
 import { Button, ConfirmDialog } from "../components/ui";
 import { FaPen, FaTrash } from "react-icons/fa";
 import { useToast } from "../context/ToastContext";
+import INDIAN_CITIES from "../data/indianCities";
+
+function CityDropdown({ value, onChange, placeholder = "Search & select city..." }) {
+    const [search, setSearch] = useState(value || "");
+    const [open, setOpen] = useState(false);
+    const ref = useRef(null);
+
+    useEffect(() => {
+        setSearch(value || "");
+    }, [value]);
+
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (ref.current && !ref.current.contains(e.target)) {
+                setOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    const filtered = INDIAN_CITIES.filter(city =>
+        city.toLowerCase().includes(search.toLowerCase())
+    ).slice(0, 50);
+
+    return (
+        <div ref={ref} style={{ position: "relative" }}>
+            <input
+                type="text"
+                value={search}
+                onChange={(e) => {
+                    setSearch(e.target.value);
+                    setOpen(true);
+                    if (!e.target.value) onChange("");
+                }}
+                onFocus={() => setOpen(true)}
+                className="page-modal-input"
+                placeholder={placeholder}
+                autoComplete="off"
+            />
+            {open && filtered.length > 0 && (
+                <ul className="city-dropdown-list">
+                    {filtered.map((city) => (
+                        <li
+                            key={city}
+                            className={`city-dropdown-item${city === value ? " selected" : ""}`}
+                            onClick={() => {
+                                onChange(city);
+                                setSearch(city);
+                                setOpen(false);
+                            }}
+                        >
+                            {city}
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </div>
+    );
+}
 
 export default function Departments() {
     const [departments, setDepartments] = useState([]);
@@ -19,7 +79,6 @@ export default function Departments() {
         location: "",
     });
 
-    const [locations, setLocations] = useState([]);
     const [employees, setEmployees] = useState([]);
     const [deleteConfirm, setDeleteConfirm] = useState({ open: false, item: null });
 
@@ -29,12 +88,8 @@ export default function Departments() {
 
     const loadData = async () => {
         try {
-            const [deptData, locData] = await Promise.all([
-                api.getDepartmentsCommon(),
-                api.getLocationsCommon()
-            ]);
+            const deptData = await api.getDepartmentsCommon();
             setDepartments(deptData);
-            setLocations(locData);
 
             if (entity === "ALL") {
                 const entities = await api.getEntities();
@@ -63,8 +118,8 @@ export default function Departments() {
 
     const handleAddDept = async (e) => {
         e.preventDefault();
-        if (!newDept.name || !newDept.location) {
-            toast.warning("Department name and location are required");
+        if (!newDept.name) {
+            toast.warning("Department name is required");
             return;
         }
 
@@ -139,7 +194,7 @@ export default function Departments() {
                         {departments.map((dept) => (
                             <tr key={dept.id}>
                                 <td>{dept.name}</td>
-                                <td>{dept.location}</td>
+                                <td>{dept.location || "—"}</td>
                                 <td>
                                     <span className="status-badge" style={{
                                         backgroundColor: "var(--primary-soft)",
@@ -225,17 +280,11 @@ export default function Departments() {
 
                             <div style={{ marginBottom: "var(--space-lg)" }}>
                                 <label className="page-modal-label">Location</label>
-                                <select
-                                    name="location"
+                                <CityDropdown
                                     value={newDept.location}
-                                    onChange={handleInputChange}
-                                    className="page-modal-input"
-                                >
-                                    <option value="">Select Location...</option>
-                                    {locations.map(loc => (
-                                        <option key={loc.id} value={loc.name}>{loc.name}</option>
-                                    ))}
-                                </select>
+                                    onChange={(city) => setNewDept(prev => ({ ...prev, location: city }))}
+                                    placeholder="Search Indian city..."
+                                />
                             </div>
 
                             <div className="page-modal-footer">

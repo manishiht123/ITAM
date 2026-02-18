@@ -7,12 +7,23 @@ const safeValue = (value) => (value === undefined || value === null || value ===
 
 const buildConsentHtml = (data) => {
     const template = fs.readFileSync(templatePath, "utf8");
+
+    // Build logo img tag — render inline if base64/URL present, otherwise empty placeholder
+    const entityLogoHtml = data.entityLogo
+        ? `<img src="${data.entityLogo}" alt="${safeValue(data.entityName)}" class="header-logo" />`
+        : `<div class="header-logo-placeholder"></div>`;
+
     return template
+        .replace(/{{entityLogoHtml}}/g, entityLogoHtml)
+        .replace(/{{entityName}}/g, safeValue(data.entityName))
+        .replace(/{{entityAddress}}/g, safeValue(data.entityAddress))
         .replace(/{{employeeName}}/g, safeValue(data.employeeName))
         .replace(/{{employeeEmail}}/g, safeValue(data.employeeEmail))
+        .replace(/{{department}}/g, safeValue(data.department))
         .replace(/{{allocationDate}}/g, safeValue(data.allocationDate))
         .replace(/{{assetId}}/g, safeValue(data.assetId))
         .replace(/{{assetName}}/g, safeValue(data.assetName))
+        .replace(/{{category}}/g, safeValue(data.category))
         .replace(/{{serialNumber}}/g, safeValue(data.serialNumber))
         .replace(/{{ram}}/g, safeValue(data.ram))
         .replace(/{{storage}}/g, safeValue(data.storage))
@@ -67,21 +78,32 @@ const buildPdf = (lines) => {
 
 const buildConsentPdf = (data) => {
     const lines = [
+        data.entityName ? `${safeValue(data.entityName)} - IT Asset Management` : "IT Asset Management",
         "Asset Allocation Consent Form",
-        `Employee: ${safeValue(data.employeeName)}`,
+        `Generated: ${safeValue(data.allocationDate)}`,
+        "",
+        "-- EMPLOYEE DETAILS --",
+        `Name: ${safeValue(data.employeeName)}`,
         `Email: ${safeValue(data.employeeEmail)}`,
+        `Department: ${safeValue(data.department)}`,
         `Allocation Date: ${safeValue(data.allocationDate)}`,
         "",
+        "-- ASSET DETAILS --",
         `Asset ID: ${safeValue(data.assetId)}`,
         `Asset Name: ${safeValue(data.assetName)}`,
-        `Asset Serial No: ${safeValue(data.serialNumber)}`,
+        `Category: ${safeValue(data.category)}`,
+        `Serial Number: ${safeValue(data.serialNumber)}`,
         `RAM: ${safeValue(data.ram)}`,
         `Storage: ${safeValue(data.storage)}`,
         `Condition: ${safeValue(data.condition)}`,
         "",
-        "Employee agrees to use the asset responsibly and return it when requested.",
-        "Employee Signature: ______________________",
-        "IT Representative: ______________________"
+        "-- TERMS & CONDITIONS --",
+        "The asset must be used solely for official business purposes.",
+        "Any damage or loss must be reported to IT immediately.",
+        "The asset must be returned upon resignation or request.",
+        "",
+        "Employee Signature: ______________________  Date: ___________",
+        "IT Representative:  ______________________  Date: ___________"
     ];
 
     return buildPdf(lines);

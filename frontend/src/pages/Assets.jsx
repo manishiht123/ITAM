@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useEntity } from "../context/EntityContext";
 import "./Assets.css";
+import { FaPencilAlt, FaUserPlus, FaUndoAlt } from "react-icons/fa";
 import { KpiCard, Card, Button, Badge, ConfirmDialog } from "../components/ui";
 import ChartCard from "../components/ChartCard";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -519,32 +520,33 @@ export default function Assets() {
                     </Badge>
                   </td>
                   <td>
-                    {/* ACTION BUTTONS */}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => navigate(`/assets/edit/${asset.id}?entity=${encodeURIComponent(asset.entity || "")}`)}
-                    >
-                      Edit
-                    </Button>
-                    {isAvailableStatus(asset.status) && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => navigate(`/assets/allocate?assetId=${encodeURIComponent(asset.id)}`)}
+                    <div className="asset-action-icons">
+                      <button
+                        className="asset-icon-btn edit"
+                        title="Edit Asset"
+                        onClick={() => navigate(`/assets/edit/${asset.id}?entity=${encodeURIComponent(asset.entity || "")}`)}
                       >
-                        Allocate
-                      </Button>
-                    )}
-                    {isAllocatedStatus(asset.status) && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleReturn(asset)}
-                      >
-                        Return
-                      </Button>
-                    )}
+                        <FaPencilAlt />
+                      </button>
+                      {isAvailableStatus(asset.status) && (
+                        <button
+                          className="asset-icon-btn allocate"
+                          title="Allocate Asset"
+                          onClick={() => navigate(`/assets/allocate?assetId=${encodeURIComponent(asset.id)}`)}
+                        >
+                          <FaUserPlus />
+                        </button>
+                      )}
+                      {isAllocatedStatus(asset.status) && (
+                        <button
+                          className="asset-icon-btn return"
+                          title="Return Asset"
+                          onClick={() => handleReturn(asset)}
+                        >
+                          <FaUndoAlt />
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               )})}

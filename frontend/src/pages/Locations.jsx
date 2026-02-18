@@ -1,9 +1,69 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import "./Assets.css";
 import api from "../services/api";
 import { Button, LoadingOverlay, ConfirmDialog } from "../components/ui";
 import { FaPen, FaTrash } from "react-icons/fa";
 import { useToast } from "../context/ToastContext";
+import INDIAN_CITIES from "../data/indianCities";
+
+function CityDropdown({ value, onChange, placeholder = "Search & select city..." }) {
+    const [search, setSearch] = useState(value || "");
+    const [open, setOpen] = useState(false);
+    const ref = useRef(null);
+
+    useEffect(() => {
+        setSearch(value || "");
+    }, [value]);
+
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (ref.current && !ref.current.contains(e.target)) {
+                setOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    const filtered = INDIAN_CITIES.filter(city =>
+        city.toLowerCase().includes(search.toLowerCase())
+    ).slice(0, 50);
+
+    return (
+        <div ref={ref} style={{ position: "relative" }}>
+            <input
+                type="text"
+                value={search}
+                onChange={(e) => {
+                    setSearch(e.target.value);
+                    setOpen(true);
+                    if (!e.target.value) onChange("");
+                }}
+                onFocus={() => setOpen(true)}
+                className="page-modal-input"
+                placeholder={placeholder}
+                autoComplete="off"
+            />
+            {open && filtered.length > 0 && (
+                <ul className="city-dropdown-list">
+                    {filtered.map((city) => (
+                        <li
+                            key={city}
+                            className={`city-dropdown-item${city === value ? " selected" : ""}`}
+                            onClick={() => {
+                                onChange(city);
+                                setSearch(city);
+                                setOpen(false);
+                            }}
+                        >
+                            {city}
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </div>
+    );
+}
 
 export default function Locations() {
     const [locations, setLocations] = useState([]);
@@ -14,7 +74,7 @@ export default function Locations() {
     const [editingLocation, setEditingLocation] = useState(null);
     const [newLocation, setNewLocation] = useState({
         city: "",
-        country: "",
+        country: "India",
         address: "",
     });
     const [deleteConfirm, setDeleteConfirm] = useState({ open: false, item: null });
@@ -60,7 +120,7 @@ export default function Locations() {
             }
             setShowModal(false);
             setEditingLocation(null);
-            setNewLocation({ city: "", country: "", address: "" });
+            setNewLocation({ city: "", country: "India", address: "" });
         } catch (error) {
             toast.error(error.message || "Failed to save location");
         }
@@ -137,7 +197,7 @@ export default function Locations() {
                                                 setEditingLocation(loc);
                                                 setNewLocation({
                                                     city: loc.city || "",
-                                                    country: loc.country || "",
+                                                    country: loc.country || "India",
                                                     address: loc.address || ""
                                                 });
                                                 setShowModal(true);
@@ -184,21 +244,17 @@ export default function Locations() {
                             <div>
                                 <h2>{editingLocation ? "Edit Location" : "Add New Location"}</h2>
                             </div>
-                            <button className="page-modal-close" onClick={() => { setShowModal(false); setEditingLocation(null); setNewLocation({ city: "", country: "", address: "" }); }}>✕</button>
+                            <button className="page-modal-close" onClick={() => { setShowModal(false); setEditingLocation(null); setNewLocation({ city: "", country: "India", address: "" }); }}>✕</button>
                         </div>
 
                         <form onSubmit={handleAddLocation} className="page-modal-body">
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-lg)", marginBottom: "var(--space-lg)" }}>
                                 <div>
-                                    <label className="page-modal-label">City</label>
-                                    <input
-                                        type="text"
-                                        name="city"
+                                    <label className="page-modal-label">City *</label>
+                                    <CityDropdown
                                         value={newLocation.city}
-                                        onChange={handleInputChange}
-                                        className="page-modal-input"
-                                        placeholder="e.g. New York"
-                                        required
+                                        onChange={(city) => setNewLocation(prev => ({ ...prev, city }))}
+                                        placeholder="Search Indian city..."
                                     />
                                 </div>
                                 <div>
@@ -209,7 +265,7 @@ export default function Locations() {
                                         value={newLocation.country}
                                         onChange={handleInputChange}
                                         className="page-modal-input"
-                                        placeholder="e.g. USA"
+                                        placeholder="e.g. India"
                                     />
                                 </div>
                             </div>
@@ -233,7 +289,7 @@ export default function Locations() {
                                     onClick={() => {
                                         setShowModal(false);
                                         setEditingLocation(null);
-                                        setNewLocation({ city: "", country: "", address: "" });
+                                        setNewLocation({ city: "", country: "India", address: "" });
                                     }}
                                 >
                                     Cancel

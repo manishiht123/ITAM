@@ -27,14 +27,12 @@ const dedupeAssets = (assets) => {
 
 const getAssetModel = async (req) => {
     const entityCode = req.headers['x-entity-code'];
-    console.log(`[AssetController] Loading assets for entity: ${entityCode || "Global"}`);
     const sequelize = await TenantManager.getConnection(entityCode);
     if (!sequelize.models.Asset) {
-        console.error("[AssetController] Asset model not found on connection!");
-        // Force init if missing (fallback)
         const Asset = require("../models/Asset");
-        // If it's the default connection, Asset should have been defined.
-        // If separate connection, we need init.
+        if (Asset.init) {
+            return Asset.init(sequelize);
+        }
     }
     return sequelize.models.Asset;
 };
@@ -106,6 +104,25 @@ const getDepartmentLocationSets = async (sequelize) => {
     return { deptSet, locSet };
 };
 
+const buildEmpMap = (employees) => {
+    const map = {};
+    (employees || []).forEach((e) => {
+        const emp = e.toJSON ? e.toJSON() : e;
+        if (emp.employeeId) map[emp.employeeId] = emp;
+    });
+    return map;
+};
+
+const enrichWithEmployee = (asset, empMap) => {
+    const emp = empMap[asset.employeeId] || null;
+    return {
+        ...asset,
+        employeeName: emp?.name || null,
+        employeeEmail: emp?.email || null,
+        employeeDepartment: emp?.department || asset.department || null
+    };
+};
+
 exports.getAssets = async (req, res) => {
     try {
         const rawEntityCode = req.headers['x-entity-code'];
@@ -133,9 +150,14 @@ exports.getAssets = async (req, res) => {
                 ...allCodes.map((code) => (async () => {
                     const sequelize = await TenantManager.getConnection(code);
                     const Asset = sequelize.models.Asset || require("../models/Asset").init(sequelize);
-                    const assets = await Asset.findAll();
+                    const Employee = sequelize.models.Employee || require("../models/Employee").init(sequelize);
+                    const [assets, employees] = await Promise.all([
+                        Asset.findAll(),
+                        Employee.findAll({ attributes: ["employeeId", "name", "email", "department"] }).catch(() => [])
+                    ]);
+                    const empMap = buildEmpMap(employees);
                     console.log(`[AssetController] ${code} assets: ${assets.length}`);
-                    return assets.map((a) => ({ ...a.toJSON(), entity: a.entity || code }));
+                    return assets.map((a) => enrichWithEmployee({ ...a.toJSON(), entity: a.entity || code }, empMap));
                 })())
             ]);
 
@@ -152,8 +174,16 @@ exports.getAssets = async (req, res) => {
         }
 
         const Asset = await getAssetModel(req);
-        const assets = await Asset.findAll();
-        const uniqueAssets = dedupeAssets(assets.map((a) => (a.toJSON ? a.toJSON() : a)));
+        const entityCodeForEmp = req.headers['x-entity-code'];
+        const sequelize = await TenantManager.getConnection(entityCodeForEmp);
+        const Employee = sequelize.models.Employee || require("../models/Employee").init(sequelize);
+        const [assets, employees] = await Promise.all([
+            Asset.findAll(),
+            Employee.findAll({ attributes: ["employeeId", "name", "email", "department"] }).catch(() => [])
+        ]);
+        const empMap = buildEmpMap(employees);
+        const enriched = assets.map((a) => enrichWithEmployee(a.toJSON ? a.toJSON() : a, empMap));
+        const uniqueAssets = dedupeAssets(enriched);
         res.json(uniqueAssets);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -453,11 +483,18 @@ exports.updateAsset = async (req, res) => {
         // Fire email notifications (non-blocking behavior)
         try {
             const entityCode = req.headers['x-entity-code'];
-            const sequelize = await TenantManager.getConnection(entityCode);
-            const Employee = sequelize.models.Employee || require("../models/Employee").init(sequelize);
-            const EmailSettings = sequelize.models.EmailSettings || require("../models/EmailSettings").init(sequelize);
+            const tenantSequelize = await TenantManager.getConnection(entityCode);
+            const Employee = tenantSequelize.models.Employee || require("../models/Employee").init(tenantSequelize);
+
+            // EmailSettings lives in the MAIN (global) DB — not the tenant DB
+            const EmailSettings = require("../models/EmailSettings");
             const settings = await EmailSettings.findOne();
             const notificationSettings = await NotificationSettings.findOne();
+
+            // Fetch entity info (logo + name) from main DB for consent form branding
+            const entityInfo = entityCode
+                ? await Entity.findOne({ where: { code: entityCode } })
+                : null;
 
             const lookupEmployee = async (employeeId) => {
                 if (!employeeId) return null;
@@ -484,12 +521,12 @@ exports.updateAsset = async (req, res) => {
 
                 if (becameAllocated && updated.employeeId && allocationEnabled) {
                     const employee = await lookupEmployee(updated.employeeId);
-                    await sendAllocationEmail({ settings, employee, asset: updated });
+                    await sendAllocationEmail({ settings, employee, asset: updated, entity: entityInfo });
                 }
 
                 if (becameReturned && returnEnabled) {
                     const employee = await lookupEmployee(existing.employeeId);
-                    await sendReturnEmail({ settings, employee, asset: updated });
+                    await sendReturnEmail({ settings, employee, asset: updated, entity: entityInfo });
                 }
             }
         } catch (emailErr) {

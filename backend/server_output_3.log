@@ -1,0 +1,13 @@
+MySQL connected
+[ensureAssetColumns] No columns found for table 'Assets'. Is the table created yet?
+Server running on port 5000
+[ensureAssetColumns] No columns found for table 'Assets'. Is the table created yet?
+Connected to tenant DB: itam_entity_ofb
+[ensureAssetColumns] No columns found for table 'Assets'. Is the table created yet?
+Connected to tenant DB: itam_entity_oxyzo
+[AssetController] OFB assets: 4
+[AssetController] OXYZO assets: 4
+[AssetController] Aggregated assets: 8, unique: 8
+[AssetController] OFB assets: 4
+[AssetController] OXYZO assets: 4
+[AssetController] Aggregated assets: 8, unique: 8

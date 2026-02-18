@@ -1,10 +1,69 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import "./AddAsset.css";
 import api from "../services/api";
 import { useNavigate } from "react-router-dom";
 import { useEntity } from "../context/EntityContext";
 import { Button } from "../components/ui";
 import { useToast } from "../context/ToastContext";
+import INDIAN_CITIES from "../data/indianCities";
+
+function CityDropdown({ value, onChange, placeholder = "Search & select city..." }) {
+  const [search, setSearch] = useState(value || "");
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    setSearch(value || "");
+  }, [value]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const filtered = INDIAN_CITIES.filter(city =>
+    city.toLowerCase().includes(search.toLowerCase())
+  ).slice(0, 50);
+
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      <input
+        type="text"
+        value={search}
+        onChange={(e) => {
+          setSearch(e.target.value);
+          setOpen(true);
+          if (!e.target.value) onChange("");
+        }}
+        onFocus={() => setOpen(true)}
+        placeholder={placeholder}
+        autoComplete="off"
+      />
+      {open && filtered.length > 0 && (
+        <ul className="city-dropdown-list">
+          {filtered.map((city) => (
+            <li
+              key={city}
+              className={`city-dropdown-item${city === value ? " selected" : ""}`}
+              onClick={() => {
+                onChange(city);
+                setSearch(city);
+                setOpen(false);
+              }}
+            >
+              {city}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 export default function AddAsset() {
   const navigate = useNavigate();
@@ -97,6 +156,31 @@ export default function AddAsset() {
     setWarrantyExpiry(d.toISOString().split("T")[0]);
   }, [purchaseDate, warrantyYears]);
 
+  const [aiCategorySuggestion, setAiCategorySuggestion] = useState(null);
+
+  useEffect(() => {
+    const name = formData.name.trim();
+    if (!name) {
+      setAiCategorySuggestion(null);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      try {
+        const entityCode = formData.entity !== "ALL" ? formData.entity : null;
+        const result = await api.autoCategorizeBulk([name], entityCode);
+        const first = Array.isArray(result?.results) ? result.results[0] : null;
+        if (first && first.category && first.category !== "Other") {
+          setAiCategorySuggestion(first);
+        } else {
+          setAiCategorySuggestion(null);
+        }
+      } catch {
+        setAiCategorySuggestion(null);
+      }
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [formData.name, formData.entity]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -177,6 +261,18 @@ export default function AddAsset() {
                 <option key={cat.id || cat.name} value={cat.name}>{cat.name}</option>
               ))}
             </select>
+            {aiCategorySuggestion && aiCategorySuggestion.category !== formData.category && (
+              <div className="ai-category-suggestion">
+                <span>AI suggests: <strong>{aiCategorySuggestion.category}</strong></span>
+                <button
+                  type="button"
+                  className="ai-category-apply-btn"
+                  onClick={() => setFormData(prev => ({ ...prev, category: aiCategorySuggestion.category }))}
+                >
+                  Apply
+                </button>
+              </div>
+            )}
           </Field>
 
           <Field label="Department">
@@ -189,12 +285,11 @@ export default function AddAsset() {
           </Field>
 
           <Field label="Location">
-            <select name="location" value={formData.location} onChange={handleChange}>
-              <option value="">-- Select --</option>
-              {locations.map(l => (
-                <option key={l.id} value={l.name}>{l.name}</option>
-              ))}
-            </select>
+            <CityDropdown
+              value={formData.location}
+              onChange={(city) => setFormData(prev => ({ ...prev, location: city }))}
+              placeholder="Search Indian city..."
+            />
           </Field>
 
           <Field label="Asset Name / Tag">

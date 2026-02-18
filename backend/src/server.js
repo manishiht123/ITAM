@@ -20,17 +20,22 @@ require("./models/Entity");
 require("./models/Organization");
 const bcrypt = require("bcryptjs");
 const ensureAssetStatusEnum = require("./utils/ensureAssetStatusEnum");
+const ensureAssetColumns = require("./utils/ensureAssetColumns");
 
 const ensureEntityLogoColumn = async () => {
   const [rows] = await sequelize.query(`
-    SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+    SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS
     WHERE TABLE_SCHEMA = DATABASE()
       AND TABLE_NAME = "Entities"
       AND COLUMN_NAME = "logo"
   `);
 
   if (!rows.length) {
-    await sequelize.query("ALTER TABLE `Entities` ADD COLUMN `logo` TEXT NULL;");
+    // Column doesn't exist — add it as MEDIUMTEXT
+    await sequelize.query("ALTER TABLE `Entities` ADD COLUMN `logo` MEDIUMTEXT NULL;");
+  } else if (rows[0].DATA_TYPE !== 'mediumtext') {
+    // Column exists but is too small (TEXT only holds ~64KB) — upgrade to MEDIUMTEXT (16MB)
+    await sequelize.query("ALTER TABLE `Entities` MODIFY COLUMN `logo` MEDIUMTEXT NULL;");
   }
 };
 
@@ -40,7 +45,7 @@ const ensureUserPermissionColumns = async () => {
     SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
     WHERE TABLE_SCHEMA = DATABASE()
       AND TABLE_NAME = "Users"
-      AND COLUMN_NAME IN ("allowedEntities", "entityPermissions")
+      AND COLUMN_NAME IN ("allowedEntities", "entityPermissions", "phone", "title")
   `);
 
   const existing = new Set(rows.map((row) => row.COLUMN_NAME));
@@ -49,6 +54,12 @@ const ensureUserPermissionColumns = async () => {
   }
   if (!existing.has('entityPermissions')) {
     await sequelize.query("ALTER TABLE `Users` ADD COLUMN `entityPermissions` TEXT NULL;");
+  }
+  if (!existing.has('phone')) {
+    await sequelize.query("ALTER TABLE `Users` ADD COLUMN `phone` VARCHAR(255) NULL;");
+  }
+  if (!existing.has('title')) {
+    await sequelize.query("ALTER TABLE `Users` ADD COLUMN `title` VARCHAR(255) NULL;");
   }
 };
 
@@ -75,15 +86,17 @@ const startServer = async () => {
   try {
     await waitForDB();
     await sequelize.sync({ alter: false });
-    await AuditLog.sync({ alter: true });
-    await EmailSettings.sync({ alter: true });
-    await NotificationSettings.sync({ alter: true });
-    await SystemPreference.sync({ alter: true });
-    await Role.sync({ alter: true });
-    await AlertRule.sync({ alter: true });
+    await AuditLog.sync();
+    await EmailSettings.sync();
+    await NotificationSettings.sync();
+    await SystemPreference.sync();
+    await Role.sync();
+    await AlertRule.sync();
+    await ensureAssetColumns(sequelize);
+    await ensureAssetStatusEnum(sequelize);
     await ensureUserPermissionColumns();
     await ensureEntityLogoColumn();
-    await ensureAssetStatusEnum(sequelize);
+    await sequelize.query("ALTER TABLE `Departments` MODIFY COLUMN `location` VARCHAR(255) NULL;").catch(() => { });
 
     const admin = await User.findOne({
       where: { email: "manish@ofbusiness.in" }

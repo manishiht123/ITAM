@@ -72,7 +72,7 @@ const buildReturnEmailHtml = (data) => {
     `;
 };
 
-const sendAllocationEmail = async ({ settings, employee, asset }) => {
+const sendAllocationEmail = async ({ settings, employee, asset, entity }) => {
     if (!settings || !settings.enabled) return;
     if (!settings.smtpUser || !settings.smtpPass || !employee?.email) return;
 
@@ -80,13 +80,18 @@ const sendAllocationEmail = async ({ settings, employee, asset }) => {
     const data = {
         employeeName: employee.name,
         employeeEmail: employee.email,
+        department: employee.department || "-",
         allocationDate,
         assetId: asset.assetId || asset.id,
         assetName: asset.name,
+        category: asset.category || "-",
         serialNumber: asset.serialNumber,
         ram: asset.ram,
         storage: asset.storage,
-        condition: asset.condition
+        condition: asset.condition,
+        entityName: entity?.name || "",
+        entityLogo: entity?.logo || "",
+        entityAddress: entity?.address || ""
     };
 
     const consentHtml = buildConsentHtml(data);
@@ -134,7 +139,7 @@ const sendReturnEmail = async ({ settings, employee, asset }) => {
         assetName: asset.name,
         serialNumber: asset.serialNumber,
         returnToName: settings.returnToName || "IT Admin",
-        returnToEmail: settings.returnToEmail || recipient,
+        returnToEmail: settings.returnToEmail || settings.smtpUser,
         returnDate: new Date().toISOString().slice(0, 10)
     };
 

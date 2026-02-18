@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import api from "../../services/api";
 import { useEntity } from "../../context/EntityContext";
 import { useToast } from "../../context/ToastContext";
-import { getEntityLogo } from "../../config/entityLogos";
+import ofbLogo from "../../assets/logos/default.svg";
 import {
   Button,
   Card,
@@ -68,6 +68,12 @@ export default function Reports() {
       : entities.find((item) => item.code === entity) || null;
   }, [entity, entities]);
 
+  const entityNameMap = useMemo(() => {
+    const map = {};
+    entities.forEach(e => { map[e.code] = e.name || e.code; });
+    return map;
+  }, [entities]);
+
   const normalizeCompliance = (row) => {
     const owned = Number(row?.seatsOwned || 0);
     const used = Number(row?.seatsUsed || 0);
@@ -95,45 +101,125 @@ export default function Reports() {
     return dt.toLocaleString();
   };
 
-  const downloadCsv = (rows, filename) => {
+  const downloadHtmlReport = (title, columns, rows) => {
     if (!rows.length) {
       toast.warning("No data available for this report.");
       return;
     }
-    const headers = Object.keys(rows[0]);
-    const csv = [
-      headers.join(","),
-      ...rows.map((row) =>
-        headers
-          .map((h) => `"${String(row[h] ?? "").replace(/"/g, '""')}"`)
-          .join(",")
-      )
-    ].join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", filename);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success(`${filename} downloaded successfully!`);
+
+    const entityLogo = selectedEntity?.logo || (entity === "ALL" ? ofbLogo : "");
+    const entityName = selectedEntity?.name || (entity !== "ALL" ? entity : "All Entities");
+    const reportDate = new Date().toLocaleDateString("en-GB", {
+      year: "numeric", month: "long", day: "numeric"
+    });
+
+    const logoHtml = entityLogo
+      ? `<img src="${entityLogo}" alt="${entityName}" style="height:52px;max-width:160px;object-fit:contain;border-radius:6px;" />`
+      : `<div style="width:52px;height:52px;border-radius:8px;background:#1a56db;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;">${entity.slice(0, 4).toUpperCase()}</div>`;
+
+    const headerCells = columns.map(col => `<th>${col.label}</th>`).join("");
+    const dataRows = rows.map(row =>
+      `<tr>${columns.map(col => `<td>${row[col.key] ?? "-"}</td>`).join("")}</tr>`
+    ).join("\n");
+
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>${title}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; color: #111827; background: #fff; }
+    .container { max-width: 960px; margin: 0 auto; padding: 32px 28px; }
+    .header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 18px; border-bottom: 2px solid #1a56db; margin-bottom: 24px; }
+    .header-text { text-align: right; }
+    .header-entity { font-size: 15px; font-weight: 700; color: #1a56db; }
+    .header-title { font-size: 18px; font-weight: 700; color: #111827; margin-top: 2px; }
+    .header-sub { font-size: 11px; color: #6b7280; margin-top: 2px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+    th { background: #1a56db; color: #fff; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; padding: 9px 12px; text-align: left; }
+    td { border: 1px solid #e5e7eb; padding: 8px 12px; font-size: 13px; color: #374151; }
+    tr:nth-child(even) td { background: #f9fafb; }
+    .doc-footer { margin-top: 28px; padding-top: 14px; border-top: 1px solid #e5e7eb; font-size: 10px; color: #9ca3af; display: flex; justify-content: space-between; }
+    @media print {
+      .container { padding: 16px; }
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      ${logoHtml}
+      <div class="header-text">
+        <div class="header-entity">${entityName}</div>
+        <div class="header-title">${title}</div>
+        <div class="header-sub">ITAM &middot; Generated on ${reportDate}</div>
+      </div>
+    </div>
+    <table>
+      <thead><tr>${headerCells}</tr></thead>
+      <tbody>
+${dataRows}
+      </tbody>
+    </table>
+    <div class="doc-footer">
+      <span>${entityName} &middot; IT Asset Management</span>
+      <span>Report Date: ${reportDate}</span>
+    </div>
+  </div>
+  <script>
+    window.addEventListener('load', function() {
+      setTimeout(function() { window.print(); }, 350);
+      window.addEventListener('afterprint', function() { window.close(); });
+    });
+  </script>
+</body>
+</html>`;
+
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      toast.warning("Please allow pop-ups to export PDF reports.");
+      return;
+    }
+    printWindow.document.write(html);
+    printWindow.document.close();
   };
 
-  const exportAssetsReport = async () => {
-    try {
-      const blob = await api.exportAssets(entity === "ALL" ? null : entity, "csv");
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", "assets_report.csv");
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      toast.success("Assets report downloaded successfully!");
-    } catch (err) {
-      toast.error("Failed to export assets report.");
-    }
+  const exportAssetsReport = () => {
+    const columns = [
+      { key: "assetId", label: "Asset ID" },
+      { key: "name", label: "Asset Name" },
+      { key: "category", label: "Category" },
+      { key: "serialNumber", label: "Serial Number" },
+      { key: "status", label: "Status" },
+      { key: "entity", label: "Entity" },
+      { key: "employeeId", label: "Employee ID" },
+      { key: "employeeName", label: "Employee Name" },
+      { key: "employeeEmail", label: "Employee Email" },
+      { key: "department", label: "Department" },
+      { key: "location", label: "Location" },
+      { key: "purchaseDate", label: "Purchase Date" },
+      { key: "allocationDate", label: "Allocation Date" }
+    ];
+    const rows = reportData.assets.map(asset => ({
+      assetId: asset.assetId || asset.id || "-",
+      name: asset.name || "-",
+      category: asset.category || "-",
+      serialNumber: asset.serialNumber || "-",
+      status: asset.status || "-",
+      entity: entityNameMap[asset.entityCode || asset.entity] || asset.entityCode || asset.entity || entityNameMap[entity] || entity,
+      employeeId: asset.employeeId || "-",
+      employeeName: asset.employeeName || "-",
+      employeeEmail: asset.employeeEmail || "-",
+      department: asset.employeeDepartment || asset.department || "-",
+      location: asset.location || "-",
+      purchaseDate: asset.dateOfPurchase ? new Date(asset.dateOfPurchase).toLocaleDateString() : "-",
+      allocationDate: asset.status === "In Use" && asset.updatedAt
+        ? new Date(asset.updatedAt).toLocaleDateString()
+        : "-"
+    }));
+    downloadHtmlReport("Asset Inventory Summary", columns, rows);
   };
 
   const loadSoftwareData = async () => {
@@ -255,32 +341,54 @@ export default function Reports() {
 
   const exportLicenseReport = async () => {
     const data = await loadSoftwareData();
-    const rows = (data.licenses || []).map((lic, idx) => ({
-      "S. No": idx + 1,
-      Product: lic.product,
-      Vendor: lic.vendor,
-      Entity: lic.entity || lic._entityCode || entity,
-      "Seats Owned": lic.seatsOwned,
-      "Seats Used": lic.seatsUsed,
-      Renewal: lic.renewalDate || ""
-    }));
-    downloadCsv(rows, "license_report.csv");
+    const columns = [
+      { key: "sno", label: "S. No" },
+      { key: "product", label: "Product" },
+      { key: "vendor", label: "Vendor" },
+      { key: "entity", label: "Entity" },
+      { key: "seatsOwned", label: "Seats Owned" },
+      { key: "seatsUsed", label: "Seats Used" },
+      { key: "renewal", label: "Renewal Date" }
+    ];
+    const rows = (data.licenses || []).map((lic, idx) => {
+      const code = lic.entity || lic._entityCode || entity;
+      return {
+        sno: idx + 1,
+        product: lic.product || "-",
+        vendor: lic.vendor || "-",
+        entity: entityNameMap[code] || code,
+        seatsOwned: lic.seatsOwned ?? "-",
+        seatsUsed: lic.seatsUsed ?? "-",
+        renewal: lic.renewalDate || "-"
+      };
+    });
+    downloadHtmlReport("License Compliance Report", columns, rows);
   };
 
   const exportAssignmentReport = async () => {
     const data = await loadSoftwareData();
-    const rows = (data.assignments || []).map((assign, idx) => ({
-      "S. No": idx + 1,
-      Employee: assign.employeeName || assign.employeeId,
-      Email: assign.employeeEmail || "",
-      License: assign.license?.product || "",
-      Vendor: assign.license?.vendor || "",
-      Entity: assign.entity || assign._entityCode || entity,
-      Assigned: assign.assignedAt
-        ? new Date(assign.assignedAt).toLocaleDateString()
-        : ""
-    }));
-    downloadCsv(rows, "assignment_report.csv");
+    const columns = [
+      { key: "sno", label: "S. No" },
+      { key: "employee", label: "Employee" },
+      { key: "email", label: "Email" },
+      { key: "license", label: "License" },
+      { key: "vendor", label: "Vendor" },
+      { key: "entity", label: "Entity" },
+      { key: "assigned", label: "Assigned On" }
+    ];
+    const rows = (data.assignments || []).map((assign, idx) => {
+      const code = assign.entity || assign._entityCode || entity;
+      return {
+        sno: idx + 1,
+        employee: assign.employeeName || assign.employeeId || "-",
+        email: assign.employeeEmail || "-",
+        license: assign.license?.product || "-",
+        vendor: assign.license?.vendor || "-",
+        entity: entityNameMap[code] || code,
+        assigned: assign.assignedAt ? new Date(assign.assignedAt).toLocaleDateString() : "-"
+      };
+    });
+    downloadHtmlReport("Assignment & Ownership Report", columns, rows);
   };
 
   return (
@@ -289,18 +397,9 @@ export default function Reports() {
         <div>
           <h1>
             Reports
-            {selectedEntity && (
-              <span style={{ marginLeft: 12, display: "inline-flex", alignItems: "center", gap: 8 }}>
-                <img
-                  src={getEntityLogo(selectedEntity.code)}
-                  alt={`${selectedEntity.code} logo`}
-                  style={{ height: 22 }}
-                />
-                <span style={{ fontSize: 14, color: "var(--text-secondary)" }}>
-                  {selectedEntity.name} ({selectedEntity.code})
-                </span>
-              </span>
-            )}
+            <Badge variant="primary" style={{ marginLeft: 10, fontSize: 12, verticalAlign: "middle" }}>
+              {selectedEntity ? selectedEntity.code : "All Entities"}
+            </Badge>
           </h1>
           <p>Generate audit-ready exports and scheduled reports across assets, licenses, and compliance.</p>
         </div>

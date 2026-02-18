@@ -154,13 +154,22 @@ const STATUS_KEYWORDS = {
 };
 
 const INTENT_PATTERNS = [
-    { pattern: /how many|count|total|number of/i, intent: "count" },
+    { pattern: /^(hi|hello|hey|good\s*(morning|afternoon|evening)|greetings|howdy)[\s!?.]*$/i, intent: "greeting" },
+    { pattern: /what can you (do|help)|how (do|can) (i|you)|help me|what are you|your (capabilities|features|functions)/i, intent: "help" },
+    { pattern: /utilization|utilisation|usage rate|how (many|much).*(use|using|used|allocated)/i, intent: "utilization" },
+    { pattern: /how many|count|total number|number of/i, intent: "count" },
+    { pattern: /fleet (summary|stats|overview|report|status)|overview|summary|statistics|dashboard/i, intent: "fleet_summary" },
+    { pattern: /anomaly|anomalies|unusual|problem|issue|alert|warning/i, intent: "anomaly" },
+    { pattern: /forecast|predict|future|next (month|year|quarter)|budget/i, intent: "forecast" },
     { pattern: /show|list|find|get|display|view|search/i, intent: "list" },
     { pattern: /who has|assigned to|belongs to|owner/i, intent: "owner_lookup" },
-    { pattern: /health|score|condition|state/i, intent: "health" },
+    { pattern: /health|score|condition|state|grade/i, intent: "health" },
     { pattern: /oldest|newest|recent|latest|first|last/i, intent: "sort" },
     { pattern: /department|dept/i, intent: "department_filter" },
-    { pattern: /entity|company|org/i, intent: "entity_filter" }
+    { pattern: /entity|company|org/i, intent: "entity_filter" },
+    { pattern: /retired|decommissioned|end of life/i, intent: "retired" },
+    { pattern: /repair|broken|damaged|maintenance/i, intent: "repair" },
+    { pattern: /available|free|unallocated|unassigned/i, intent: "available" },
 ];
 
 const SORT_KEYWORDS = {
@@ -284,14 +293,130 @@ function parseSmartQuery(query, knownEntities = [], knownDepartments = []) {
 }
 
 function executeSmartQuery(parsedQuery, assets) {
+    const total = assets.length;
+
+    // ── Greeting ──────────────────────────────────────
+    if (parsedQuery.intent === "greeting") {
+        return {
+            type: "info",
+            message: "Hello! I'm your ITAM AI Assistant 👋\n\nI can help you with:\n• Asset counts and searches\n• Fleet health analysis\n• Anomaly detection\n• Budget forecasting\n• Utilization reports\n\nTry asking: \"How many laptops are available?\" or \"Show fleet health\"",
+            followUps: ["How many assets do we have?", "Show fleet summary", "Any anomalies?"]
+        };
+    }
+
+    // ── Help ──────────────────────────────────────────
+    if (parsedQuery.intent === "help") {
+        return {
+            type: "info",
+            message: `I'm your ITAM Intelligence Assistant. Here's what I can do:\n\n📦 **Asset Queries** — "Show all laptops", "List available desktops"\n📊 **Counts** — "How many assets are in use?", "Count printers"\n❤️ **Health** — "Fleet health report", "Show unhealthy assets"\n⚠️ **Anomalies** — "Any anomalies?", "Show problems"\n💰 **Forecast** — "Budget forecast", "Predict next quarter"\n📈 **Summary** — "Fleet overview", "Give me a summary"\n\nCurrently tracking **${total} assets** in the fleet.`,
+            followUps: ["Fleet summary", "Show all assets", "Health report"]
+        };
+    }
+
+    // ── Fleet Summary ─────────────────────────────────
+    if (parsedQuery.intent === "fleet_summary") {
+        if (total === 0) {
+            return {
+                type: "info",
+                message: "No assets found in the current fleet. Add assets via the Assets page to get started.",
+                followUps: ["How to add assets?", "Show all assets"]
+            };
+        }
+        const summary = getFleetHealthSummary(assets);
+        const inUse = assets.filter(a => a.status === "In Use").length;
+        const available = assets.filter(a => a.status === "Available").length;
+        const underRepair = assets.filter(a => a.status === "Under Repair").length;
+        const retired = assets.filter(a => a.status === "Retired").length;
+        const utilRate = total > 0 ? Math.round((inUse / total) * 100) : 0;
+
+        const byCategory = {};
+        assets.forEach(a => { byCategory[a.category || "Other"] = (byCategory[a.category || "Other"] || 0) + 1; });
+        const topCat = Object.entries(byCategory).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, v]) => `${k}: ${v}`).join(", ");
+
+        return {
+            type: "info",
+            message: `📊 **Fleet Summary**\n\n**Total Assets:** ${total}\n**In Use:** ${inUse} (${utilRate}% utilization)\n**Available:** ${available}\n**Under Repair:** ${underRepair}\n**Retired:** ${retired}\n\n**Fleet Health:** Grade ${summary.averageGrade} (${summary.averageScore}%)\n**Needs Replacement:** ${summary.replacementNeeded} assets\n\n**Top Categories:** ${topCat || "—"}`,
+            followUps: ["Show health report", "Any anomalies?", "Budget forecast"]
+        };
+    }
+
+    // ── Utilization ───────────────────────────────────
+    if (parsedQuery.intent === "utilization") {
+        if (total === 0) {
+            return { type: "info", message: "No assets found to calculate utilization.", followUps: ["Show all assets"] };
+        }
+        const inUse = assets.filter(a => a.status === "In Use").length;
+        const available = assets.filter(a => a.status === "Available").length;
+        const utilRate = Math.round((inUse / total) * 100);
+
+        let insight = utilRate >= 80
+            ? "⚠️ High utilization — consider procuring additional assets."
+            : utilRate >= 50
+                ? "✅ Healthy utilization — fleet is well-balanced."
+                : "📦 Low utilization — many assets are idle. Consider reallocation.";
+
+        return {
+            type: "info",
+            message: `📈 **Asset Utilization Report**\n\n**Total Assets:** ${total}\n**In Use:** ${inUse}\n**Available:** ${available}\n**Utilization Rate:** ${utilRate}%\n\n${insight}`,
+            followUps: ["Show available assets", "Show in-use assets", "Fleet summary"]
+        };
+    }
+
+    // ── Anomaly ───────────────────────────────────────
+    if (parsedQuery.intent === "anomaly") {
+        const anomalies = detectAnomalies(assets, []);
+        if (anomalies.length === 0) {
+            return {
+                type: "info",
+                message: "✅ No anomalies detected in the current fleet. Everything looks normal!",
+                followUps: ["Show fleet health", "Fleet summary"]
+            };
+        }
+        const critical = anomalies.filter(a => a.severity === "critical");
+        const warnings = anomalies.filter(a => a.severity === "warning");
+        const list = anomalies.slice(0, 5).map(a => `• [${a.severity.toUpperCase()}] ${a.title}: ${a.description}`).join("\n");
+        return {
+            type: "info",
+            message: `⚠️ **${anomalies.length} Anomalies Detected**\n\n🔴 Critical: ${critical.length}  🟡 Warnings: ${warnings.length}\n\n${list}\n\nGo to AI Intelligence → Anomalies for the full report.`,
+            followUps: ["Show fleet health", "Budget forecast", "Fleet summary"]
+        };
+    }
+
+    // ── Forecast ──────────────────────────────────────
+    if (parsedQuery.intent === "forecast") {
+        const forecast = forecastBudget(assets);
+        if (!forecast || !forecast.nextMonthForecast) {
+            return {
+                type: "info",
+                message: "Not enough historical procurement data to generate a forecast yet. Add more assets with purchase dates to enable forecasting.",
+                followUps: ["Fleet summary", "Show all assets"]
+            };
+        }
+        const fmt = (n) => `₹${Number(n || 0).toLocaleString("en-IN")}`;
+        return {
+            type: "info",
+            message: `💰 **Budget Forecast**\n\n**Next Month:** ${fmt(forecast.nextMonthForecast)}\n**Next Quarter:** ${fmt(forecast.nextQuarterForecast)}\n**Next Year:** ${fmt(forecast.nextYearForecast)}\n\nBased on historical procurement of ${total} assets.\n\nVisit AI Intelligence → Forecast for detailed trends.`,
+            followUps: ["Fleet summary", "Fleet health", "Any anomalies?"]
+        };
+    }
+
+    // ── Quick status intents ───────────────────────────
+    if (parsedQuery.intent === "available") {
+        parsedQuery.filters.status = "Available";
+    } else if (parsedQuery.intent === "repair") {
+        parsedQuery.filters.status = "Under Repair";
+    } else if (parsedQuery.intent === "retired") {
+        parsedQuery.filters.status = "Retired";
+    }
+
+    // ── Apply standard filters ─────────────────────────
     let filtered = [...assets];
 
-    // Apply filters
     if (parsedQuery.filters.category) {
         filtered = filtered.filter(a => (a.category || "").toLowerCase() === parsedQuery.filters.category.toLowerCase());
     }
     if (parsedQuery.filters.status) {
-        filtered = filtered.filter(a => a.status === parsedQuery.filters.status);
+        filtered = filtered.filter(a => (a.status || "").toLowerCase() === parsedQuery.filters.status.toLowerCase());
     }
     if (parsedQuery.filters.entity) {
         filtered = filtered.filter(a => (a.entity || "").toLowerCase() === parsedQuery.filters.entity.toLowerCase());
@@ -314,33 +439,64 @@ function executeSmartQuery(parsedQuery, assets) {
         filtered = filtered.slice(0, parsedQuery.limit);
     }
 
-    // Handle count intent
+    // ── Count intent ───────────────────────────────────
     if (parsedQuery.intent === "count") {
+        const label = parsedQuery.filters.category || "assets";
+        const statusLabel = parsedQuery.filters.status ? ` with status "${parsedQuery.filters.status}"` : "";
         return {
             type: "count",
             count: filtered.length,
-            explanation: parsedQuery.explanation,
-            message: `Found ${filtered.length} matching assets.`
+            message: `Found **${filtered.length}** ${label}${statusLabel} out of **${total}** total assets.`,
+            followUps: filtered.length > 0 ? [
+                `Show these ${label}`,
+                "Check health of these assets",
+                "Fleet summary"
+            ] : ["Show all assets", "Fleet summary"]
         };
     }
 
-    // Handle health intent
+    // ── Health intent ──────────────────────────────────
     if (parsedQuery.intent === "health") {
+        if (filtered.length === 0) {
+            return {
+                type: "info",
+                message: "No assets match the criteria for health analysis.",
+                followUps: ["Show all assets", "Fleet summary"]
+            };
+        }
+        const summary = getFleetHealthSummary(filtered);
         return {
             type: "health",
-            summary: getFleetHealthSummary(filtered),
+            summary,
             assets: computeHealthScores(filtered).slice(0, 20),
-            explanation: parsedQuery.explanation,
-            message: `Health analysis for ${filtered.length} assets.`
+            message: `❤️ **Fleet Health: Grade ${summary.averageGrade} (${summary.averageScore}%)**\n\n${filtered.length} assets analyzed.\n${summary.replacementNeeded} need replacement.\n${summary.healthyPercentage}% are in good condition.`,
+            followUps: summary.replacementNeeded > 0
+                ? ["Show assets needing replacement", "Budget forecast", "Any anomalies?"]
+                : ["Fleet summary", "Show all assets"]
         };
     }
+
+    // ── List / default ─────────────────────────────────
+    if (filtered.length === 0) {
+        const filters = Object.entries(parsedQuery.filters).map(([k, v]) => `${k}: ${v}`).join(", ");
+        return {
+            type: "info",
+            message: `No assets found matching your query${filters ? ` (${filters})` : ""}. Try broadening your search.`,
+            followUps: ["Show all assets", "Fleet summary", "Fleet health"]
+        };
+    }
+
+    const followUps = [];
+    if (!parsedQuery.filters.status) followUps.push("Filter by available");
+    if (!parsedQuery.sort) followUps.push("Show newest first");
+    followUps.push("Check fleet health");
 
     return {
         type: "list",
         count: filtered.length,
-        assets: filtered.slice(0, 50), // Cap results
-        explanation: parsedQuery.explanation,
-        message: `Showing ${Math.min(filtered.length, 50)} of ${filtered.length} matching assets.`
+        assets: filtered.slice(0, 50),
+        message: `Found **${filtered.length}** matching assets${filtered.length > 50 ? " (showing first 50)" : ""}.`,
+        followUps: followUps.slice(0, 3)
     };
 }
 

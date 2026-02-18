@@ -46,34 +46,41 @@ export default function AddAssetCategory() {
         </div>
       </div>
 
-      <div className="asset-table-wrapper" style={{ maxWidth: "720px" }}>
-        <form onSubmit={handleSubmit} className="asset-form">
-          <div className="form-group">
-            <label htmlFor="name">Category Name</label>
+      <div className="add-category-card">
+        <form onSubmit={handleSubmit} className="add-category-form">
+          <div className="add-category-field">
+            <label htmlFor="name" className="add-category-label">
+              Category Name <span className="required-mark">*</span>
+            </label>
             <input
               id="name"
               name="name"
               type="text"
               value={formData.name}
               onChange={handleChange}
-              placeholder="e.g. Laptops"
+              placeholder="e.g. Laptops, Monitors, Printers"
+              className="add-category-input"
               required
             />
+            <p className="add-category-hint">Choose a clear, descriptive name for this category.</p>
           </div>
 
-          <div className="form-group">
-            <label htmlFor="description">Description</label>
+          <div className="add-category-field">
+            <label htmlFor="description" className="add-category-label">
+              Description
+            </label>
             <textarea
               id="description"
               name="description"
               value={formData.description}
               onChange={handleChange}
-              placeholder="Optional details about this category"
+              placeholder="Optional details about this category – e.g. what types of assets belong here"
               rows="4"
+              className="add-category-textarea"
             />
           </div>
 
-          <div className="asset-actions">
+          <div className="add-category-actions">
             <Button
               variant="secondary"
               onClick={() => navigate("/asset-categories")}

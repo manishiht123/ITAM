@@ -5,7 +5,7 @@ const DepartmentSchema = {
     id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
     name: { type: DataTypes.STRING, allowNull: false },
     head: { type: DataTypes.STRING, allowNull: true },
-    location: { type: DataTypes.STRING, allowNull: false },
+    location: { type: DataTypes.STRING, allowNull: true },
     employees: { type: DataTypes.INTEGER, defaultValue: 0 }
 };
 

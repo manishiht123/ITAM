@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   FaTachometerAlt,
@@ -7,8 +7,9 @@ import {
   FaUsers,
   FaCog,
   FaChevronDown,
+  FaChevronLeft,
+  FaChevronRight,
   FaSignOutAlt,
-  FaBars,
   FaBuilding,
   FaLayerGroup,
   FaRobot
@@ -19,8 +20,14 @@ import { FaLocationPin } from "react-icons/fa6";
 import { useAuth } from "../../context/AuthContext";
 
 export default function Sidebar() {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(window.innerWidth <= 768);
   const [settingsOpen, setSettingsOpen] = useState(false);
+
+  useEffect(() => {
+    const handleToggle = () => setCollapsed(prev => !prev);
+    window.addEventListener("toggle-sidebar", handleToggle);
+    return () => window.removeEventListener("toggle-sidebar", handleToggle);
+  }, []);
   const navigate = useNavigate();
   const { user, isAdmin, canAccess } = useAuth();
 
@@ -44,14 +51,14 @@ export default function Sidebar() {
       {/* ================= HEADER ================= */}
       <div className="sidebar-header">
         <div className="entity-name">
-          {!collapsed ? "OfBusiness" : "ITAM"}
+          {!collapsed ? "OfBusiness" : ""}
         </div>
-
         <button
           className="collapse-btn"
           onClick={() => setCollapsed(!collapsed)}
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
-          <FaBars />
+          {collapsed ? <FaChevronRight /> : <FaChevronLeft />}
         </button>
       </div>
 

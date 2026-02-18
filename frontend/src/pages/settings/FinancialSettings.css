@@ -1,10 +1,15 @@
-/* Financial Settings */
+/* ============================================================
+   Financial Settings Page
+   ============================================================ */
+
 .finance-page {
   margin: 0 auto;
   padding: 24px;
   color: var(--text-primary);
+  max-width: 1100px;
 }
 
+/* ── Header ── */
 .finance-header {
   display: flex;
   align-items: flex-end;
@@ -25,44 +30,136 @@
   margin: 0;
 }
 
-.finance-grid {
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* ── KPI Strip ── */
+.finance-kpi-strip {
   display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.fin-kpi-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px 18px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+
+.fin-kpi-icon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.fin-kpi-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.fin-kpi-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.fin-kpi-value {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.fin-kpi-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* ── Sections ── */
+.finance-sections {
+  display: flex;
+  flex-direction: column;
   gap: 20px;
 }
 
-/* Card padding scoped to this page */
 .finance-page .card {
-  padding: 20px 24px;
+  padding: 22px 26px;
+  border-radius: 16px;
 }
 
-/* Section titles inside cards */
+.fin-section {}
+
+.fin-section-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.fin-section-icon {
+  font-size: 18px;
+  color: var(--primary);
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+
 .finance-page .card-title {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: 16px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--border);
+  margin: 0 0 3px;
 }
 
+.fin-section-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* ── Form grid ── */
 .finance-page .form-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px 18px;
+  gap: 14px 20px;
 }
 
 .finance-page .form-group {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
 .finance-page .form-group label {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
+}
+
+.form-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
 }
 
 .finance-page .form-group input,
@@ -75,6 +172,7 @@
   background: var(--bg-elevated);
   color: var(--text-primary);
   transition: border-color 0.2s, box-shadow 0.2s;
+  width: 100%;
 }
 
 .finance-page .form-group input:focus,
@@ -84,41 +182,279 @@
   box-shadow: 0 0 0 3px var(--primary-soft);
 }
 
-.finance-page .metrics-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
+.finance-page .form-group input:disabled,
+.finance-page .form-group select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: var(--bg-muted);
 }
 
-.finance-page .metric {
+/* Input with prefix/suffix */
+.input-with-prefix,
+.input-with-suffix {
+  display: flex;
+  align-items: center;
   border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 16px;
-  background: linear-gradient(135deg, var(--bg-muted), var(--primary-soft));
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--bg-elevated);
+  height: 40px;
 }
 
-.finance-page .metric span {
-  font-size: 12px;
+.input-prefix,
+.input-suffix {
+  padding: 0 10px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+  background: var(--bg-muted);
+  border-right: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  height: 100%;
+  user-select: none;
 }
 
-.finance-page .metric strong {
-  display: block;
-  margin-top: 8px;
-  font-size: 20px;
+.input-with-suffix .input-suffix {
+  border-right: none;
+  border-left: 1px solid var(--border);
+}
+
+.input-with-prefix input,
+.input-with-suffix input {
+  border: none !important;
+  border-radius: 0 !important;
+  height: 100% !important;
+  flex: 1;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.input-with-prefix input:focus,
+.input-with-suffix input:focus {
+  outline: none;
+  box-shadow: none !important;
+}
+
+.input-with-prefix:focus-within,
+.input-with-suffix:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-soft);
+}
+
+/* ── Method Info Callout ── */
+.fin-method-callout {
+  margin-top: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--primary-soft);
+  border-left: 3px solid var(--primary);
+  border-radius: 0 10px 10px 0;
+  padding: 12px 14px;
+  font-size: 13px;
   color: var(--text-primary);
 }
 
-.actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
+.fin-callout-icon {
+  color: var(--primary);
+  flex-shrink: 0;
+  margin-top: 1px;
+  font-size: 14px;
 }
 
-/* Dark mode polish */
+/* ── CapEx Band ── */
+.fin-capex-band {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-top: 18px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--bg-muted);
+}
+
+.fin-capex-label {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.fin-opex-tag,
+.fin-capex-tag {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.fin-opex-tag {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.fin-capex-tag {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.fin-capex-divider {
+  width: 2px;
+  height: 44px;
+  background: var(--border);
+}
+
+/* ── Calculator ── */
+.fin-calc-toggle {
+  margin-left: auto;
+  flex-shrink: 0;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s;
+}
+
+.fin-calc-toggle:hover {
+  background: var(--primary-dark, #1565c0);
+}
+
+.fin-calc-body {
+  margin-top: 16px;
+  border-top: 1px solid var(--border);
+  padding-top: 20px;
+}
+
+.fin-calc-input-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.fin-calc-summary {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.fin-calc-badge {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  background: var(--bg-muted);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.fin-calc-badge strong {
+  font-size: 13px;
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.fin-calc-table-wrap {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.fin-calc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.fin-calc-table thead tr {
+  background: var(--bg-muted);
+}
+
+.fin-calc-table th {
+  text-align: left;
+  padding: 10px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.fin-calc-table td {
+  padding: 10px 14px;
+  border-top: 1px solid var(--border);
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.fin-calc-table tbody tr:hover {
+  background: var(--bg-hover, var(--bg-muted));
+}
+
+.fin-calc-yr {
+  font-weight: 600;
+  color: var(--primary) !important;
+}
+
+.fin-dep-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 140px;
+}
+
+.fin-dep-bar {
+  height: 7px;
+  background: var(--primary);
+  border-radius: 4px;
+  transition: width 0.3s;
+  min-width: 2px;
+}
+
+.fin-dep-bar-wrap span {
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* ── Bottom save bar ── */
+.fin-bottom-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 24px;
+  padding: 16px 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+
+.fin-last-saved-note {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* ── Dark mode ── */
 [data-theme="dark"] .finance-page .form-group input,
 [data-theme="dark"] .finance-page .form-group select {
   background: var(--bg-muted);
@@ -126,15 +462,67 @@
   color: var(--text-primary);
 }
 
-[data-theme="dark"] .finance-page .form-group input::placeholder {
-  color: var(--text-muted);
+[data-theme="dark"] .fin-opex-tag {
+  background: #0d2137;
+  color: #64b5f6;
 }
 
-@media (max-width: 1100px) {
+[data-theme="dark"] .fin-capex-tag {
+  background: #0d2616;
+  color: #81c784;
+}
+
+[data-theme="dark"] .fin-method-callout {
+  background: rgba(var(--primary-rgb, 33,150,243), 0.12);
+}
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+  .finance-kpi-strip {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .finance-page {
+    padding: 16px;
+  }
+
+  .finance-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .finance-kpi-strip {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
   .finance-page .form-grid {
     grid-template-columns: 1fr;
   }
-  .finance-page .metrics-grid {
+
+  .fin-capex-band {
+    flex-direction: column;
+  }
+
+  .fin-capex-divider {
+    width: 100%;
+    height: 2px;
+  }
+
+  .fin-calc-input-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .fin-bottom-actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .finance-kpi-strip {
     grid-template-columns: 1fr;
   }
 }

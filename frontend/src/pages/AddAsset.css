@@ -141,3 +141,78 @@ input:disabled {
 }
 
 /* Button styles handled by Button component CSS */
+
+/* ================= CITY DROPDOWN ================= */
+.city-dropdown-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  max-height: 220px;
+  overflow-y: auto;
+  margin: 4px 0 0;
+  padding: 4px 0;
+  list-style: none;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+}
+
+.city-dropdown-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.city-dropdown-list::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+.city-dropdown-item {
+  padding: 8px 14px;
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.city-dropdown-item:hover {
+  background: var(--primary-soft);
+  color: var(--primary-700);
+}
+
+.city-dropdown-item.selected {
+  background: var(--primary);
+  color: #fff;
+  font-weight: var(--font-weight-semibold);
+}
+/* AI Auto-Categorize Suggestion */
+.ai-category-suggestion {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--primary-soft);
+  border: 1px solid var(--primary);
+  font-size: 12px;
+  color: var(--text-primary);
+}
+
+.ai-category-apply-btn {
+  padding: 2px 10px;
+  border-radius: 6px;
+  border: none;
+  background: var(--primary);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.ai-category-apply-btn:hover {
+  opacity: 0.85;
+}

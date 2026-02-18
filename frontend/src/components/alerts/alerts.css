@@ -44,7 +44,65 @@
   color: var(--text-primary);
 }
 
+/* --- Colored Variants --- */
+.alert-card.critical,
+.compliance-card.critical {
+  background: var(--feedback-danger-bg);
+  border-left: 5px solid var(--danger);
+}
+
+.alert-card.critical .alert-card-title,
+.alert-card.critical .alert-card-value,
+.alert-card.critical .alert-card-description,
+.compliance-card.critical .compliance-card-title,
+.compliance-card.critical .compliance-card-status {
+  color: var(--feedback-danger-text);
+}
+
+.alert-card.warning,
+.compliance-card.warning {
+  background: var(--feedback-warning-bg);
+  border-left: 5px solid var(--warning);
+}
+
+.alert-card.warning .alert-card-title,
+.alert-card.warning .alert-card-value,
+.alert-card.warning .alert-card-description,
+.compliance-card.warning .compliance-card-title,
+.compliance-card.warning .compliance-card-status {
+  color: var(--feedback-warning-text);
+}
+
+.alert-card.success,
+.compliance-card.success {
+  background: var(--feedback-success-bg);
+  border-left: 5px solid var(--success);
+}
+
+.alert-card.success .alert-card-title,
+.alert-card.success .alert-card-value,
+.alert-card.success .alert-card-description,
+.compliance-card.success .compliance-card-title,
+.compliance-card.success .compliance-card-status {
+  color: var(--feedback-success-text);
+}
+
+.alert-card.info,
+.compliance-card.info {
+  background: var(--feedback-info-bg);
+  border-left: 5px solid var(--info);
+}
+
+.alert-card.info .alert-card-title,
+.alert-card.info .alert-card-value,
+.alert-card.info .alert-card-description,
+.compliance-card.info .compliance-card-title,
+.compliance-card.info .compliance-card-status {
+  color: var(--feedback-info-text);
+}
+
 @media (max-width: 1024px) {
+
   .alerts-grid,
   .compliance-grid {
     grid-template-columns: 1fr;

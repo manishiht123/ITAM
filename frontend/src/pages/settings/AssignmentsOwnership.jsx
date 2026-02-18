@@ -47,9 +47,23 @@ export default function AssignmentsOwnership() {
       setLoading(true);
       try {
         const entityCode = entity === "ALL" ? null : entity;
-        const [assets, employees] = await Promise.all([
-          api.getAssets(entityCode),
-          api.getEmployees(entityCode)
+
+        let employees = [];
+        if (entity === "ALL") {
+          const entitiesData = await api.getEntities();
+          const codes = (entitiesData || []).map(e => e.code).filter(Boolean);
+          const empResults = await Promise.allSettled(
+            codes.map(code => api.getEmployees(code))
+          );
+          employees = empResults.flatMap(r =>
+            r.status === "fulfilled" ? r.value : []
+          );
+        } else {
+          employees = await api.getEmployees(entityCode);
+        }
+
+        const [assets] = await Promise.all([
+          api.getAssets(entityCode)
         ]);
 
         const employeeIndex = employees.reduce((acc, employee) => {
@@ -223,48 +237,48 @@ export default function AssignmentsOwnership() {
           {loading ? (
             <LoadingOverlay visible message="Loading assignments..." />
           ) : (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Asset</th>
-                <th>User</th>
-                <th>Department</th>
-                <th>Entity</th>
-                <th>Status</th>
-                <th>Assigned On</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((row) => (
-                <tr key={row.id}>
-                  <td>
-                    <strong>{row.assetTag}</strong>
-                    <div className="muted">{row.assetType}</div>
-                  </td>
-                  <td>{row.user}</td>
-                  <td>{row.department}</td>
-                  <td>{row.entity}</td>
-                  <td>
-                    <span className={`status-chip ${row.status === "Assigned" ? "good" : "watch"}`}>
-                      {row.status}
-                    </span>
-                  </td>
-                  <td>{row.assignedOn}</td>
-                  <td>
-                    <Button variant="ghost" size="sm" onClick={() => navigate("/assets")}>View</Button>
-                  </td>
-                </tr>
-              ))}
-              {!filtered.length && (
+            <table className="table">
+              <thead>
                 <tr>
-                  <td colSpan={7} className="empty">
-                    No assignments found.
-                  </td>
+                  <th>Asset</th>
+                  <th>User</th>
+                  <th>Department</th>
+                  <th>Entity</th>
+                  <th>Status</th>
+                  <th>Assigned On</th>
+                  <th>Action</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {filtered.map((row) => (
+                  <tr key={row.id}>
+                    <td>
+                      <strong>{row.assetTag}</strong>
+                      <div className="muted">{row.assetType}</div>
+                    </td>
+                    <td>{row.user}</td>
+                    <td>{row.department}</td>
+                    <td>{row.entity}</td>
+                    <td>
+                      <span className={`status-chip ${row.status === "Assigned" ? "good" : "watch"}`}>
+                        {row.status}
+                      </span>
+                    </td>
+                    <td>{row.assignedOn}</td>
+                    <td>
+                      <Button variant="ghost" size="sm" onClick={() => navigate("/assets")}>View</Button>
+                    </td>
+                  </tr>
+                ))}
+                {!filtered.length && (
+                  <tr>
+                    <td colSpan={7} className="empty">
+                      No assignments found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           )}
         </div>
 

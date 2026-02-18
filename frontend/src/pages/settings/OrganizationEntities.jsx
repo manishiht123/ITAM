@@ -279,7 +279,7 @@ export default function OrganizationEntities() {
                                 <label className="page-modal-label">Entity Logo</label>
                                 <div style={{ display: "grid", gap: "12px" }}>
                                     <input
-                                        type="url"
+                                        type="text"
                                         name="logo"
                                         value={entityForm.logo}
                                         onChange={handleEntityChange}

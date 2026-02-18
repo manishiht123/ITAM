@@ -40,9 +40,10 @@ export default function AddEmployeeDrawer({
           ...initialData
         });
       } else {
+        const initialEntity = (!currentEntity || currentEntity === "ALL") ? "" : currentEntity;
         setFormData({
           ...emptyForm,
-          entity: currentEntity || ""
+          entity: initialEntity
         });
       }
     }

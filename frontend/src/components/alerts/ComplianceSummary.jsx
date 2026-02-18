@@ -1,9 +1,9 @@
 import "./alerts.css";
 
 const fallbackItems = [
-  { title: "License Compliance", status: "Compliant", color: "var(--feedback-success-bg)" },
-  { title: "Audit Readiness", status: "Audit Ready", color: "var(--feedback-success-bg)" },
-  { title: "Shadow IT Risk", status: "Low Risk", color: "var(--feedback-info-bg)" }
+  { title: "License Compliance", status: "Compliant", variant: "success" },
+  { title: "Audit Readiness", status: "Audit Ready", variant: "success" },
+  { title: "Shadow IT Risk", status: "Low Risk", variant: "info" }
 ];
 
 export default function ComplianceSummary({ items }) {
@@ -15,16 +15,16 @@ export default function ComplianceSummary({ items }) {
           key={`${item.title}-${idx}`}
           title={item.title}
           status={item.status}
-          color={item.color}
+          variant={item.variant || item.type || "success"}
         />
       ))}
     </div>
   );
 }
 
-function ComplianceCard({ title, status, color }) {
+function ComplianceCard({ title, status, variant }) {
   return (
-    <div className="compliance-card" style={{ background: color }}>
+    <div className={`compliance-card ${variant}`}>
       <p className="compliance-card-title">{title}</p>
       <h3 className="compliance-card-status">{status}</h3>
     </div>

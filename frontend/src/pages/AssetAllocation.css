@@ -16,7 +16,19 @@
 .page-subtitle {
   color: var(--text-secondary);
   font-size: 14px;
+  margin: 0;
+}
+
+/* ===============================
+   PAGE HEADER
+================================ */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   margin-bottom: 24px;
+  flex-wrap: wrap;
 }
 
 /* ===============================
@@ -143,12 +155,15 @@
 ================================ */
 .form-actions {
   display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 20px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 24px;
+  padding: 16px 20px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 12px;
 }
-
-/* Button styles handled by Button component CSS */
 
 /* ===============================
    RESPONSIVE (IMPORTANT)
@@ -233,4 +248,88 @@
   font-size: 13px;
   font-weight: 600;
   text-align: center;
+}
+/* ===============================
+   AI SUGGESTIONS PANEL
+================================ */
+.ai-suggestion-card {
+  border-left: 3px solid var(--primary);
+}
+
+.ai-suggestions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.ai-suggestion-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-muted);
+  cursor: pointer;
+  transition: border-color 0.18s, background 0.18s;
+}
+
+.ai-suggestion-item:hover {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.ai-suggestion-item.selected {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  box-shadow: 0 0 0 2px var(--primary-soft);
+}
+
+.ai-suggestion-rank {
+  min-width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ai-suggestion-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.ai-suggestion-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 3px;
+}
+
+.ai-suggestion-meta {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.ai-suggestion-reasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ai-reason-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--feedback-success-bg);
+  color: var(--feedback-success-text);
+  font-size: 11px;
+  font-weight: 600;
 }

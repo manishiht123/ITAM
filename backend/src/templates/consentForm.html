@@ -4,38 +4,144 @@
     <meta charset="UTF-8" />
     <title>Asset Allocation Consent Form</title>
     <style>
-      body { font-family: Arial, sans-serif; color: #111827; }
-      .container { max-width: 720px; margin: 0 auto; padding: 24px; }
-      h1 { font-size: 20px; margin-bottom: 12px; }
-      .meta { margin-bottom: 16px; }
-      table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-      th, td { border: 1px solid #e5e7eb; padding: 8px; text-align: left; }
-      .footer { margin-top: 24px; }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: Arial, sans-serif; color: #111827; background: #fff; }
+      .container { max-width: 720px; margin: 0 auto; padding: 32px 28px; }
+
+      /* ── HEADER ── */
+      .header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 18px; border-bottom: 2px solid #1a56db; margin-bottom: 20px; }
+      .header-logo { height: 52px; max-width: 160px; object-fit: contain; }
+      .header-logo-placeholder { width: 52px; height: 52px; }
+      .header-text { text-align: right; }
+      .header-entity { font-size: 15px; font-weight: 700; color: #1a56db; }
+      .header-title { font-size: 18px; font-weight: 700; color: #111827; margin-top: 2px; }
+      .header-sub { font-size: 11px; color: #6b7280; margin-top: 2px; }
+
+      /* ── NOTICE BANNER ── */
+      .notice { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 10px 14px; font-size: 12px; color: #1d4ed8; margin-bottom: 20px; }
+
+      /* ── SECTION TITLES ── */
+      .section-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #6b7280; margin: 20px 0 8px; }
+
+      /* ── INFO GRID ── */
+      .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 4px; }
+      .info-item { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 8px 12px; }
+      .info-label { font-size: 10px; font-weight: 600; text-transform: uppercase; color: #9ca3af; margin-bottom: 2px; }
+      .info-value { font-size: 13px; font-weight: 500; color: #111827; }
+
+      /* ── ASSET TABLE ── */
+      table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+      th { background: #1a56db; color: #fff; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; padding: 8px 10px; text-align: left; }
+      td { border: 1px solid #e5e7eb; padding: 8px 10px; font-size: 13px; color: #374151; }
+      tr:nth-child(even) td { background: #f9fafb; }
+
+      /* ── TERMS ── */
+      .terms { background: #fefce8; border: 1px solid #fde68a; border-radius: 6px; padding: 12px 14px; font-size: 12px; color: #92400e; line-height: 1.6; margin-top: 20px; }
+      .terms ul { padding-left: 18px; margin-top: 6px; }
+      .terms li { margin-bottom: 4px; }
+
+      /* ── SIGNATURE ── */
+      .signature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 28px; }
+      .sig-box { border-top: 1.5px solid #374151; padding-top: 8px; }
+      .sig-label { font-size: 11px; color: #6b7280; }
+      .sig-name { font-size: 13px; font-weight: 600; color: #111827; margin-top: 3px; }
+      .sig-date { font-size: 11px; color: #6b7280; margin-top: 2px; }
+
+      /* ── FOOTER ── */
+      .doc-footer { margin-top: 28px; padding-top: 14px; border-top: 1px solid #e5e7eb; font-size: 10px; color: #9ca3af; display: flex; justify-content: space-between; }
     </style>
   </head>
   <body>
     <div class="container">
-      <h1>Asset Allocation Consent Form</h1>
-      <div class="meta">
-        <p>Employee: {{employeeName}}</p>
-        <p>Email: {{employeeEmail}}</p>
-        <p>Allocation Date: {{allocationDate}}</p>
+
+      <!-- HEADER: entity logo + title -->
+      <div class="header">
+        {{entityLogoHtml}}
+        <div class="header-text">
+          <div class="header-entity">{{entityName}}</div>
+          <div class="header-title">Asset Allocation Consent Form</div>
+          <div class="header-sub">ITAM · Generated on {{allocationDate}}</div>
+        </div>
       </div>
 
+      <!-- NOTICE -->
+      <div class="notice">
+        This document confirms the allocation of a company asset. Please read the terms carefully before signing.
+      </div>
+
+      <!-- EMPLOYEE INFO -->
+      <div class="section-title">Employee Details</div>
+      <div class="info-grid">
+        <div class="info-item">
+          <div class="info-label">Full Name</div>
+          <div class="info-value">{{employeeName}}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Email Address</div>
+          <div class="info-value">{{employeeEmail}}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Department</div>
+          <div class="info-value">{{department}}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Allocation Date</div>
+          <div class="info-value">{{allocationDate}}</div>
+        </div>
+      </div>
+
+      <!-- ASSET INFO -->
+      <div class="section-title">Asset Details</div>
       <table>
-        <tr><th>Asset ID</th><td>{{assetId}}</td></tr>
-        <tr><th>Asset Name</th><td>{{assetName}}</td></tr>
-        <tr><th>Asset Serial No</th><td>{{serialNumber}}</td></tr>
-        <tr><th>RAM</th><td>{{ram}}</td></tr>
-        <tr><th>Storage</th><td>{{storage}}</td></tr>
-        <tr><th>Condition</th><td>{{condition}}</td></tr>
+        <thead>
+          <tr>
+            <th>Field</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Asset ID</td><td>{{assetId}}</td></tr>
+          <tr><td>Asset Name</td><td>{{assetName}}</td></tr>
+          <tr><td>Category</td><td>{{category}}</td></tr>
+          <tr><td>Serial Number</td><td>{{serialNumber}}</td></tr>
+          <tr><td>RAM</td><td>{{ram}}</td></tr>
+          <tr><td>Storage</td><td>{{storage}}</td></tr>
+          <tr><td>Condition</td><td>{{condition}}</td></tr>
+        </tbody>
       </table>
 
-      <div class="footer">
-        <p>By accepting this asset, the employee agrees to use it responsibly, keep it in good condition, and return it upon request or when employment ends.</p>
-        <p>Employee Signature: ______________________ Date: ____________</p>
-        <p>IT Representative: ______________________ Date: ____________</p>
+      <!-- TERMS -->
+      <div class="terms">
+        <strong>Terms &amp; Conditions of Asset Use:</strong>
+        <ul>
+          <li>The asset must be used solely for official business purposes.</li>
+          <li>The employee is responsible for the safekeeping and proper use of the asset.</li>
+          <li>Any damage, loss, or theft must be reported to IT immediately.</li>
+          <li>The asset must be returned in good condition upon resignation, transfer, or request.</li>
+          <li>Unauthorised software installation or modification is strictly prohibited.</li>
+        </ul>
       </div>
+
+      <!-- SIGNATURES -->
+      <div class="signature-grid">
+        <div class="sig-box">
+          <div class="sig-label">Employee Signature</div>
+          <div class="sig-name">{{employeeName}}</div>
+          <div class="sig-date">Date: _______________</div>
+        </div>
+        <div class="sig-box">
+          <div class="sig-label">IT Representative</div>
+          <div class="sig-name">______________________</div>
+          <div class="sig-date">Date: _______________</div>
+        </div>
+      </div>
+
+      <!-- FOOTER -->
+      <div class="doc-footer">
+        <span>{{entityName}} · IT Asset Management</span>
+        <span>Allocation Date: {{allocationDate}}</span>
+      </div>
+
     </div>
   </body>
 </html>

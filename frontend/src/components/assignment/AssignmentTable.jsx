@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "../ui";
+import { FaExchangeAlt, FaHistory } from "react-icons/fa";
 
 /**
  * PHASE 3 – Assignment & Ownership
@@ -49,6 +49,28 @@ export default function AssignmentTable({ entity, rows }) {
 
   return (
     <div>
+      <style>{`
+        .asgn-icon-btn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 30px;
+          height: 30px;
+          border-radius: 8px;
+          border: none;
+          cursor: pointer;
+          font-size: 13px;
+          transition: background 0.18s, color 0.18s, transform 0.15s;
+          background: transparent;
+        }
+        .asgn-icon-btn:hover { transform: scale(1.12); }
+        .asgn-icon-btn.reassign { color: var(--primary); background: var(--primary-soft); }
+        .asgn-icon-btn.reassign:hover { background: var(--primary); color: #fff; }
+        .asgn-icon-btn.history { color: #7c3aed; background: #ede9fe; }
+        .asgn-icon-btn.history:hover { background: #7c3aed; color: #fff; }
+        [data-theme="dark"] .asgn-icon-btn.history { background: rgba(124,58,237,0.15); }
+      `}</style>
+
       {/* SEARCH */}
       <input
         type="text"
@@ -98,9 +120,9 @@ export default function AssignmentTable({ entity, rows }) {
                 </td>
                 <td style={tdActions}>
                   <div style={actionGroup}>
-                    <Button
-                      variant="primary"
-                      size="sm"
+                    <button
+                      className="asgn-icon-btn reassign"
+                      title="Reassign Asset"
                       onClick={() => {
                         const targetEntity = row.entity || entity;
                         navigate(
@@ -110,11 +132,11 @@ export default function AssignmentTable({ entity, rows }) {
                         );
                       }}
                     >
-                      Reassign
-                    </Button>
-                    <Button
-                      variant="primary"
-                      size="sm"
+                      <FaExchangeAlt />
+                    </button>
+                    <button
+                      className="asgn-icon-btn history"
+                      title="View History"
                       onClick={() => {
                         const targetEntity = row.entity || entity;
                         navigate(
@@ -124,8 +146,8 @@ export default function AssignmentTable({ entity, rows }) {
                         );
                       }}
                     >
-                      History
-                    </Button>
+                      <FaHistory />
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -188,14 +210,14 @@ const td = {
 
 const thActions = {
   ...th,
-  width: 180,
-  minWidth: 180
+  width: 90,
+  minWidth: 90
 };
 
 const tdActions = {
   ...td,
-  width: 180,
-  minWidth: 180
+  width: 90,
+  minWidth: 90
 };
 
 const actionGroup = {

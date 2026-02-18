@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button, Badge, PageLayout, ConfirmDialog } from "../components/ui";
 import { useEntity } from "../context/EntityContext";
 import { useToast } from "../context/ToastContext";
 import api from "../services/api";
 import EmployeeTable from "../components/employees/EmployeeTable";
 import AddEmployeeDrawer from "../components/employees/AddEmployeeDrawer";
+import { FaPlus, FaFileUpload, FaFileExport, FaFileAlt } from "react-icons/fa";
 import "./Employees.css";
 
 export default function Employees() {
@@ -15,6 +16,59 @@ export default function Employees() {
   const [editingEmployee, setEditingEmployee] = useState(null);
   const [refreshToken, setRefreshToken] = useState(0);
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, item: null });
+  const fileInputRef = useRef(null);
+
+  const handleExport = async () => {
+    try {
+      const blob = await api.exportEmployees(entity);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `employees_export_${entity || "ALL"}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success("Employees exported successfully");
+    } catch (err) {
+      toast.error(err.message || "Export failed");
+    }
+  };
+
+  const handleDownloadTemplate = () => {
+    const headers = ["Employee Name", "Employee Email ID", "Employee ID", "Department"];
+    const csvContent = [headers.join(","), ""].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "employees_import_template.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleImportClick = () => {
+    fileInputRef.current.click();
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!entity || entity === "ALL") {
+      toast.warning("Please select a single entity to import employees");
+      e.target.value = null;
+      return;
+    }
+    try {
+      const result = await api.importEmployees(file, entity);
+      toast.success(result?.message || "Employees imported successfully");
+      setRefreshToken(v => v + 1);
+    } catch (err) {
+      toast.error(err.message || "Import failed");
+    } finally {
+      e.target.value = null;
+    }
+  };
 
   const handleEdit = (employee) => {
     setEditingEmployee(employee);
@@ -29,7 +83,7 @@ export default function Employees() {
     const { item } = deleteConfirm;
     setDeleteConfirm({ open: false, item: null });
     try {
-      const entityCode = entity === "ALL" ? null : entity;
+      const entityCode = entity === "ALL" ? (item.entity || null) : entity;
       await api.deleteEmployee(item.id, entityCode);
       toast.success(`Employee "${item.name}" deleted successfully`);
       setRefreshToken((value) => value + 1);
@@ -54,9 +108,50 @@ export default function Employees() {
         }
         subtitle="Manage employee records and assignments"
         actions={
-          <Button variant="primary" onClick={() => setOpenAdd(true)}>
-            + Add Employee
-          </Button>
+          <div className="employees-actions">
+            <Button
+              variant="primary"
+              size="md"
+              icon={<FaFileAlt />}
+              onClick={handleDownloadTemplate}
+              title="Download CSV Template"
+            >
+              Template
+            </Button>
+            <Button
+              variant="primary"
+              size="md"
+              icon={<FaFileUpload />}
+              onClick={handleImportClick}
+              title="Import employees from CSV"
+            >
+              Import
+            </Button>
+            <Button
+              variant="primary"
+              size="md"
+              icon={<FaFileExport />}
+              onClick={handleExport}
+              title="Export all employees to CSV"
+            >
+              Export
+            </Button>
+            <Button
+              variant="primary"
+              size="md"
+              icon={<FaPlus />}
+              onClick={() => setOpenAdd(true)}
+            >
+              Add Employee
+            </Button>
+            <input
+              type="file"
+              ref={fileInputRef}
+              style={{ display: "none" }}
+              accept=".csv, .xlsx, .xls"
+              onChange={handleFileChange}
+            />
+          </div>
         }
       />
 

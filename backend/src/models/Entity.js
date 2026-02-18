@@ -9,7 +9,7 @@ const Entity = sequelize.define("Entity", {
     address: { type: DataTypes.TEXT, allowNull: true },
     contactPerson: { type: DataTypes.STRING, allowNull: true },
     contactEmail: { type: DataTypes.STRING, allowNull: true },
-    logo: { type: DataTypes.TEXT, allowNull: true }
+    logo: { type: DataTypes.TEXT('medium'), allowNull: true }
 });
 
 module.exports = Entity;

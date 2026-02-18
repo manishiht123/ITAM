@@ -106,7 +106,7 @@
   --z-drawer: 60;
   --z-overlay: 60;
   --z-modal: 70;
-  --z-toast: 100;
+  --z-toast: 10000;
 
   /* ============== TRANSITIONS ============== */
   --transition-fast: 150ms ease;

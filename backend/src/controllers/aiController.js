@@ -35,7 +35,15 @@ const getEmployeesForEntity = async (entityCode) => {
 exports.getHealthScores = async (req, res) => {
     try {
         const entityCode = req.headers["x-entity-code"];
-        const assets = await getAssetsForEntity(entityCode);
+        let assets = [];
+
+        if (entityCode && entityCode !== "ALL") {
+            assets = await getAssetsForEntity(entityCode);
+        } else {
+            const allEntities = await Entity.findAll({ attributes: ['code'], raw: true });
+            const assetGroups = await Promise.all(allEntities.map(e => getAssetsForEntity(e.code).catch(() => [])));
+            assets = assetGroups.flat();
+        }
 
         const scores = AI.computeHealthScores(assets);
         const summary = AI.getFleetHealthSummary(assets);
@@ -65,11 +73,21 @@ exports.smartSearch = async (req, res) => {
         }
 
         // Fetch assets with error handling
-        let assets;
+        let assets = [];
         try {
-            assets = await getAssetsForEntity(entityCode);
+            if (entityCode && entityCode !== "ALL") {
+                assets = await getAssetsForEntity(entityCode);
+            } else {
+                // AGGREGATE: Get all assets from ALL entities
+                const allEntities = await Entity.findAll({ attributes: ['code'], raw: true });
+                const assetPromises = allEntities.map(e => getAssetsForEntity(e.code).catch(() => []));
+                const assetGroups = await Promise.all(assetPromises);
+                assets = assetGroups.flat();
+            }
         } catch (dbErr) {
-            return res.status(500).json({ error: "Database connection failed: " + dbErr.message });
+            console.error("Aggregation failed:", dbErr);
+            // Fallback to main DB if aggregation fails completely
+            assets = await getAssetsForEntity(null).catch(() => []);
         }
 
         // Context data (optional)
@@ -80,7 +98,8 @@ exports.smartSearch = async (req, res) => {
         } catch (e) { console.warn("Entity fetch failed", e.message); }
 
         try {
-            const sequelize = await TenantManager.getConnection(entityCode || null);
+            // Get departments from the current connection (of specific entity or main)
+            const sequelize = await TenantManager.getConnection(entityCode && entityCode !== "ALL" ? entityCode : null);
             const DeptModel = sequelize.models.Department;
             if (DeptModel) departments = await DeptModel.findAll({ raw: true });
         } catch (e) { console.warn("Department fetch failed", e.message); }
@@ -113,8 +132,19 @@ exports.smartSearch = async (req, res) => {
 exports.getAnomalies = async (req, res) => {
     try {
         const entityCode = req.headers["x-entity-code"];
-        const assets = await getAssetsForEntity(entityCode);
-        const employees = await getEmployeesForEntity(entityCode);
+        let assets = [];
+        let employees = [];
+
+        if (entityCode && entityCode !== "ALL") {
+            assets = await getAssetsForEntity(entityCode);
+            employees = await getEmployeesForEntity(entityCode);
+        } else {
+            const allEntities = await Entity.findAll({ attributes: ['code'], raw: true });
+            const assetGroups = await Promise.all(allEntities.map(e => getAssetsForEntity(e.code).catch(() => [])));
+            const empGroups = await Promise.all(allEntities.map(e => getEmployeesForEntity(e.code).catch(() => [])));
+            assets = assetGroups.flat();
+            employees = empGroups.flat();
+        }
 
         const anomalies = AI.detectAnomalies(assets, employees);
 
@@ -135,7 +165,15 @@ exports.getAnomalies = async (req, res) => {
 exports.getBudgetForecast = async (req, res) => {
     try {
         const entityCode = req.headers["x-entity-code"];
-        const assets = await getAssetsForEntity(entityCode);
+        let assets = [];
+
+        if (entityCode && entityCode !== "ALL") {
+            assets = await getAssetsForEntity(entityCode);
+        } else {
+            const allEntities = await Entity.findAll({ attributes: ['code'], raw: true });
+            const assetGroups = await Promise.all(allEntities.map(e => getAssetsForEntity(e.code).catch(() => [])));
+            assets = assetGroups.flat();
+        }
 
         const forecast = AI.forecastBudget(assets);
 
@@ -199,13 +237,26 @@ exports.getAllocationSuggestions = async (req, res) => {
 exports.getInsights = async (req, res) => {
     try {
         const entityCode = req.headers["x-entity-code"];
-        const assets = await getAssetsForEntity(entityCode);
-        const employees = await getEmployeesForEntity(entityCode);
+        let assets = [];
+        let employees = [];
+
+        if (entityCode && entityCode !== "ALL") {
+            assets = await getAssetsForEntity(entityCode);
+            employees = await getEmployeesForEntity(entityCode);
+        } else {
+            const allEntities = await Entity.findAll({ attributes: ['code'], raw: true });
+            const assetGroups = await Promise.all(allEntities.map(e => getAssetsForEntity(e.code).catch(() => [])));
+            const empGroups = await Promise.all(allEntities.map(e => getEmployeesForEntity(e.code).catch(() => [])));
+            assets = assetGroups.flat();
+            employees = empGroups.flat();
+        }
 
         const insights = AI.generateInsights(assets, employees);
 
         res.json({
             entityCode: entityCode || "Global",
+            totalAssets: assets.length,
+            totalEmployees: employees.length,
             insights
         });
     } catch (error) {

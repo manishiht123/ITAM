@@ -1,11 +1,13 @@
-import { FaBell, FaArrowLeft, FaChevronDown, FaUserCircle, FaKey, FaSignOutAlt, FaSun, FaMoon, FaDesktop } from "react-icons/fa";
+import { FaBell, FaArrowLeft, FaChevronDown, FaUserCircle, FaKey, FaSignOutAlt, FaSun, FaMoon } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { useEntity } from "../../context/EntityContext";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
-import { getEntityLogo } from "../../config/entityLogos";
 import api from "../../services/api";
+import ofbLogo from "../../assets/logos/default.svg";
+import ofbLogoDark from "../../assets/logos/default-dark.svg";
+import { getEntityLogoForTheme } from "../../config/entityLogos";
 import "../../styles/topbar.css";
 
 export default function Topbar() {
@@ -16,6 +18,7 @@ export default function Topbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [readIds, setReadIds] = useState(new Set());
   const menuRef = useRef(null);
   const notifRef = useRef(null);
   const getUserName = () => {
@@ -31,9 +34,16 @@ export default function Topbar() {
 
   // Load entities for the switcher
   useEffect(() => {
+    console.log("[Topbar] Fetching entities...");
     api.getEntities()
-      .then((data) => setEntityList(data || []))
-      .catch(() => setEntityList([]));
+      .then((data) => {
+        console.log("[Topbar] Entities received:", data.length);
+        setEntityList(data || []);
+      })
+      .catch((err) => {
+        console.error("[Topbar] Failed to fetch entities:", err);
+        setEntityList([]);
+      });
   }, []);
 
   // Determine which entities the user can see
@@ -136,14 +146,21 @@ export default function Topbar() {
     <header className="topbar">
       {/* LEFT : LOGO */}
       <div className="topbar-left">
-        <button className="icon-btn" onClick={() => navigate(-1)} title="Go Back">
+        <button className="icon-btn back-btn" onClick={() => navigate(-1)} title="Go Back">
           <FaArrowLeft />
         </button>
-        <img
-          src={getEntityLogo(entity)}
-          alt={`${entity} logo`}
-          className="topbar-logo"
-        />
+        {(() => {
+          const entityObj = entityList.find(e => e.code === entity);
+          // Tier 1: curated file-based config logo (exact entity-code match, theme-aware)
+          const configLogo = getEntityLogoForTheme(entity, theme);
+          // Tier 2: DB logo uploaded via settings
+          const dbLogo = entityObj?.logo;
+          // Tier 3: OFB default fallback
+          const defaultLogo = theme === "dark" ? ofbLogoDark : ofbLogo;
+          const logoSrc = configLogo || dbLogo || defaultLogo;
+          const logoAlt = entityObj?.name || "OFBusiness";
+          return <img src={logoSrc} alt={logoAlt} className="topbar-logo-brand" />;
+        })()}
         <span className="product-name"></span>
       </div>
 
@@ -178,50 +195,65 @@ export default function Topbar() {
         {/* NOTIFICATIONS */}
         <div className="topbar-action-wrapper" ref={notifRef}>
           <button
-            className={`icon-btn ${notifications.length > 0 ? "has-notification" : ""}`}
+            className="notif-btn"
             onClick={() => setNotifOpen(!notifOpen)}
-            data-count={notifications.length}
             title="Notifications"
           >
             <FaBell />
+            {notifications.filter(n => !readIds.has(n.id)).length > 0 && (
+              <span className="notif-badge">
+                {notifications.filter(n => !readIds.has(n.id)).length}
+              </span>
+            )}
           </button>
 
           {notifOpen && (
             <div className="notification-dropdown">
               <div className="notification-header">
-                <span className="notification-title"><FaBell /> Notifications</span>
-                <span style={{ fontSize: "11px", color: "var(--text-secondary)" }}>
-                  {notifications.length} relevant
-                </span>
+                <span className="notification-title">Notifications</span>
+                {notifications.length > 0 && (
+                  <button
+                    className="notif-mark-all-btn"
+                    onClick={() => setReadIds(new Set(notifications.map(n => n.id)))}
+                  >
+                    Mark all as read
+                  </button>
+                )}
               </div>
 
               <div className="notification-list">
                 {notifications.length === 0 ? (
                   <div className="notification-empty">
-                    <span style={{ fontSize: "24px", display: "block", marginBottom: "8px" }}>👍</span>
-                    No new alerts
+                    <FaBell style={{ fontSize: "28px", opacity: 0.25, display: "block", margin: "0 auto 8px" }} />
+                    <span>All caught up!</span>
+                    <span style={{ fontSize: "11px", color: "var(--text-secondary)", display: "block", marginTop: 4 }}>No new alerts at this time</span>
                   </div>
                 ) : (
-                  notifications.map((notif) => (
-                    <div
-                      key={notif.id}
-                      className={`notification-item ${notif.severity}`}
-                      onClick={() => {
-                        setNotifOpen(false);
-                        if (notif.id.startsWith("health") || notif.id.startsWith("anomaly")) {
-                          navigate("/ai");
-                        }
-                      }}
-                    >
-                      <div className="notification-item-header">
-                        <span className="notification-item-title">{notif.title}</span>
-                        <span className="notification-time">{notif.time}</span>
+                  notifications.map((notif) => {
+                    const isRead = readIds.has(notif.id);
+                    return (
+                      <div
+                        key={notif.id}
+                        className={`notification-item ${notif.severity}${isRead ? " read" : ""}`}
+                        onClick={() => {
+                          setReadIds(prev => new Set([...prev, notif.id]));
+                          setNotifOpen(false);
+                          navigate("/ai-intelligence");
+                        }}
+                      >
+                        <div className="notif-dot-col">
+                          {!isRead && <span className={`notif-dot ${notif.severity}`} />}
+                        </div>
+                        <div className="notif-content-col">
+                          <div className="notification-item-header">
+                            <span className="notification-item-title">{notif.title}</span>
+                            <span className="notification-time">{notif.time}</span>
+                          </div>
+                          <div className="notification-desc">{notif.desc}</div>
+                        </div>
                       </div>
-                      <div className="notification-desc">
-                        {notif.desc}
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>

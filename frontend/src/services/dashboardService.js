@@ -51,14 +51,14 @@ const buildDashboardData = (assets, employees, licenses, entityCode) => {
 
   const scopedLicenses = entityFilter
     ? (licenses || []).filter((license) => {
-        const licenseEntity =
-          normalizeEntityCode(license._entityCode) ||
-          normalizeEntityCode(license.entity);
-        // Single-entity inventory responses often don't include entity on each row.
-        // In that case, treat rows as already scoped to the selected entity.
-        if (!licenseEntity) return true;
-        return licenseEntity === normalizedFilter;
-      })
+      const licenseEntity =
+        normalizeEntityCode(license._entityCode) ||
+        normalizeEntityCode(license.entity);
+      // Single-entity inventory responses often don't include entity on each row.
+      // In that case, treat rows as already scoped to the selected entity.
+      if (!licenseEntity) return true;
+      return licenseEntity === normalizedFilter;
+    })
     : licenses || [];
 
   const statusBreakdown = scopedAssets.length
@@ -165,10 +165,10 @@ const buildDashboardData = (assets, employees, licenses, entityCode) => {
 
   const licenseUsage = scopedLicenses.length
     ? [
-        { name: "Used Seats", value: licenseTotals.used },
-        { name: "Available Seats", value: Math.max(licenseTotals.owned - licenseTotals.used, 0) },
-        { name: "Over-allocated", value: licenseTotals.overused }
-      ]
+      { name: "Used Seats", value: licenseTotals.used },
+      { name: "Available Seats", value: Math.max(licenseTotals.owned - licenseTotals.used, 0) },
+      { name: "Over-allocated", value: licenseTotals.overused }
+    ]
     : [];
 
   const alerts = [
@@ -193,9 +193,9 @@ const buildDashboardData = (assets, employees, licenses, entityCode) => {
   ];
 
   const compliance = [
-    { title: "Asset Coverage", status: "Tracked", color: "#dcfce7" },
-    { title: "Data Freshness", status: "Live", color: "#e0f2fe" },
-    { title: "Audit Readiness", status: "Monitoring", color: "#fef9c3" }
+    { title: "Asset Coverage", status: "Tracked", variant: "success" },
+    { title: "Data Freshness", status: "Live", variant: "info" },
+    { title: "Audit Readiness", status: "Monitoring", variant: "warning" }
   ];
 
   return {

@@ -4,6 +4,13 @@ const BASE_URL =
     `http://${resolvedHost}:5000/api`;
 
 const handleResponse = async (res) => {
+    if (res.status === 401) {
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("authUser");
+        if (!window.location.pathname.includes("/login")) {
+            window.location.reload(); // Force refresh to redirect via guard or layout
+        }
+    }
     if (!res.ok) {
         let errorMessage = "API request failed";
         try {
@@ -265,6 +272,26 @@ const api = {
             method: "DELETE",
             headers: buildHeaders(entityCode)
         }));
+    },
+    exportEmployees: async (entityCode) => {
+        const res = await fetch(`${BASE_URL}/employees/export`, {
+            headers: buildHeaders(entityCode)
+        });
+        if (!res.ok) {
+            const errorData = await res.json().catch(() => ({}));
+            throw new Error(errorData.error || errorData.message || "Export failed");
+        }
+        return res.blob();
+    },
+    importEmployees: async (file, entityCode) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        const res = await fetch(`${BASE_URL}/employees/import`, {
+            method: "POST",
+            headers: buildHeaders(entityCode),
+            body: formData
+        });
+        return handleResponse(res);
     },
 
     // --- ORGANIZATION ---

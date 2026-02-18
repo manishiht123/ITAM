@@ -1,7 +1,7 @@
 const ensureAssetStatusEnum = async (sequelize) => {
   const [rows] = await sequelize.query(`
     SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = DATABASE()
+    WHERE TABLE_SCHEMA = "${sequelize.options.database}"
       AND TABLE_NAME = "Assets"
       AND COLUMN_NAME = "status"
   `);

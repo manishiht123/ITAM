@@ -18,7 +18,10 @@ module.exports = async (req, res, next) => {
 
   const token = authHeader.replace("Bearer ", "").trim();
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // Fallback secret if not provided in environment
+    const secret = process.env.JWT_SECRET || "SUPERSECRETJWTKEY";
+    const decoded = jwt.verify(token, secret);
+
     const user = await User.findByPk(decoded.id);
     if (!user) {
       return res.status(401).json({ message: "Unauthorized" });

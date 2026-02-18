@@ -31,6 +31,20 @@ export default function AISmartSearch() {
         return () => window.removeEventListener("open-ai-chat", handleOpen);
     }, []);
 
+    // Proactive greeting
+    useEffect(() => {
+        if (isOpen && chatHistory.length === 0) {
+            const timer = setTimeout(() => {
+                setChatHistory([{
+                    role: "assistant",
+                    content: "Hello! I'm your ITAM AI Assistant. I can help you find assets, check fleet health, or detect anomalies. How can I assist you today?",
+                    followUps: ["Show all assets", "Run health check", "Any anomalies?"]
+                }]);
+            }, 600);
+            return () => clearTimeout(timer);
+        }
+    }, [isOpen]);
+
     const sendMessage = async (messageText) => {
         if (!messageText.trim() || loading) return;
 
@@ -46,14 +60,15 @@ export default function AISmartSearch() {
             let botMessage = "";
             let data = null;
 
-            if (result.type === "count") {
-                botMessage = `${result.message}\n\n${result.explanation}`;
-            } else if (result.type === "health") {
-                botMessage = `${result.message}\n\nFleet Health: ${result.summary.averageScore}% (Grade ${result.summary.averageGrade})\n${result.summary.healthyPercentage}% of assets are healthy.\n${result.summary.replacementNeeded} need replacement.`;
+            if (result.type === "health") {
+                botMessage = result.message;
                 data = result.assets?.slice(0, 5);
-            } else {
+            } else if (result.type === "list") {
                 botMessage = result.message;
                 data = result.assets?.slice(0, 8);
+            } else {
+                // count, info, and general answers
+                botMessage = result.message;
             }
 
             setChatHistory((prev) => [
@@ -63,7 +78,8 @@ export default function AISmartSearch() {
                     content: botMessage,
                     data,
                     confidence: response.query?.confidence,
-                    explanation: response.query?.explanation
+                    explanation: response.query?.explanation,
+                    followUps: result.followUps
                 }
             ]);
         } catch (err) {
@@ -81,13 +97,6 @@ export default function AISmartSearch() {
         sendMessage(query);
     };
 
-    const suggestions = [
-        "Show laptops under repair",
-        "How many assets are available?",
-        "Show oldest desktops",
-        "Health of all assets",
-        "Count printers in use"
-    ];
 
     return (
         <>
@@ -112,52 +121,59 @@ export default function AISmartSearch() {
                 <div className="ai-chat-panel">
                     <div className="ai-chat-header">
                         <div className="ai-chat-header-left">
-                            <div className="ai-avatar">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                                </svg>
+                            <div className="ai-avatar-container">
+                                <div className="ai-avatar">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                                        <path d="M12 12l.01.01" />
+                                    </svg>
+                                </div>
+                                <div className="ai-status-indicator" />
                             </div>
-                            <div>
-                                <h4>ITAM AI Assistant</h4>
-                                <span className="ai-status-dot" /> Online
+                            <div className="ai-header-info">
+                                <h4>ITAM Intelligence</h4>
+                                <div className="ai-online-badge">
+                                    <span className="ai-online-dot" />
+                                    Active Now
+                                </div>
                             </div>
                         </div>
-                        <button className="ai-chat-close" onClick={() => setIsOpen(false)}>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                        <button className="ai-chat-close" onClick={() => setIsOpen(false)} aria-label="Close Assistant">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                                <line x1="18" y1="6" x2="6" y2="18" />
+                                <line x1="6" y1="6" x2="18" y2="18" />
                             </svg>
                         </button>
                     </div>
 
                     <div className="ai-chat-body">
-                        {chatHistory.length === 0 && (
-                            <div className="ai-welcome">
-                                <div className="ai-welcome-icon">💡</div>
-                                <h4>Hi! I'm your AI Asset Assistant</h4>
-                                <p>Ask me anything about your assets using natural language.</p>
-                                <div className="ai-suggestions">
-                                    {suggestions.map((s, i) => (
-                                        <button
-                                            key={i}
-                                            className="ai-suggestion-chip"
-                                            onClick={() => sendMessage(s)}
-                                        >
-                                            {s}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
                         {chatHistory.map((msg, idx) => (
                             <div key={idx} className={`ai-message ${msg.role}`}>
                                 <div className="ai-message-content">
                                     {msg.role === "assistant" && (
-                                        <div className="ai-msg-avatar">💡</div>
+                                        <div className="ai-msg-avatar">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                                            </svg>
+                                        </div>
                                     )}
                                     <div className="ai-msg-bubble">
-                                        <p>{msg.content}</p>
-                                        {msg.confidence !== undefined && (
+                                        <div className="ai-msg-text">
+                                            {msg.content.split("\n").map((line, li) => {
+                                                // Render **bold** inline
+                                                const parts = line.split(/(\*\*[^*]+\*\*)/g);
+                                                return (
+                                                    <p key={li} style={{ margin: line === "" ? "4px 0" : "2px 0" }}>
+                                                        {parts.map((part, pi) =>
+                                                            part.startsWith("**") && part.endsWith("**")
+                                                                ? <strong key={pi}>{part.slice(2, -2)}</strong>
+                                                                : part
+                                                        )}
+                                                    </p>
+                                                );
+                                            })}
+                                        </div>
+                                        {msg.confidence !== undefined && msg.confidence > 0 && (
                                             <span className="ai-confidence">
                                                 Confidence: {Math.round(msg.confidence * 100)}%
                                             </span>
@@ -196,6 +212,22 @@ export default function AISmartSearch() {
                                                 </table>
                                             </div>
                                         )}
+                                        {msg.followUps && msg.followUps.length > 0 && (
+                                            <div className="ai-followups">
+                                                <div className="ai-followup-label">Try asking:</div>
+                                                <div className="ai-followup-chips">
+                                                    {msg.followUps.map((f, i) => (
+                                                        <button
+                                                            key={i}
+                                                            className="ai-followup-chip"
+                                                            onClick={() => sendMessage(f)}
+                                                        >
+                                                            {f}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -217,22 +249,24 @@ export default function AISmartSearch() {
                         <div ref={chatEndRef} />
                     </div>
 
-                    <form className="ai-chat-input" onSubmit={handleSubmit}>
-                        <input
-                            ref={inputRef}
-                            type="text"
-                            value={query}
-                            onChange={(e) => setQuery(e.target.value)}
-                            placeholder="Ask about your assets..."
-                            disabled={loading}
-                        />
-                        <button type="submit" disabled={!query.trim() || loading}>
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <line x1="22" y1="2" x2="11" y2="13" />
-                                <polygon points="22 2 15 22 11 13 2 9 22 2" />
-                            </svg>
-                        </button>
-                    </form>
+                    <div className="ai-chat-footer">
+                        <form className="ai-chat-input" onSubmit={handleSubmit}>
+                            <input
+                                ref={inputRef}
+                                type="text"
+                                value={query}
+                                onChange={(e) => setQuery(e.target.value)}
+                                placeholder="Ask about your assets..."
+                                disabled={loading}
+                            />
+                            <button type="submit" disabled={!query.trim() || loading} aria-label="Send message">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <line x1="22" y1="2" x2="11" y2="13" />
+                                    <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                                </svg>
+                            </button>
+                        </form>
+                    </div>
                 </div>
             )}
         </>

@@ -1,10 +1,69 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import "./AddAsset.css";
 import api from "../services/api";
 import { useEntity } from "../context/EntityContext";
 import { Button, LoadingOverlay } from "../components/ui";
 import { useToast } from "../context/ToastContext";
+import INDIAN_CITIES from "../data/indianCities";
+
+function CityDropdown({ value, onChange, placeholder = "Search & select city..." }) {
+  const [search, setSearch] = useState(value || "");
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    setSearch(value || "");
+  }, [value]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const filtered = INDIAN_CITIES.filter(city =>
+    city.toLowerCase().includes(search.toLowerCase())
+  ).slice(0, 50);
+
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      <input
+        type="text"
+        value={search}
+        onChange={(e) => {
+          setSearch(e.target.value);
+          setOpen(true);
+          if (!e.target.value) onChange("");
+        }}
+        onFocus={() => setOpen(true)}
+        placeholder={placeholder}
+        autoComplete="off"
+      />
+      {open && filtered.length > 0 && (
+        <ul className="city-dropdown-list">
+          {filtered.map((city) => (
+            <li
+              key={city}
+              className={`city-dropdown-item${city === value ? " selected" : ""}`}
+              onClick={() => {
+                onChange(city);
+                setSearch(city);
+                setOpen(false);
+              }}
+            >
+              {city}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 export default function EditAsset() {
   const navigate = useNavigate();
@@ -171,12 +230,11 @@ export default function EditAsset() {
             </select>
           </Field>
           <Field label="Location">
-            <select name="location" value={formData.location} onChange={handleChange}>
-              <option value="">-- Select --</option>
-              {locations.map((l) => (
-                <option key={l.id} value={l.name}>{l.name}</option>
-              ))}
-            </select>
+            <CityDropdown
+              value={formData.location}
+              onChange={(city) => setFormData(prev => ({ ...prev, location: city }))}
+              placeholder="Search Indian city..."
+            />
           </Field>
           <Field label="Asset Name / Tag">
             <input name="name" value={formData.name} onChange={handleChange} />
