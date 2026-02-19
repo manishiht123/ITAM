@@ -12,7 +12,7 @@ exports.getRoles = async (req, res) => {
 
 exports.createRole = async (req, res) => {
   try {
-    const { name, description, permissions } = req.body || {};
+    const { name, description, permissions, entityPermissions } = req.body || {};
     const trimmedName = String(name || "").trim();
     if (!trimmedName) {
       return res.status(400).json({ error: "Role name is required" });
@@ -31,7 +31,8 @@ exports.createRole = async (req, res) => {
     const role = await Role.create({
       name: trimmedName,
       description: description || "",
-      permissions: Array.isArray(permissions) ? permissions : []
+      permissions: Array.isArray(permissions) ? permissions : [],
+      entityPermissions: entityPermissions && typeof entityPermissions === "object" ? entityPermissions : {}
     });
     res.status(201).json(role);
   } catch (error) {
@@ -44,10 +45,11 @@ exports.updateRole = async (req, res) => {
     const role = await Role.findByPk(req.params.id);
     if (!role) return res.status(404).json({ error: "Role not found" });
 
-    const { name, description, permissions } = req.body || {};
+    const { name, description, permissions, entityPermissions } = req.body || {};
     if (name !== undefined) role.name = String(name).trim();
     if (description !== undefined) role.description = description;
     if (permissions !== undefined) role.permissions = Array.isArray(permissions) ? permissions : [];
+    if (entityPermissions !== undefined) role.entityPermissions = (entityPermissions && typeof entityPermissions === "object") ? entityPermissions : {};
 
     await role.save();
     res.json(role);

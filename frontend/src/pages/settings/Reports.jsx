@@ -130,19 +130,20 @@ export default function Reports() {
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Arial, sans-serif; color: #111827; background: #fff; }
-    .container { max-width: 960px; margin: 0 auto; padding: 32px 28px; }
-    .header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 18px; border-bottom: 2px solid #1a56db; margin-bottom: 24px; }
+    .container { width: 100%; padding: 24px 28px; }
+    .header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 14px; border-bottom: 2px solid #1a56db; margin-bottom: 20px; }
     .header-text { text-align: right; }
-    .header-entity { font-size: 15px; font-weight: 700; color: #1a56db; }
-    .header-title { font-size: 18px; font-weight: 700; color: #111827; margin-top: 2px; }
-    .header-sub { font-size: 11px; color: #6b7280; margin-top: 2px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 4px; }
-    th { background: #1a56db; color: #fff; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; padding: 9px 12px; text-align: left; }
-    td { border: 1px solid #e5e7eb; padding: 8px 12px; font-size: 13px; color: #374151; }
+    .header-entity { font-size: 13px; font-weight: 700; color: #1a56db; text-transform: uppercase; letter-spacing: 0.05em; }
+    .header-title { font-size: 16px; font-weight: 700; color: #111827; margin-top: 2px; }
+    .header-sub { font-size: 10px; color: #6b7280; margin-top: 2px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 4px; table-layout: auto; }
+    th { background: #1a56db; color: #fff; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; padding: 7px 8px; text-align: left; white-space: nowrap; }
+    td { border: 1px solid #e5e7eb; padding: 6px 8px; font-size: 11px; color: #374151; word-break: break-word; }
     tr:nth-child(even) td { background: #f9fafb; }
-    .doc-footer { margin-top: 28px; padding-top: 14px; border-top: 1px solid #e5e7eb; font-size: 10px; color: #9ca3af; display: flex; justify-content: space-between; }
+    .doc-footer { margin-top: 20px; padding-top: 12px; border-top: 1px solid #e5e7eb; font-size: 10px; color: #9ca3af; display: flex; justify-content: space-between; }
     @media print {
-      .container { padding: 16px; }
+      @page { size: A4 landscape; margin: 12mm 10mm; }
+      .container { padding: 0; }
       body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     }
   </style>

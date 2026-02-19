@@ -183,8 +183,7 @@
 
 .dpl-bar-wrap {
   height: 5px;
-  /* faint track against the card background */
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--border);
   border-radius: 99px;
   overflow: hidden;
   margin-left: 18px; /* align under label text (skip dot + gap) */

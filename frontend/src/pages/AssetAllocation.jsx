@@ -118,20 +118,20 @@ export default function AssetAllocation() {
       }
 
       setAllAssets(assetsData);
-      // Filter only available assets
-      const available = assetsData.filter((asset) => {
-        const status = String(asset.status || "").trim().toLowerCase();
-        return status === "available" || status === "in stock" || status === "new";
-      });
-      setAvailableAssets(available);
-      setEmployees(empsData);
 
       const assetParam = searchParams.get("asset");
       const assetIdParam = searchParams.get("assetId");
       const historyParam = searchParams.get("history");
-      if (historyParam === "1") {
-        setOpenHistory(true);
-      }
+
+      // Filter available assets (Available / In Stock / New)
+      const available = assetsData.filter((asset) => {
+        const status = String(asset.status || "").trim().toLowerCase();
+        return status === "available" || status === "in stock" || status === "new";
+      });
+
+      // If a specific asset was requested via URL param, always include it
+      // in the available list (e.g. "Reassign After Repair" for Under Repair assets)
+      let preSelectedId = "";
       if (assetParam || assetIdParam) {
         const target = assetParam || assetIdParam;
         const match = assetsData.find(
@@ -140,8 +140,22 @@ export default function AssetAllocation() {
             String(asset.id) === String(target)
         );
         if (match) {
-          setSelectedAssetId(String(match.id));
+          preSelectedId = String(match.id);
+          // If it's not already in the available list, add it
+          if (!available.some((a) => String(a.id) === preSelectedId)) {
+            available.unshift(match);
+          }
         }
+      }
+
+      setAvailableAssets(available);
+      setEmployees(empsData);
+
+      if (historyParam === "1") {
+        setOpenHistory(true);
+      }
+      if (preSelectedId) {
+        setSelectedAssetId(preSelectedId);
       }
     } catch (err) {
       console.error("Failed to load allocation data", err);

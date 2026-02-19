@@ -55,11 +55,14 @@ const getTenantConnection = async (entityCode) => {
         return require("../config/db");
     }
 
-    const dbName = `itam_entity_${entityCode.toLowerCase()}`;
+    // Always normalize to lowercase so cache hits are case-insensitive
+    // e.g. "OXYZO", "oxyzo", "Oxyzo" all resolve to the same connection
+    const normalizedCode = String(entityCode).trim().toLowerCase();
+    const dbName = `itam_entity_${normalizedCode}`;
 
-    // Return cached connection
-    if (connections[entityCode]) {
-        return connections[entityCode];
+    // Return cached connection (keyed by lowercase code)
+    if (connections[normalizedCode]) {
+        return connections[normalizedCode];
     }
 
     // Initialize new Sequelize instance
@@ -94,7 +97,7 @@ const getTenantConnection = async (entityCode) => {
         await ensureDepartmentColumns(sequelize);
         await ensureAssetStatusEnum(sequelize);
 
-        connections[entityCode] = sequelize;
+        connections[normalizedCode] = sequelize;
         console.log(`Connected to tenant DB: ${dbName}`);
         return sequelize;
     } catch (err) {
@@ -102,13 +105,13 @@ const getTenantConnection = async (entityCode) => {
         if (err.original && err.original.code === 'ER_BAD_DB_ERROR') {
             console.log(`Database ${dbName} not found. Attempting to create...`);
             await createDatabase(dbName);
-            return getTenantConnection(entityCode); // Retry
+            return getTenantConnection(normalizedCode); // Retry with normalised code
         }
         // If access denied, attempt to grant privileges and retry
         if (err.original && err.original.code === 'ER_ACCESS_DENIED_ERROR') {
             console.log(`Access denied for ${dbName}. Attempting to grant privileges...`);
             await createDatabase(dbName);
-            return getTenantConnection(entityCode);
+            return getTenantConnection(normalizedCode);
         }
         throw err;
     }

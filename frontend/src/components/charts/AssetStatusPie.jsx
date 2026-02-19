@@ -31,15 +31,19 @@ const centerTextPlugin = {
     const cx = (chartArea.left + chartArea.right) / 2;
     const cy = (chartArea.top + chartArea.bottom) / 2;
 
+    const styles = getComputedStyle(document.documentElement);
+    const textColor = styles.getPropertyValue("--text-primary").trim() || "#0f172a";
+    const subColor  = styles.getPropertyValue("--text-secondary").trim() || "#64748b";
+
     ctx.save();
     ctx.font = "bold 30px Inter, sans-serif";
-    ctx.fillStyle = "#f1f5f9";
+    ctx.fillStyle = textColor;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(total, cx, cy - 11);
 
     ctx.font = "500 11px Inter, sans-serif";
-    ctx.fillStyle = "#64748b";
+    ctx.fillStyle = subColor;
     ctx.fillText("Total Assets", cx, cy + 13);
     ctx.restore();
   }

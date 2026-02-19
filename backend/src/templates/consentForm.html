@@ -5,143 +5,254 @@
     <title>Asset Allocation Consent Form</title>
     <style>
       * { box-sizing: border-box; margin: 0; padding: 0; }
-      body { font-family: Arial, sans-serif; color: #111827; background: #fff; }
-      .container { max-width: 720px; margin: 0 auto; padding: 32px 28px; }
+      body { font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; background: #fff; }
+      .page { max-width: 760px; margin: 0 auto; }
 
-      /* ── HEADER ── */
-      .header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 18px; border-bottom: 2px solid #1a56db; margin-bottom: 20px; }
-      .header-logo { height: 52px; max-width: 160px; object-fit: contain; }
-      .header-logo-placeholder { width: 52px; height: 52px; }
-      .header-text { text-align: right; }
-      .header-entity { font-size: 15px; font-weight: 700; color: #1a56db; }
-      .header-title { font-size: 18px; font-weight: 700; color: #111827; margin-top: 2px; }
-      .header-sub { font-size: 11px; color: #6b7280; margin-top: 2px; }
+      /* ── HEADER BAND ── */
+      .header-band {
+        display: table;
+        width: 100%;
+        background: #0f3460;
+        border-bottom: 4px solid #f59e0b;
+      }
+      .header-logo-cell {
+        display: table-cell;
+        width: 140px;
+        vertical-align: middle;
+        background: #ffffff;
+        padding: 16px 18px;
+        border-right: 4px solid #f59e0b;
+      }
+      .header-logo { height: 60px; max-width: 120px; object-fit: contain; display: block; }
+      .header-logo-placeholder { width: 48px; height: 48px; }
+      .header-text-cell {
+        display: table-cell;
+        vertical-align: middle;
+        padding: 18px 24px;
+        color: #fff;
+      }
+      .header-entity { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: #93c5fd; margin-bottom: 5px; }
+      .header-title { font-size: 20px; font-weight: 700; color: #ffffff; }
+      .header-sub { font-size: 11px; color: #bfdbfe; margin-top: 4px; }
+      .header-badge-cell {
+        display: table-cell;
+        vertical-align: middle;
+        padding: 0 22px;
+        text-align: right;
+        white-space: nowrap;
+      }
+      .header-badge {
+        display: inline-block;
+        background: #f59e0b;
+        color: #1e293b;
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        padding: 6px 14px;
+        border-radius: 4px;
+      }
+
+      /* ── BODY ── */
+      .body { padding: 24px 30px; }
 
       /* ── NOTICE BANNER ── */
-      .notice { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 10px 14px; font-size: 12px; color: #1d4ed8; margin-bottom: 20px; }
+      .notice {
+        background: #eff6ff;
+        border-left: 4px solid #1a56db;
+        border-radius: 0 6px 6px 0;
+        padding: 10px 14px;
+        font-size: 12px;
+        color: #1d4ed8;
+        line-height: 1.6;
+        margin-bottom: 22px;
+      }
 
-      /* ── SECTION TITLES ── */
-      .section-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #6b7280; margin: 20px 0 8px; }
+      /* ── SECTION HEADERS ── */
+      .section-header {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        margin: 22px 0 10px;
+      }
+      .section-bar { width: 4px; height: 16px; background: #1a56db; border-radius: 2px; flex-shrink: 0; }
+      .section-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: #1a56db; }
 
       /* ── INFO GRID ── */
-      .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 4px; }
-      .info-item { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 8px 12px; }
-      .info-label { font-size: 10px; font-weight: 600; text-transform: uppercase; color: #9ca3af; margin-bottom: 2px; }
-      .info-value { font-size: 13px; font-weight: 500; color: #111827; }
+      .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+      .info-item {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 10px 14px;
+      }
+      .info-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #94a3b8; margin-bottom: 4px; }
+      .info-value { font-size: 13px; font-weight: 500; color: #1e293b; }
 
       /* ── ASSET TABLE ── */
-      table { width: 100%; border-collapse: collapse; margin-top: 4px; }
-      th { background: #1a56db; color: #fff; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; padding: 8px 10px; text-align: left; }
-      td { border: 1px solid #e5e7eb; padding: 8px 10px; font-size: 13px; color: #374151; }
-      tr:nth-child(even) td { background: #f9fafb; }
+      .asset-table { width: 100%; border-collapse: collapse; border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden; }
+      .asset-table thead tr { background: #0f3460; }
+      .asset-table th { color: #fff; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 10px 14px; text-align: left; }
+      .asset-table tbody tr { border-bottom: 1px solid #f1f5f9; }
+      .asset-table tbody tr:last-child { border-bottom: none; }
+      .asset-table td { padding: 9px 14px; font-size: 12.5px; color: #334155; }
+      .asset-table td:first-child { font-size: 11px; font-weight: 600; color: #64748b; background: #f8fafc; width: 170px; text-transform: uppercase; letter-spacing: 0.5px; }
+      .asset-table tbody tr:nth-child(even) td:not(:first-child) { background: #fafbfc; }
 
       /* ── TERMS ── */
-      .terms { background: #fefce8; border: 1px solid #fde68a; border-radius: 6px; padding: 12px 14px; font-size: 12px; color: #92400e; line-height: 1.6; margin-top: 20px; }
-      .terms ul { padding-left: 18px; margin-top: 6px; }
-      .terms li { margin-bottom: 4px; }
+      .terms {
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+        border-left: 4px solid #f59e0b;
+        border-radius: 0 6px 6px 0;
+        padding: 14px 16px;
+        font-size: 12px;
+        color: #78350f;
+        line-height: 1.75;
+      }
+      .terms-title { font-weight: 700; font-size: 12px; color: #92400e; margin-bottom: 8px; display: block; }
+      .terms ol { padding-left: 20px; }
+      .terms li { margin-bottom: 3px; }
 
-      /* ── SIGNATURE ── */
-      .signature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 28px; }
-      .sig-box { border-top: 1.5px solid #374151; padding-top: 8px; }
-      .sig-label { font-size: 11px; color: #6b7280; }
-      .sig-name { font-size: 13px; font-weight: 600; color: #111827; margin-top: 3px; }
-      .sig-date { font-size: 11px; color: #6b7280; margin-top: 2px; }
+      /* ── SIGNATURES ── */
+      .sig-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-top: 10px; }
+      .sig-box { border: 1px solid #e2e8f0; border-radius: 6px; padding: 14px 16px; }
+      .sig-role { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #64748b; margin-bottom: 12px; }
+      .sig-space { height: 40px; border-bottom: 2px solid #0f3460; margin-bottom: 10px; }
+      .sig-name { font-size: 12px; font-weight: 600; color: #1e293b; }
+      .sig-date { font-size: 11px; color: #94a3b8; margin-top: 6px; }
+      .sig-date span { display: inline-block; width: 120px; border-bottom: 1px solid #cbd5e1; margin-left: 4px; }
 
       /* ── FOOTER ── */
-      .doc-footer { margin-top: 28px; padding-top: 14px; border-top: 1px solid #e5e7eb; font-size: 10px; color: #9ca3af; display: flex; justify-content: space-between; }
+      .doc-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 28px;
+        padding-top: 12px;
+        border-top: 2px solid #e2e8f0;
+        font-size: 10px;
+        color: #94a3b8;
+      }
     </style>
   </head>
   <body>
-    <div class="container">
+    <div class="page">
 
-      <!-- HEADER: entity logo + title -->
-      <div class="header">
-        {{entityLogoHtml}}
-        <div class="header-text">
+      <!-- ── HEADER BAND ── -->
+      <div class="header-band">
+        <div class="header-logo-cell">
+          {{entityLogoHtml}}
+        </div>
+        <div class="header-text-cell">
           <div class="header-entity">{{entityName}}</div>
           <div class="header-title">Asset Allocation Consent Form</div>
-          <div class="header-sub">ITAM · Generated on {{allocationDate}}</div>
+          <div class="header-sub">IT Asset Management &nbsp;·&nbsp; {{allocationDate}}</div>
+        </div>
+        <div class="header-badge-cell">
+          <div class="header-badge">Official</div>
         </div>
       </div>
 
-      <!-- NOTICE -->
-      <div class="notice">
-        This document confirms the allocation of a company asset. Please read the terms carefully before signing.
+      <!-- ── BODY ── -->
+      <div class="body">
+
+        <!-- NOTICE -->
+        <div class="notice">
+          This document confirms the allocation of a company asset. By accepting the asset, the employee agrees to the terms and conditions stated below. Please retain a copy of this document.
+        </div>
+
+        <!-- EMPLOYEE DETAILS -->
+        <div class="section-header">
+          <div class="section-bar"></div>
+          <div class="section-label">Employee Details</div>
+        </div>
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-label">Full Name</div>
+            <div class="info-value">{{employeeName}}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Email Address</div>
+            <div class="info-value">{{employeeEmail}}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Department</div>
+            <div class="info-value">{{department}}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Allocation Date</div>
+            <div class="info-value">{{allocationDate}}</div>
+          </div>
+        </div>
+
+        <!-- ASSET DETAILS -->
+        <div class="section-header">
+          <div class="section-bar"></div>
+          <div class="section-label">Asset Details</div>
+        </div>
+        <table class="asset-table">
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Asset ID</td><td>{{assetId}}</td></tr>
+            <tr><td>Asset Name</td><td>{{assetName}}</td></tr>
+            <tr><td>Category</td><td>{{category}}</td></tr>
+            <tr><td>Serial Number</td><td>{{serialNumber}}</td></tr>
+            <tr><td>RAM</td><td>{{ram}}</td></tr>
+            <tr><td>Storage</td><td>{{storage}}</td></tr>
+            <tr><td>Condition</td><td>{{condition}}</td></tr>
+          </tbody>
+        </table>
+
+        <!-- TERMS & CONDITIONS -->
+        <div class="section-header">
+          <div class="section-bar"></div>
+          <div class="section-label">Terms &amp; Conditions</div>
+        </div>
+        <div class="terms">
+          <span class="terms-title">By accepting this asset, the employee acknowledges and agrees to the following:</span>
+          <ol>
+            <li>The asset must be used solely for official business purposes and company-approved activities.</li>
+            <li>The employee is fully responsible for the safekeeping, care, and proper use of this asset at all times.</li>
+            <li>Any damage, loss, theft, or malfunction must be reported to the IT Department immediately.</li>
+            <li>The asset must be returned in good working condition upon resignation, department transfer, or upon request by the company.</li>
+            <li>Unauthorised software installation, hardware modification, or sharing of the asset with external parties is strictly prohibited.</li>
+            <li>The company reserves the right to audit asset usage and retrieve the asset at any time during the period of employment.</li>
+          </ol>
+        </div>
+
+        <!-- SIGNATURES -->
+        <div class="section-header">
+          <div class="section-bar"></div>
+          <div class="section-label">Acknowledgement &amp; Signatures</div>
+        </div>
+        <div class="sig-grid">
+          <div class="sig-box">
+            <div class="sig-role">Employee Signature</div>
+            <div class="sig-space"></div>
+            <div class="sig-name">{{employeeName}}</div>
+            <div class="sig-date">Date: <span></span></div>
+          </div>
+          <div class="sig-box">
+            <div class="sig-role">IT Representative</div>
+            <div class="sig-space"></div>
+            <div class="sig-name">Authorised by IT Department</div>
+            <div class="sig-date">Date: <span></span></div>
+          </div>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="doc-footer">
+          <span><strong style="color:#64748b;">{{entityName}}</strong> · IT Asset Management System</span>
+          <span>Document Date: {{allocationDate}}</span>
+        </div>
+
       </div>
-
-      <!-- EMPLOYEE INFO -->
-      <div class="section-title">Employee Details</div>
-      <div class="info-grid">
-        <div class="info-item">
-          <div class="info-label">Full Name</div>
-          <div class="info-value">{{employeeName}}</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Email Address</div>
-          <div class="info-value">{{employeeEmail}}</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Department</div>
-          <div class="info-value">{{department}}</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Allocation Date</div>
-          <div class="info-value">{{allocationDate}}</div>
-        </div>
-      </div>
-
-      <!-- ASSET INFO -->
-      <div class="section-title">Asset Details</div>
-      <table>
-        <thead>
-          <tr>
-            <th>Field</th>
-            <th>Details</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td>Asset ID</td><td>{{assetId}}</td></tr>
-          <tr><td>Asset Name</td><td>{{assetName}}</td></tr>
-          <tr><td>Category</td><td>{{category}}</td></tr>
-          <tr><td>Serial Number</td><td>{{serialNumber}}</td></tr>
-          <tr><td>RAM</td><td>{{ram}}</td></tr>
-          <tr><td>Storage</td><td>{{storage}}</td></tr>
-          <tr><td>Condition</td><td>{{condition}}</td></tr>
-        </tbody>
-      </table>
-
-      <!-- TERMS -->
-      <div class="terms">
-        <strong>Terms &amp; Conditions of Asset Use:</strong>
-        <ul>
-          <li>The asset must be used solely for official business purposes.</li>
-          <li>The employee is responsible for the safekeeping and proper use of the asset.</li>
-          <li>Any damage, loss, or theft must be reported to IT immediately.</li>
-          <li>The asset must be returned in good condition upon resignation, transfer, or request.</li>
-          <li>Unauthorised software installation or modification is strictly prohibited.</li>
-        </ul>
-      </div>
-
-      <!-- SIGNATURES -->
-      <div class="signature-grid">
-        <div class="sig-box">
-          <div class="sig-label">Employee Signature</div>
-          <div class="sig-name">{{employeeName}}</div>
-          <div class="sig-date">Date: _______________</div>
-        </div>
-        <div class="sig-box">
-          <div class="sig-label">IT Representative</div>
-          <div class="sig-name">______________________</div>
-          <div class="sig-date">Date: _______________</div>
-        </div>
-      </div>
-
-      <!-- FOOTER -->
-      <div class="doc-footer">
-        <span>{{entityName}} · IT Asset Management</span>
-        <span>Allocation Date: {{allocationDate}}</span>
-      </div>
-
     </div>
   </body>
 </html>

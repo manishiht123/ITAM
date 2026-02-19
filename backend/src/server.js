@@ -16,6 +16,7 @@ const NotificationSettings = require("./models/NotificationSettings");
 const SystemPreference = require("./models/SystemPreference");
 const Role = require("./models/Role");
 const AlertRule = require("./models/AlertRule");
+const AssetTransfer = require("./models/AssetTransfer");
 require("./models/Entity");
 require("./models/Organization");
 const bcrypt = require("bcryptjs");
@@ -91,7 +92,17 @@ const startServer = async () => {
     await NotificationSettings.sync();
     await SystemPreference.sync();
     await Role.sync();
+    // Ensure entityPermissions column exists on Roles table
+    await sequelize.query(`
+      SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'Roles' AND COLUMN_NAME = 'entityPermissions'
+    `).then(async ([rows]) => {
+      if (!rows.length) {
+        await sequelize.query("ALTER TABLE `Roles` ADD COLUMN `entityPermissions` JSON NULL;");
+      }
+    });
     await AlertRule.sync();
+    await AssetTransfer.sync();
     await ensureAssetColumns(sequelize);
     await ensureAssetStatusEnum(sequelize);
     await ensureUserPermissionColumns();

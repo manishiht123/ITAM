@@ -169,6 +169,18 @@ const api = {
             headers: buildHeaders(entityCode)
         }));
     },
+    initiateAssetTransfer: async (data) => {
+        return handleResponse(await fetch(`${BASE_URL}/assets/transfer`, {
+            method: "POST",
+            headers: buildHeaders(null, { "Content-Type": "application/json" }),
+            body: JSON.stringify(data)
+        }));
+    },
+    getAssetTransfers: async () => {
+        return handleResponse(await fetch(`${BASE_URL}/assets/transfers`, {
+            headers: buildHeaders()
+        }));
+    },
 
     // --- ASSET CATEGORIES ---
     getAssetCategories: async (entityCode) => handleResponse(await fetch(`${BASE_URL}/asset-categories`, {

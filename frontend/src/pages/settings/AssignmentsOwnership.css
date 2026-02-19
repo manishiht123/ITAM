@@ -213,32 +213,213 @@
   padding: 16px;
 }
 
-.assignments-page .metrics-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
+/* ── Assignment Insights ──────────────────────── */
+.insight-section {
+  margin-bottom: 18px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
 }
 
-.assignments-page .metric {
+.insight-section:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.insight-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+}
+
+/* Utilization bar */
+.utilization-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.utilization-bar {
+  flex: 1;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--bg-muted);
   border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 16px;
-  background: linear-gradient(135deg, var(--bg-muted), var(--primary-soft));
+  overflow: hidden;
 }
 
-.assignments-page .metric span {
+.utilization-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--primary), var(--primary-700, #3730a3));
+  transition: width 0.4s ease;
+}
+
+.utilization-pct {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--primary);
+  min-width: 40px;
+  text-align: right;
+}
+
+.utilization-legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  flex-wrap: wrap;
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legend-dot.assigned {
+  background: var(--primary);
+}
+
+.legend-dot.unassigned {
+  background: var(--bg-muted);
+  border: 1px solid var(--border);
+}
+
+.legend-total {
+  margin-left: auto;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Department list */
+.dept-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.dept-row {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  align-items: center;
+  gap: 10px;
+}
+
+.dept-name {
+  font-size: 12px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dept-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dept-bar {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--bg-muted);
+  overflow: hidden;
+}
+
+.dept-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--primary-soft);
+  border: 1px solid var(--primary);
+  transition: width 0.4s ease;
+}
+
+.dept-count {
   font-size: 12px;
   font-weight: 600;
   color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+  min-width: 24px;
+  text-align: right;
 }
 
-.assignments-page .metric strong {
-  display: block;
-  margin-top: 8px;
-  font-size: 20px;
+/* Policy compliance */
+.insight-ok {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--feedback-success-text);
+  background: var(--feedback-success-bg);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.violation-warning {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--feedback-danger-text);
+  background: var(--feedback-danger-bg);
+  border-radius: 8px;
+  padding: 7px 12px;
+  margin-bottom: 8px;
+}
+
+.violation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.violation-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--bg-muted);
+}
+
+.violation-name {
   color: var(--text-primary);
+  font-weight: 500;
+}
+
+.violation-count {
+  font-weight: 700;
+  color: var(--feedback-danger-text);
+}
+
+/* Long-hold / refresh candidates */
+.insight-longhold {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  background: var(--feedback-warning-bg);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.longhold-count {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--feedback-warning-text);
+  line-height: 1;
+}
+
+.longhold-label {
+  font-size: 12px;
+  color: var(--feedback-warning-text);
+  line-height: 1.4;
 }
 
 /* Dark mode polish */
@@ -265,9 +446,6 @@
     grid-template-columns: 1fr;
   }
   .assignments-page .filters-row {
-    grid-template-columns: 1fr;
-  }
-  .assignments-page .metrics-grid {
     grid-template-columns: 1fr;
   }
 }

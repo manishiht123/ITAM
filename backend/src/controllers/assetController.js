@@ -108,13 +108,17 @@ const buildEmpMap = (employees) => {
     const map = {};
     (employees || []).forEach((e) => {
         const emp = e.toJSON ? e.toJSON() : e;
-        if (emp.employeeId) map[emp.employeeId] = emp;
+        // Index by both employeeId and email so lookups work regardless of
+        // which value was stored in the asset's employeeId field
+        if (emp.employeeId) map[String(emp.employeeId).trim().toLowerCase()] = emp;
+        if (emp.email) map[String(emp.email).trim().toLowerCase()] = emp;
     });
     return map;
 };
 
 const enrichWithEmployee = (asset, empMap) => {
-    const emp = empMap[asset.employeeId] || null;
+    const key = asset.employeeId ? String(asset.employeeId).trim().toLowerCase() : null;
+    const emp = key ? (empMap[key] || null) : null;
     return {
         ...asset,
         employeeName: emp?.name || null,
@@ -437,6 +441,30 @@ exports.updateAsset = async (req, res) => {
         const nextEmployeeId = req.body?.employeeId ? String(req.body.employeeId).trim() : "";
         const wantsAllocation = ["In Use", "Allocated"].includes(nextStatus);
         if (wantsAllocation && nextEmployeeId) {
+            // Cross-entity validation: employee must exist in this entity's DB
+            const entityCode = req.headers['x-entity-code'];
+            const tenantSeq = await TenantManager.getConnection(entityCode);
+            const Employee = tenantSeq.models.Employee || require("../models/Employee").init(tenantSeq);
+            const employeeExists = await Employee.findOne({
+                where: {
+                    [Op.or]: [
+                        tenantSeq.where(
+                            tenantSeq.fn("LOWER", tenantSeq.col("employeeId")),
+                            nextEmployeeId.toLowerCase()
+                        ),
+                        tenantSeq.where(
+                            tenantSeq.fn("LOWER", tenantSeq.col("email")),
+                            nextEmployeeId.toLowerCase()
+                        )
+                    ]
+                }
+            });
+            if (!employeeExists) {
+                return res.status(400).json({
+                    error: "Employee not found in this entity. Assets can only be assigned to employees within the same entity."
+                });
+            }
+
             const SystemPreference = require("../models/SystemPreference");
             const pref = await SystemPreference.findOne();
             const maxAssetsPerEmployee = pref?.maxAssetsPerEmployee ?? 2;
@@ -521,12 +549,22 @@ exports.updateAsset = async (req, res) => {
 
                 if (becameAllocated && updated.employeeId && allocationEnabled) {
                     const employee = await lookupEmployee(updated.employeeId);
-                    await sendAllocationEmail({ settings, employee, asset: updated, entity: entityInfo });
+                    await sendAllocationEmail({
+                        settings: settings?.toJSON ? settings.toJSON() : settings,
+                        employee: employee?.toJSON ? employee.toJSON() : employee,
+                        asset: updated?.toJSON ? updated.toJSON() : updated,
+                        entity: entityInfo?.toJSON ? entityInfo.toJSON() : entityInfo
+                    });
                 }
 
                 if (becameReturned && returnEnabled) {
                     const employee = await lookupEmployee(existing.employeeId);
-                    await sendReturnEmail({ settings, employee, asset: updated, entity: entityInfo });
+                    await sendReturnEmail({
+                        settings: settings?.toJSON ? settings.toJSON() : settings,
+                        employee: employee?.toJSON ? employee.toJSON() : employee,
+                        asset: updated?.toJSON ? updated.toJSON() : updated,
+                        entity: entityInfo?.toJSON ? entityInfo.toJSON() : entityInfo
+                    });
                 }
             }
         } catch (emailErr) {

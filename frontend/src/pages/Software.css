@@ -92,69 +92,63 @@
   color: var(--text-secondary);
 }
 
-.drawer-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.4);
-  z-index: 60;
-}
-
-.drawer-panel {
-  position: fixed;
-  top: 0;
-  right: 0;
-  width: 420px;
-  height: 100vh;
-  background: var(--bg-elevated);
-  border-left: 1px solid var(--border);
-  box-shadow: -6px 0 24px rgba(15, 23, 42, 0.12);
-  z-index: 70;
-  display: flex;
-  flex-direction: column;
-}
-
-.drawer-header {
-  padding: 16px 18px;
-  border-bottom: 1px solid var(--border);
+/* ── Drawer form section headers ── */
+.sw-form-section-title {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-}
-
-.drawer-body {
-  padding: 16px 18px;
-  overflow-y: auto;
-  display: grid;
-  gap: 12px;
-}
-
-.drawer-footer {
-  padding: 14px 18px;
-  border-top: 1px solid var(--border);
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.form-group label {
-  font-size: 12px;
-  font-weight: 500;
+  gap: 7px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
   color: var(--text-secondary);
+  margin-bottom: 14px;
 }
 
-.form-group input,
-.form-group select,
-.form-group textarea {
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  padding: 8px 12px;
+.sw-form-section-icon {
   font-size: 13px;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.sw-form-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 20px 0;
+}
+
+/* Two-column row inside drawer */
+.sw-form-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-md);
+}
+
+/* Textarea styled to match Input component */
+.sw-textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 80px;
+  padding: 8px 12px;
+  font-size: var(--text-sm);
+  font-family: inherit;
+  color: var(--text-primary);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  outline: none;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  line-height: 1.5;
+  box-sizing: border-box;
+}
+
+.sw-textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-soft);
+}
+
+[data-theme="dark"] .sw-textarea {
+  background: var(--bg-elevated);
 }
 
 .form-grid.two-col {
@@ -164,9 +158,7 @@
 }
 
 @media (max-width: 1100px) {
-  .drawer-panel {
-    width: 100%;
-  }
+  .sw-form-row,
   .form-grid.two-col {
     grid-template-columns: 1fr;
   }
