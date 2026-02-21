@@ -1,5 +1,6 @@
 const app = require("./app");
 const sequelize = require("./config/db");
+const TenantManager = require("./utils/TenantManager");
 // Ensure all models are registered on the default connection
 const User = require("./models/User");
 require("./models/Asset");
@@ -13,15 +14,103 @@ require("./models/SoftwareAssignment");
 const AuditLog = require("./models/AuditLog");
 const EmailSettings = require("./models/EmailSettings");
 const NotificationSettings = require("./models/NotificationSettings");
+const ReportSchedule = require("./models/ReportSchedule");
 const SystemPreference = require("./models/SystemPreference");
 const Role = require("./models/Role");
 const AlertRule = require("./models/AlertRule");
 const AssetTransfer = require("./models/AssetTransfer");
 require("./models/Entity");
 require("./models/Organization");
+require("./models/AssetIdPrefix");
 const bcrypt = require("bcryptjs");
 const ensureAssetStatusEnum = require("./utils/ensureAssetStatusEnum");
 const ensureAssetColumns = require("./utils/ensureAssetColumns");
+
+// One-time data cleanup: clear employee associations from Retired / Theft-Missing assets
+// across all tenant databases. Safe to run on every startup — only touches rows that
+// still have a non-null employeeId in those statuses.
+const releaseRetiredAssets = async () => {
+  try {
+    const Entity = require("./models/Entity");
+    const entities = await Entity.findAll();
+    let total = 0;
+    for (const entity of entities) {
+      try {
+        const tenantSeq = await TenantManager.getConnection(entity.code);
+        const [result] = await tenantSeq.query(`
+          UPDATE \`Assets\`
+          SET \`employeeId\` = NULL,
+              \`department\` = NULL,
+              \`location\`   = NULL
+          WHERE \`status\` IN ('Retired', 'Theft/Missing')
+            AND (\`employeeId\` IS NOT NULL
+              OR \`department\` IS NOT NULL
+              OR \`location\`   IS NOT NULL)
+        `);
+        if (result.affectedRows > 0) {
+          total += result.affectedRows;
+          console.log(`[Cleanup] ${entity.code}: cleared ${result.affectedRows} retired/stolen asset(s).`);
+        }
+      } catch (err) {
+        console.error(`[Cleanup] Skipped entity ${entity.code}:`, err.message);
+      }
+    }
+    if (total > 0) {
+      console.log(`[Cleanup] Total retired/stolen assets released: ${total}`);
+    }
+  } catch (err) {
+    console.error("[Cleanup] releaseRetiredAssets failed:", err.message);
+  }
+};
+
+// One-time data cleanup: clear employee associations from Available / In-Stock assets
+// across all tenant databases. Safe to run on every startup — only touches rows that
+// still have a non-null employeeId in those statuses.
+const releaseAvailableAssets = async () => {
+  try {
+    const Entity = require("./models/Entity");
+    const entities = await Entity.findAll();
+    let total = 0;
+    for (const entity of entities) {
+      try {
+        const tenantSeq = await TenantManager.getConnection(entity.code);
+        const [result] = await tenantSeq.query(`
+          UPDATE \`Assets\`
+          SET \`employeeId\` = NULL,
+              \`department\` = NULL,
+              \`location\`   = NULL
+          WHERE \`status\` IN ('Available', 'In Stock')
+            AND (\`employeeId\` IS NOT NULL
+              OR \`department\` IS NOT NULL
+              OR \`location\`   IS NOT NULL)
+        `);
+        if (result.affectedRows > 0) {
+          total += result.affectedRows;
+          console.log(`[Cleanup] ${entity.code}: cleared ${result.affectedRows} available/in-stock asset(s) with stale employee data.`);
+        }
+      } catch (err) {
+        console.error(`[Cleanup] Skipped entity ${entity.code}:`, err.message);
+      }
+    }
+    if (total > 0) {
+      console.log(`[Cleanup] Total available/in-stock assets released: ${total}`);
+    }
+  } catch (err) {
+    console.error("[Cleanup] releaseAvailableAssets failed:", err.message);
+  }
+};
+
+const ensureEmailSettingsBackendUrlColumn = async () => {
+  const [rows] = await sequelize.query(`
+    SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = "EmailSettings"
+      AND COLUMN_NAME = "backendUrl"
+  `);
+  if (!rows.length) {
+    await sequelize.query("ALTER TABLE `EmailSettings` ADD COLUMN `backendUrl` VARCHAR(2048) NULL;");
+  }
+};
 
 const ensureEntityLogoColumn = async () => {
   const [rows] = await sequelize.query(`
@@ -107,7 +196,15 @@ const startServer = async () => {
     await ensureAssetStatusEnum(sequelize);
     await ensureUserPermissionColumns();
     await ensureEntityLogoColumn();
+    await ensureEmailSettingsBackendUrlColumn();
     await sequelize.query("ALTER TABLE `Departments` MODIFY COLUMN `location` VARCHAR(255) NULL;").catch(() => { });
+    await ReportSchedule.sync();
+    await releaseRetiredAssets();
+    await releaseAvailableAssets();
+    // Start the report scheduler (non-blocking)
+    require("./services/reportScheduler").startScheduler().catch(err =>
+        console.error("[Scheduler] Startup error:", err.message)
+    );
 
     const admin = await User.findOne({
       where: { email: "manish@ofbusiness.in" }

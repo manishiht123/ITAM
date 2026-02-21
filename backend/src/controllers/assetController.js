@@ -440,6 +440,17 @@ exports.updateAsset = async (req, res) => {
         const nextStatus = req.body?.status;
         const nextEmployeeId = req.body?.employeeId ? String(req.body.employeeId).trim() : "";
         const wantsAllocation = ["In Use", "Allocated"].includes(nextStatus);
+
+        // Block allocation of assets that are in a non-allocatable state
+        if (wantsAllocation && existing) {
+            const nonAllocatable = ["Retired", "Theft/Missing"];
+            if (nonAllocatable.includes(existing.status)) {
+                return res.status(409).json({
+                    error: `This asset cannot be allocated. Its current status is "${existing.status}". Only Available or In-Stock assets can be assigned to employees.`
+                });
+            }
+        }
+
         if (wantsAllocation && nextEmployeeId) {
             // Cross-entity validation: employee must exist in this entity's DB
             const entityCode = req.headers['x-entity-code'];
@@ -500,6 +511,15 @@ exports.updateAsset = async (req, res) => {
             }
         }
 
+        // When an asset is retired, marked stolen, or returned to Available/In-Stock,
+        // release it from any employee so the table never shows stale associations.
+        const releasingStatuses = ["Retired", "Theft/Missing", "Available", "In Stock"];
+        if (releasingStatuses.includes(nextStatus)) {
+            req.body.employeeId = null;
+            req.body.department = null;
+            req.body.location = null;
+        }
+
         await Asset.update(req.body, { where: { id: req.params.id } });
         const updated = await Asset.findByPk(req.params.id);
         await logAudit(
@@ -510,65 +530,106 @@ exports.updateAsset = async (req, res) => {
 
         // Fire email notifications (non-blocking behavior)
         try {
-            const entityCode = req.headers['x-entity-code'];
-            const tenantSequelize = await TenantManager.getConnection(entityCode);
-            const Employee = tenantSequelize.models.Employee || require("../models/Employee").init(tenantSequelize);
+            const rawEntityCode = req.headers['x-entity-code'];
+            // Never use "ALL" as a tenant — fall back to the asset's own entity
+            const entityCode = (rawEntityCode && rawEntityCode.toUpperCase() !== "ALL")
+                ? rawEntityCode
+                : (existing?.entity || updated?.entity || null);
 
-            // EmailSettings lives in the MAIN (global) DB — not the tenant DB
-            const EmailSettings = require("../models/EmailSettings");
-            const settings = await EmailSettings.findOne();
-            const notificationSettings = await NotificationSettings.findOne();
+            if (!entityCode) {
+                console.warn("[Email] Cannot determine entity code — skipping email notification");
+            } else {
+                const tenantSequelize = await TenantManager.getConnection(entityCode);
+                const Employee = tenantSequelize.models.Employee || require("../models/Employee").init(tenantSequelize);
 
-            // Fetch entity info (logo + name) from main DB for consent form branding
-            const entityInfo = entityCode
-                ? await Entity.findOne({ where: { code: entityCode } })
-                : null;
+                // EmailSettings lives in the MAIN (global) DB — not the tenant DB
+                const EmailSettings = require("../models/EmailSettings");
+                const settings = await EmailSettings.findOne();
+                const notificationSettings = await NotificationSettings.findOne();
 
-            const lookupEmployee = async (employeeId) => {
-                if (!employeeId) return null;
-                return Employee.findOne({
-                    where: {
-                        [Op.or]: [
-                            { employeeId: employeeId },
-                            { email: employeeId }
-                        ]
+                // Fetch entity info (logo + name) from main DB for consent form branding
+                const entityInfo = await Entity.findOne({ where: { code: entityCode } });
+                console.log(`[Email] Entity lookup: code="${entityCode}" → found=${!!entityInfo}, logo=${entityInfo?.logo ? `data URL (${entityInfo.logo.length} chars, starts: ${entityInfo.logo.substring(0, 30)})` : "NONE"}`);
+
+                // Backend URL used to serve logo images via HTTP (avoids CID/base64 issues in Gmail).
+                // Use the admin-configured public URL from EmailSettings if available,
+                // otherwise fall back to the request-derived URL (works only on local networks).
+                const backendUrl = settings.backendUrl || `${req.protocol}://${req.headers.host}`;
+
+                const lookupEmployee = async (employeeId) => {
+                    if (!employeeId) return null;
+                    return Employee.findOne({
+                        where: {
+                            [Op.or]: [
+                                { employeeId: employeeId },
+                                { email: employeeId }
+                            ]
+                        }
+                    });
+                };
+
+                if (!settings) {
+                    console.warn("[Email] No EmailSettings configured — skipping notification. Configure SMTP in Settings → Notifications.");
+                } else if (!settings.enabled) {
+                    console.log("[Email] Email notifications disabled in settings — skipping.");
+                } else if (!settings.smtpUser || !settings.smtpPass) {
+                    console.warn("[Email] SMTP credentials (smtpUser/smtpPass) not configured — skipping notification.");
+                } else if (existing && updated) {
+                    const wasAllocated = ["In Use", "Allocated"].includes(existing.status);
+                    const nowAllocated = updated.status === "In Use";
+                    const nowAvailable = ["Available", "In Stock"].includes(updated.status);
+
+                    const becameAllocated = !wasAllocated && nowAllocated;
+                    const becameReturned = wasAllocated && nowAvailable;
+
+                    const allocationEnabled = notificationSettings ? notificationSettings.assetAllocation !== false : true;
+                    const returnEnabled = notificationSettings ? notificationSettings.assetReturn !== false : true;
+
+                    if (becameAllocated && updated.employeeId && allocationEnabled) {
+                        const employee = await lookupEmployee(updated.employeeId);
+                        if (!employee) {
+                            console.warn(`[Email] Employee not found for employeeId="${updated.employeeId}" — skipping allocation email`);
+                        } else if (!employee.email) {
+                            console.warn(`[Email] Employee "${employee.name}" has no email address — skipping allocation email`);
+                        } else {
+                            console.log(`[Email] Sending allocation email to ${employee.email} for asset ${updated.assetId}...`);
+                            await sendAllocationEmail({
+                                settings: settings.toJSON(),
+                                employee: employee.toJSON(),
+                                asset: updated.toJSON(),
+                                entity: entityInfo?.toJSON ? entityInfo.toJSON() : entityInfo,
+                                backendUrl,
+                                entityCode
+                            });
+                            console.log(`[Email] Allocation email sent successfully.`);
+                        }
+                    } else if (becameAllocated && !allocationEnabled) {
+                        console.log("[Email] Asset allocation email disabled in notification settings — skipping.");
                     }
-                });
-            };
 
-            if (existing && updated) {
-                const wasAllocated = ["In Use", "Allocated"].includes(existing.status);
-                const nowAllocated = updated.status === "In Use";
-                const nowAvailable = ["Available", "In Stock"].includes(updated.status);
-
-                const becameAllocated = !wasAllocated && nowAllocated;
-                const becameReturned = wasAllocated && nowAvailable;
-
-                const allocationEnabled = notificationSettings ? notificationSettings.assetAllocation !== false : true;
-                const returnEnabled = notificationSettings ? notificationSettings.assetReturn !== false : true;
-
-                if (becameAllocated && updated.employeeId && allocationEnabled) {
-                    const employee = await lookupEmployee(updated.employeeId);
-                    await sendAllocationEmail({
-                        settings: settings?.toJSON ? settings.toJSON() : settings,
-                        employee: employee?.toJSON ? employee.toJSON() : employee,
-                        asset: updated?.toJSON ? updated.toJSON() : updated,
-                        entity: entityInfo?.toJSON ? entityInfo.toJSON() : entityInfo
-                    });
-                }
-
-                if (becameReturned && returnEnabled) {
-                    const employee = await lookupEmployee(existing.employeeId);
-                    await sendReturnEmail({
-                        settings: settings?.toJSON ? settings.toJSON() : settings,
-                        employee: employee?.toJSON ? employee.toJSON() : employee,
-                        asset: updated?.toJSON ? updated.toJSON() : updated,
-                        entity: entityInfo?.toJSON ? entityInfo.toJSON() : entityInfo
-                    });
+                    if (becameReturned && returnEnabled) {
+                        const employee = await lookupEmployee(existing.employeeId);
+                        if (!employee) {
+                            console.warn(`[Email] Employee not found for employeeId="${existing.employeeId}" — skipping return email`);
+                        } else {
+                            console.log(`[Email] Sending return email for asset ${updated.assetId}...`);
+                            await sendReturnEmail({
+                                settings: settings.toJSON(),
+                                employee: employee.toJSON(),
+                                asset: updated.toJSON(),
+                                entity: entityInfo?.toJSON ? entityInfo.toJSON() : entityInfo,
+                                backendUrl,
+                                entityCode
+                            });
+                            console.log(`[Email] Return email sent successfully.`);
+                        }
+                    } else if (becameReturned && !returnEnabled) {
+                        console.log("[Email] Asset return email disabled in notification settings — skipping.");
+                    }
                 }
             }
         } catch (emailErr) {
-            console.error("Email notification failed:", emailErr.message);
+            console.error("[Email] Notification failed:", emailErr.message, emailErr.stack?.split("\n")[1]);
         }
 
         res.json({ message: "Asset updated" });

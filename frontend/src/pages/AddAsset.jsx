@@ -105,8 +105,6 @@ export default function AddAsset() {
   });
 
   useEffect(() => {
-    // Generate a simple ID
-    setAssetId(`AST-${Math.floor(Math.random() * 10000)}`);
     loadEntities();
   }, []);
 
@@ -121,6 +119,27 @@ export default function AddAsset() {
   useEffect(() => {
     loadDropdowns();
   }, []);
+
+  // Auto-generate Asset ID when entity or category changes
+  useEffect(() => {
+    const entity = formData.entity;
+    const category = formData.category;
+    if (!entity || entity === "ALL" || !category) {
+      setAssetId(`AST-${Math.floor(Math.random() * 10000)}`);
+      return;
+    }
+    let cancelled = false;
+    api.generateAssetId(entity, category)
+      .then(res => {
+        if (!cancelled) {
+          setAssetId(res.assetId || `AST-${Math.floor(Math.random() * 10000)}`);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setAssetId(`AST-${Math.floor(Math.random() * 10000)}`);
+      });
+    return () => { cancelled = true; };
+  }, [formData.entity, formData.category]);
 
   const loadEntities = async () => {
     try {

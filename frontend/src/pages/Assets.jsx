@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useEntity } from "../context/EntityContext";
 import "./Assets.css";
-import { FaPencilAlt, FaUserPlus, FaUndoAlt, FaTools, FaExchangeAlt, FaHistory } from "react-icons/fa";
+import { FaPencilAlt, FaUserPlus, FaUndoAlt, FaCheckCircle, FaExchangeAlt, FaHistory } from "react-icons/fa";
 import { KpiCard, Card, Button, Badge, ConfirmDialog } from "../components/ui";
 import ChartCard from "../components/ChartCard";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -33,6 +33,7 @@ export default function Assets() {
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [allocationData, setAllocationData] = useState({ employeeId: "" });
   const [returnConfirm, setReturnConfirm] = useState({ open: false, asset: null });
+  const [repairConfirm, setRepairConfirm] = useState({ open: false, asset: null });
 
   // Transfer modal state
   const [showTransferModal, setShowTransferModal] = useState(false);
@@ -45,6 +46,19 @@ export default function Assets() {
   // Transfer history modal
   const [showTransferHistory, setShowTransferHistory] = useState(false);
   const [transferHistory, setTransferHistory] = useState([]);
+
+  // Resolved source entity for the transfer modal (never "ALL")
+  const resolvedFromEntity = useMemo(() => {
+    if (!transferAsset) return null;
+    const raw = (transferAsset.entity || "").toString().trim();
+    if (raw && raw.toUpperCase() !== "ALL" && raw.toUpperCase() !== "ALL ENTITIES") {
+      return raw.toUpperCase();
+    }
+    if (selectedEntityCode && selectedEntityCode.toUpperCase() !== "ALL" && selectedEntityCode.toUpperCase() !== "ALL ENTITIES") {
+      return selectedEntityCode.toUpperCase();
+    }
+    return null;
+  }, [transferAsset, selectedEntityCode]);
 
   useEffect(() => {
     loadEntities();
@@ -185,7 +199,10 @@ export default function Assets() {
     const asset = returnConfirm.asset;
     setReturnConfirm({ open: false, asset: null });
     try {
-      const entityCode = selectedEntityCode || asset.entity || null;
+      // Never send "ALL" as entity code — always resolve to the asset's own entity
+      const entityCode = (selectedEntityCode && selectedEntityCode !== "ALL")
+        ? selectedEntityCode
+        : (asset.entity || null);
       await api.updateAsset(asset.id, {
         status: "Available",
         employeeId: null,
@@ -196,6 +213,21 @@ export default function Assets() {
       loadData();
     } catch (err) {
       toast.error(err.message || "Failed to return asset");
+    }
+  };
+
+  const confirmMarkAvailable = async () => {
+    const asset = repairConfirm.asset;
+    setRepairConfirm({ open: false, asset: null });
+    try {
+      const entityCode = (selectedEntityCode && selectedEntityCode !== "ALL")
+        ? selectedEntityCode
+        : (asset.entity || null);
+      await api.updateAsset(asset.id, { status: "Available" }, entityCode);
+      toast.success(`Asset ${asset.name} marked as Available`);
+      loadData();
+    } catch (err) {
+      toast.error(err.message || "Failed to update asset status");
     }
   };
 
@@ -367,6 +399,24 @@ export default function Assets() {
     }
   };
 
+  // Straight-line depreciation over 3 years (standard IT asset useful life).
+  // Returns the current book value, or null if price/date is missing.
+  const calcDepreciatedValue = (price, dateOfPurchase, usefulLifeYears = 3) => {
+    if (!price || !dateOfPurchase) return null;
+    const purchasePrice = parseFloat(String(price).replace(/[^0-9.]/g, ""));
+    if (isNaN(purchasePrice) || purchasePrice <= 0) return null;
+    const purchaseDate = new Date(dateOfPurchase);
+    if (isNaN(purchaseDate.getTime())) return null;
+    const yearsElapsed = (Date.now() - purchaseDate.getTime()) / (1000 * 60 * 60 * 24 * 365.25);
+    if (yearsElapsed < 0) return purchasePrice;
+    return Math.max(0, purchasePrice * (1 - yearsElapsed / usefulLifeYears));
+  };
+
+  const formatCurrency = (value) => {
+    if (value === null || value === undefined) return "-";
+    return "₹" + value.toLocaleString("en-IN", { maximumFractionDigits: 0 });
+  };
+
   const toggleSort = (key) => {
     if (sortKey === key) {
       setSortDir((prev) => (prev === "asc" ? "desc" : "asc"));
@@ -533,6 +583,9 @@ export default function Assets() {
               <th className="sortable" onClick={() => toggleSort("employeeId")}>
                 Employee ID <SortIndicator column="employeeId" />
               </th>
+              <th className="sortable" onClick={() => toggleSort("employeeEmail")}>
+                Employee Email <SortIndicator column="employeeEmail" />
+              </th>
               <th className="sortable" onClick={() => toggleSort("department")}>
                 Department <SortIndicator column="department" />
               </th>
@@ -542,6 +595,7 @@ export default function Assets() {
               <th className="sortable" onClick={() => toggleSort("status")}>
                 Status <SortIndicator column="status" />
               </th>
+              <th>Depr. Value</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -557,6 +611,7 @@ export default function Assets() {
                   a.category,
                   a.entity,
                   a.employeeId,
+                  a.employeeEmail,
                   a.department,
                   a.location,
                   a.status
@@ -576,6 +631,7 @@ export default function Assets() {
                   <td>{asset.category}</td>
                   <td>{asset.entity}</td>
                   <td>{asset.employeeId || "-"}</td>
+                  <td>{asset.employeeEmail || "-"}</td>
                   <td>{asset.department || "-"}</td>
                   <td>{asset.location || "-"}</td>
                   <td>
@@ -590,6 +646,25 @@ export default function Assets() {
                     >
                       {asset.status}
                     </Badge>
+                  </td>
+                  <td style={{ whiteSpace: "nowrap" }}>
+                    {(() => {
+                      const dv = calcDepreciatedValue(asset.price, asset.dateOfPurchase);
+                      if (dv === null) return <span style={{ color: "var(--text-secondary)" }}>-</span>;
+                      const pct = asset.price
+                        ? Math.round((dv / parseFloat(String(asset.price).replace(/[^0-9.]/g, ""))) * 100)
+                        : null;
+                      return (
+                        <span title={`Purchase: ₹${parseFloat(String(asset.price).replace(/[^0-9.]/g,"")).toLocaleString("en-IN")}`}>
+                          {formatCurrency(dv)}
+                          {pct !== null && (
+                            <span style={{ fontSize: 11, color: pct > 50 ? "var(--success, #22c55e)" : pct > 0 ? "var(--warning, #f97316)" : "var(--danger, #ef4444)", marginLeft: 4 }}>
+                              ({pct}%)
+                            </span>
+                          )}
+                        </span>
+                      );
+                    })()}
                   </td>
                   <td>
                     <div className="asset-action-icons">
@@ -611,11 +686,11 @@ export default function Assets() {
                       )}
                       {asset.status === "Under Repair" && (
                         <button
-                          className="asset-icon-btn reassign"
-                          title="Reassign After Repair"
-                          onClick={() => navigate(`/assets/allocate?assetId=${encodeURIComponent(asset.assetId || asset.id)}&entity=${encodeURIComponent(asset.entity || selectedEntityCode || "")}`)}
+                          className="asset-icon-btn return"
+                          title="Mark as Available (Repair Complete)"
+                          onClick={() => setRepairConfirm({ open: true, asset })}
                         >
-                          <FaTools />
+                          <FaCheckCircle />
                         </button>
                       )}
                       {isAllocatedStatus(asset.status) && (
@@ -642,7 +717,7 @@ export default function Assets() {
               )})}
             {normalizedAssets.length === 0 && (
               <tr>
-                <td colSpan="9" style={{ textAlign: "center", padding: "20px" }}>No assets found</td>
+                <td colSpan="11" style={{ textAlign: "center", padding: "20px" }}>No assets found</td>
               </tr>
             )}
           </tbody>
@@ -706,17 +781,19 @@ export default function Assets() {
         onCancel={() => setReturnConfirm({ open: false, asset: null })}
       />
 
-      {/* ================= TRANSFER MODAL ================= */}
-      {showTransferModal && (() => {
-        // Resolve source entity for display + validation (same logic as handleTransferSubmit)
-        const rawFromEntity = (transferAsset?.entity || "").toString().trim();
-        const resolvedFromEntity = rawFromEntity && rawFromEntity.toUpperCase() !== "ALL" && rawFromEntity.toUpperCase() !== "ALL ENTITIES"
-          ? rawFromEntity.toUpperCase()
-          : selectedEntityCode && selectedEntityCode.toUpperCase() !== "ALL" && selectedEntityCode.toUpperCase() !== "ALL ENTITIES"
-            ? selectedEntityCode.toUpperCase()
-            : null;
+      {/* ================= REPAIR COMPLETE CONFIRM ================= */}
+      <ConfirmDialog
+        open={repairConfirm.open}
+        title="Mark as Available"
+        message={`Confirm that "${repairConfirm.asset?.name}" has been repaired and is ready for use. It will be moved to Available status.`}
+        confirmText="Mark Available"
+        variant="primary"
+        onConfirm={confirmMarkAvailable}
+        onCancel={() => setRepairConfirm({ open: false, asset: null })}
+      />
 
-        return (
+      {/* ================= TRANSFER MODAL ================= */}
+      {showTransferModal && (
         <div className="page-modal-overlay">
           <div className="page-modal page-modal-lg">
             <div className="page-modal-header">
@@ -732,7 +809,7 @@ export default function Assets() {
             <form onSubmit={handleTransferSubmit} className="page-modal-body">
               {/* Warning if entity can't be resolved */}
               {!resolvedFromEntity && (
-                <div style={{ background: "var(--warning-soft, #fef3c7)", border: "1px solid var(--warning, #f59e0b)", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "var(--warning-dark, #92400e)" }}>
+                <div style={{ background: "#fef3c7", border: "1px solid #f59e0b", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "#92400e" }}>
                   <strong>Warning:</strong> Could not determine the source entity. Please switch to a specific entity view before transferring.
                 </div>
               )}
@@ -861,8 +938,7 @@ export default function Assets() {
             </form>
           </div>
         </div>
-        );
-      })()}
+      )}
 
       {/* ================= TRANSFER HISTORY MODAL ================= */}
       {showTransferHistory && (

@@ -34,7 +34,6 @@ const LicensesCompliance = lazy(() => import("./pages/settings/LicensesComplianc
 const AssignmentsOwnership = lazy(() => import("./pages/settings/AssignmentsOwnership"));
 const Notifications = lazy(() => import("./pages/settings/Notifications"));
 const SecurityAudit = lazy(() => import("./pages/settings/SecurityAudit"));
-const FinancialSettings = lazy(() => import("./pages/settings/FinancialSettings"));
 const SystemPreferences = lazy(() => import("./pages/settings/SystemPreferences"));
 const PasswordPolicy = lazy(() => import("./pages/settings/PasswordPolicy"));
 const Reports = lazy(() => import("./pages/settings/Reports"));
@@ -241,14 +240,6 @@ export default function App() {
           element={
             <Suspense fallback={<PageLoader />}>
               <RoleGuard adminOnly><SecurityAudit /></RoleGuard>
-            </Suspense>
-          }
-        />
-        <Route
-          path="settings/finance"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <RoleGuard adminOnly><FinancialSettings /></RoleGuard>
             </Suspense>
           }
         />

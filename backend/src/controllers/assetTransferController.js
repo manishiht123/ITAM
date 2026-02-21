@@ -1,6 +1,8 @@
 const TenantManager = require("../utils/TenantManager");
 const AssetTransfer = require("../models/AssetTransfer");
 const AuditLog = require("../models/AuditLog");
+const { Op } = require("sequelize");
+const { generateAssetId } = require("../utils/assetIdGenerator");
 
 const logAudit = async (req, action, details = "") => {
     try {
@@ -58,13 +60,22 @@ exports.initiateTransfer = async (req, res) => {
 
         console.log(`[Transfer] Searching for assetId="${assetIdStr}" in DB for entity="${fromEntity}"`);
 
-        // Case-insensitive lookup so "AST-001" matches "ast-001" etc.
-        const sourceAsset = await SourceAsset.findOne({
-            where: seq.where(
-                seq.fn("LOWER", seq.col("assetId")),
-                assetIdStr.toLowerCase()
-            )
-        });
+        // Case-insensitive lookup — try exact match first, then LOWER() fallback
+        let sourceAsset = await SourceAsset.findOne({ where: { assetId: assetIdStr } });
+        if (!sourceAsset) {
+            // Try case-insensitive (same pattern as assetController.createAsset)
+            sourceAsset = await SourceAsset.findOne({
+                where: {
+                    [Op.and]: [
+                        { assetId: { [Op.not]: null } },
+                        seq.where(
+                            seq.fn("LOWER", seq.col("assetId")),
+                            assetIdStr.toLowerCase()
+                        )
+                    ]
+                }
+            });
+        }
 
         if (!sourceAsset) {
             // Count total rows to help diagnose empty-DB issues
@@ -86,14 +97,22 @@ exports.initiateTransfer = async (req, res) => {
             });
         }
 
-        // ── Check for duplicate in target entity ────
+        // ── Get target entity model and generate new asset ID ───
         const TargetAsset = await getAssetModel(toEntity);
+        const targetSeq = TargetAsset.sequelize;
+
+        // Try to generate a new ID using the target entity's prefix config for this category.
+        // Falls back to the original assetId if no prefix is configured.
+        const generatedId = await generateAssetId(toEntity, assetData.category, targetSeq);
+        const targetAssetId = generatedId || assetData.assetId;
+
+        // Check for duplicate in target entity using the resolved target ID
         const existingInTarget = await TargetAsset.findOne({
-            where: { assetId: assetData.assetId }
+            where: { assetId: targetAssetId }
         });
         if (existingInTarget) {
             return res.status(409).json({
-                error: `Asset ID "${assetData.assetId}" already exists in ${toEntity}.`
+                error: `Asset ID "${targetAssetId}" already exists in ${toEntity}.`
             });
         }
 
@@ -106,12 +125,13 @@ exports.initiateTransfer = async (req, res) => {
         const newAsset = await TargetAsset.create({
             ...assetData,
             id: undefined,
+            assetId: targetAssetId,
             entity: toEntity,
             status: targetStatus,
             employeeId: null,
             department: null,
             comments: [
-                `Transferred from ${fromEntity} on ${dateStr}.`,
+                `Transferred from ${fromEntity} on ${dateStr}. Original ID: ${assetData.assetId}.`,
                 reason ? `Reason: ${reason}.` : "",
                 assetData.comments || ""
             ].filter(Boolean).join(" ").trim()

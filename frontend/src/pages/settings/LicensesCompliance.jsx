@@ -96,6 +96,70 @@ export default function LicensesCompliance() {
         return { active, watch, overused, auditReady };
     }, [licenses]);
 
+    const handleDownloadChecklist = () => {
+        const today = new Date().toISOString().split("T")[0];
+        const rows = [];
+
+        rows.push(["Audit Readiness Checklist"]);
+        rows.push(["Generated On", today]);
+        rows.push(["Entity", entity || "All Entities"]);
+        rows.push(["Audit Readiness Score", `${kpis.auditReady}%`]);
+        rows.push([]);
+
+        rows.push(["=== License Inventory & Compliance ==="]);
+        rows.push(["Product", "Seats Owned", "Seats Used", "Compliance Status"]);
+        if (inventory.length === 0) {
+            rows.push(["No license data available"]);
+        } else {
+            inventory.forEach((row) => {
+                rows.push([row.product, row.owned, row.used, row.compliance]);
+            });
+        }
+        rows.push([]);
+
+        rows.push(["=== Upcoming Renewals ==="]);
+        rows.push(["Product", "Vendor", "Renewal Date", "Seats", "Status"]);
+        if (renewals.length === 0) {
+            rows.push(["No upcoming renewals"]);
+        } else {
+            renewals.forEach((row) => {
+                rows.push([row.product, row.vendor || "-", row.date, row.seats, row.status]);
+            });
+        }
+        rows.push([]);
+
+        rows.push(["=== Risk Alerts ==="]);
+        rows.push(["Risk", "Level"]);
+        if (risks.length === 0) {
+            rows.push(["No immediate risks detected", "LOW"]);
+        } else {
+            risks.forEach((risk) => {
+                rows.push([risk.text, risk.level.toUpperCase()]);
+            });
+        }
+        rows.push([]);
+
+        rows.push(["=== Summary ==="]);
+        rows.push(["Active Licenses", kpis.active]);
+        rows.push(["At-Risk Renewals", kpis.watch]);
+        rows.push(["Overused Seats", kpis.overused]);
+        rows.push(["Audit Readiness", `${kpis.auditReady}%`]);
+
+        const csvContent = rows
+            .map((r) => r.map((cell) => `"${String(cell ?? "").replace(/"/g, '""')}"`).join(","))
+            .join("\n");
+
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", `audit_checklist_${today}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    };
+
     if (loading) return <div className="licenses-page"><LoadingOverlay visible message="Loading licenses..." /></div>;
 
     return (
@@ -284,7 +348,7 @@ export default function LicensesCompliance() {
                                 {kpis.auditReady}% of licenses are compliant and audit-ready.
                             </p>
                         </div>
-                        <Button variant="secondary">Download Checklist</Button>
+                        <Button variant="secondary" onClick={handleDownloadChecklist}>Download Checklist</Button>
                     </div>
                 </Card.Body>
             </Card>

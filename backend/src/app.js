@@ -34,6 +34,8 @@ app.use("/api/alert-rules", roleGuard("admin"), require("./routes/alertRuleRoute
 app.use("/api/licenses", entityAccess, moduleAccess("assets"), require("./routes/licenseRoutes"));
 app.use("/api/software", entityAccess, moduleAccess("assets"), require("./routes/softwareRoutes"));
 app.use("/api/ai", entityAccess, require("./routes/aiRoutes"));
+app.use("/api/asset-id-prefixes", require("./routes/assetIdPrefixRoutes"));
+app.use("/api/report-schedules", roleGuard("admin"), require("./routes/reportScheduleRoutes"));
 
 app.get("/", (req, res) => res.send("ITAM Backend Running"));
 

@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const PDFDocument = require("pdfkit");
+const sharp = require("sharp");
 
 const templatePath = path.join(__dirname, "..", "templates", "consentForm.html");
 
@@ -31,8 +32,33 @@ const buildConsentHtml = (data) => {
         .replace(/{{condition}}/g, safeVal(data.condition));
 };
 
+// Pre-resolves the entity logo to a raw PNG/JPEG Buffer that pdfkit can render.
+// SVG logos are rasterised to PNG via sharp; other base64 data URLs are decoded
+// as-is. Returns null if the logo is absent, unsupported, or conversion fails.
+const resolveLogoBuffer = async (entityLogo) => {
+    if (!entityLogo || !entityLogo.startsWith("data:")) return null;
+    const b64Match = entityLogo.match(/^data:[^;]+;base64,(.+)$/s);
+    if (!b64Match) return null;
+    const rawBuf = Buffer.from(b64Match[1].trim(), "base64");
+    const isSvg = entityLogo.startsWith("data:image/svg+xml");
+    if (isSvg) {
+        try {
+            const pngBuf = await sharp(rawBuf).png().toBuffer();
+            console.log("[PDF] SVG logo converted to PNG successfully.");
+            return pngBuf;
+        } catch (err) {
+            console.error("[PDF] SVG→PNG conversion failed:", err.message);
+            return null;
+        }
+    }
+    return rawBuf;
+};
+
 // ─── PDF generation (pdfkit) ─────────────────────────────────────────────────
-const buildConsentPdf = (data) => {
+const buildConsentPdf = async (data) => {
+    // Resolve logo to a renderable Buffer BEFORE entering the PDF stream
+    const logoBuffer = await resolveLogoBuffer(data.entityLogo);
+
     return new Promise((resolve, reject) => {
         try {
             const doc = new PDFDocument({ margin: 0, size: "A4" });
@@ -90,8 +116,8 @@ const buildConsentPdf = (data) => {
             // ─── HEADER BAND (y = 0 … 108) ───────────────────────────────────
             fillRect(0, 0, PW, 108, C.navy);
 
-            // Logo white panel (left)
-            const hasLogo = data.entityLogo && data.entityLogo.startsWith("data:");
+            // Logo white panel (left) — logoBuffer is a pre-resolved PNG/JPEG Buffer or null
+            const hasLogo = !!logoBuffer;
             const logoPanelW = 138;
 
             if (hasLogo) {
@@ -99,12 +125,11 @@ const buildConsentPdf = (data) => {
                 // Amber divider
                 fillRect(logoPanelW, 0, 4, 108, C.amber);
                 try {
-                    const [, b64] = data.entityLogo.split(",");
-                    if (b64) {
-                        const imgBuf = Buffer.from(b64, "base64");
-                        doc.image(imgBuf, 12, 14, { width: logoPanelW - 24, height: 80, fit: [logoPanelW - 24, 80], align: "center", valign: "center" });
-                    }
-                } catch (_) { /* skip logo on error */ }
+                    doc.image(logoBuffer, 12, 14, { fit: [logoPanelW - 24, 80], align: "center", valign: "center" });
+                } catch (err) {
+                    console.error("[PDF] Logo image render failed:", err.message);
+                    /* white panel already drawn — just skip the image */
+                }
             }
 
             // Header text

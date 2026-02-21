@@ -144,12 +144,12 @@ export default function Sidebar() {
               <div className="submenu">
                 <NavLink to="/settings/entities">Organization & Entities</NavLink>
                 <NavLink to="/settings/users">Users & Roles</NavLink>
+                <NavLink to="/settings/asset-config">Asset Configuration</NavLink>
                 <NavLink to="/settings/licenses">Licenses & Compliance</NavLink>
                 <NavLink to="/settings/assignments">Assignments & Ownership</NavLink>
                 <NavLink to="/settings/notifications">Notifications</NavLink>
                 <NavLink to="/settings/security">Security & Audit</NavLink>
                 <NavLink to="/settings/reports">Reports</NavLink>
-                <NavLink to="/settings/finance">Financial Settings</NavLink>
                 <NavLink to="/settings/system">System Preferences</NavLink>
                 <NavLink to="/settings/password">Password Policy</NavLink>
               </div>

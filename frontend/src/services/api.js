@@ -366,6 +366,12 @@ const api = {
             body: JSON.stringify(data),
         }));
     },
+    testEmailConnection: async () => {
+        return handleResponse(await fetch(`${BASE_URL}/email-settings/test`, {
+            method: "POST",
+            headers: buildHeaders(null, { "Content-Type": "application/json" }),
+        }));
+    },
 
     // --- SYSTEM PREFERENCES ---
     getSystemPreferences: async () => handleResponse(await fetch(`${BASE_URL}/system-preferences`, {
@@ -529,7 +535,62 @@ const api = {
     },
     getAllocationSuggestions: async (employeeId, entityCode) => handleResponse(await fetch(`${BASE_URL}/ai/suggest-allocation/${employeeId}`, {
         headers: buildHeaders(entityCode)
-    }))
+    })),
+
+    // --- ASSET ID PREFIXES ---
+    getAssetIdPrefixes: async () => handleResponse(await fetch(`${BASE_URL}/asset-id-prefixes`, {
+        headers: buildHeaders()
+    })),
+    upsertAssetIdPrefix: async (data) => {
+        return handleResponse(await fetch(`${BASE_URL}/asset-id-prefixes`, {
+            method: "POST",
+            headers: buildHeaders(null, { "Content-Type": "application/json" }),
+            body: JSON.stringify(data),
+        }));
+    },
+    deleteAssetIdPrefix: async (id) => {
+        return handleResponse(await fetch(`${BASE_URL}/asset-id-prefixes/${id}`, {
+            method: "DELETE",
+            headers: buildHeaders()
+        }));
+    },
+    generateAssetId: async (entity, category) => {
+        return handleResponse(await fetch(
+            `${BASE_URL}/asset-id-prefixes/generate?entity=${encodeURIComponent(entity)}&category=${encodeURIComponent(category)}`,
+            { headers: buildHeaders() }
+        ));
+    },
+
+    // --- REPORT SCHEDULES ---
+    getReportSchedules: async () => handleResponse(await fetch(`${BASE_URL}/report-schedules`, {
+        headers: buildHeaders()
+    })),
+    createReportSchedule: async (data) => {
+        return handleResponse(await fetch(`${BASE_URL}/report-schedules`, {
+            method: "POST",
+            headers: buildHeaders(null, { "Content-Type": "application/json" }),
+            body: JSON.stringify(data)
+        }));
+    },
+    updateReportSchedule: async (id, data) => {
+        return handleResponse(await fetch(`${BASE_URL}/report-schedules/${id}`, {
+            method: "PUT",
+            headers: buildHeaders(null, { "Content-Type": "application/json" }),
+            body: JSON.stringify(data)
+        }));
+    },
+    deleteReportSchedule: async (id) => {
+        return handleResponse(await fetch(`${BASE_URL}/report-schedules/${id}`, {
+            method: "DELETE",
+            headers: buildHeaders()
+        }));
+    },
+    runReportScheduleNow: async (id) => {
+        return handleResponse(await fetch(`${BASE_URL}/report-schedules/${id}/run`, {
+            method: "POST",
+            headers: buildHeaders()
+        }));
+    },
 };
 
 export default api;

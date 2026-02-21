@@ -14,7 +14,8 @@ const EmailSettingsSchema = {
     notifyEmail: { type: DataTypes.STRING, allowNull: true },
     returnToName: { type: DataTypes.STRING, allowNull: true },
     returnToEmail: { type: DataTypes.STRING, allowNull: true },
-    enabled: { type: DataTypes.BOOLEAN, defaultValue: true }
+    enabled: { type: DataTypes.BOOLEAN, defaultValue: true },
+    backendUrl: { type: DataTypes.STRING(2048), allowNull: true }
 };
 
 const EmailSettings = sequelize.define("EmailSettings", EmailSettingsSchema);

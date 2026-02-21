@@ -123,14 +123,17 @@ export default function AssetAllocation() {
       const assetIdParam = searchParams.get("assetId");
       const historyParam = searchParams.get("history");
 
+      // Statuses that can never be allocated
+      const NON_ALLOCATABLE = ["retired", "theft/missing"];
+
       // Filter available assets (Available / In Stock / New)
       const available = assetsData.filter((asset) => {
         const status = String(asset.status || "").trim().toLowerCase();
         return status === "available" || status === "in stock" || status === "new";
       });
 
-      // If a specific asset was requested via URL param, always include it
-      // in the available list (e.g. "Reassign After Repair" for Under Repair assets)
+      // If a specific asset was requested via URL param (e.g. "Reassign After Repair"),
+      // include it only if it is NOT in a non-allocatable state (Retired / Theft/Missing).
       let preSelectedId = "";
       if (assetParam || assetIdParam) {
         const target = assetParam || assetIdParam;
@@ -140,10 +143,18 @@ export default function AssetAllocation() {
             String(asset.id) === String(target)
         );
         if (match) {
-          preSelectedId = String(match.id);
-          // If it's not already in the available list, add it
-          if (!available.some((a) => String(a.id) === preSelectedId)) {
-            available.unshift(match);
+          const matchStatus = String(match.status || "").trim().toLowerCase();
+          if (NON_ALLOCATABLE.includes(matchStatus)) {
+            // Show a toast after state settles — we pass a flag via a small timeout
+            setTimeout(() => {
+              toast.error(`Asset "${match.name || match.assetId}" cannot be allocated. Its current status is "${match.status}".`);
+            }, 300);
+          } else {
+            preSelectedId = String(match.id);
+            // If it's not already in the available list, add it (e.g. Under Repair)
+            if (!available.some((a) => String(a.id) === preSelectedId)) {
+              available.unshift(match);
+            }
           }
         }
       }
@@ -187,6 +198,13 @@ export default function AssetAllocation() {
   const handleAllocate = async () => {
     if (!selectedAssetId || !selectedEmpId) {
       toast.warning("Please select an asset and an employee.");
+      return;
+    }
+
+    const selectedAsset = availableAssets.find(a => String(a.id) === String(selectedAssetId));
+    const assetStatus = String(selectedAsset?.status || "").trim().toLowerCase();
+    if (assetStatus === "retired" || assetStatus === "theft/missing") {
+      toast.error(`This asset cannot be allocated. Its current status is "${selectedAsset?.status}".`);
       return;
     }
 

@@ -103,9 +103,9 @@
 
   /* Z-Index Scale */
   --z-dropdown: 50;
-  --z-drawer: 60;
-  --z-overlay: 60;
-  --z-modal: 70;
+  --z-overlay: 200;
+  --z-drawer: 210;
+  --z-modal: 220;
   --z-toast: 10000;
 
   /* ============== TRANSITIONS ============== */

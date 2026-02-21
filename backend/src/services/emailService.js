@@ -1,7 +1,69 @@
 const nodemailer = require("nodemailer");
+const sharp = require("sharp");
 const { buildConsentHtml, buildConsentPdf } = require("./consentForm");
 
 const safeValue = (v) => (v === undefined || v === null || v === "" ? "-" : String(v));
+
+// Builds the complete logo <td> HTML element for use inside email header tables.
+//
+// Strategy (in priority order):
+//   1. Base64 PNG embedded directly in <img src="data:image/png;base64,...">
+//      - SVG logos are rasterised to PNG via sharp first.
+//      - Gmail web supports PNG/JPEG base64 data URLs in <img> tags.
+//      - No external server required; works for every entity automatically.
+//   2. External URL fallback — used only if logo conversion fails and backendUrl
+//      is configured (requires server reachable by the email client's image proxy).
+//   3. Empty string — no logo panel shown rather than a broken image.
+//
+// This function is ASYNC because sharp rasterisation is async.
+// accentColor is the right-border colour: amber for allocation, green for return.
+const resolveLogoBlock = async (logo, entityName, backendUrl, entityCode, accentColor) => {
+    const accent = accentColor || "#f59e0b";
+    const tdStyle = `background:#ffffff;padding:10px 14px;border-right:4px solid ${accent};vertical-align:middle;width:130px;`;
+    const alt = safeValue(entityName);
+
+    // ── 1. Embedded base64 PNG in <img> tag ──────────────────────────────────────
+    if (logo && logo.startsWith("data:")) {
+        try {
+            const mimeMatch = logo.match(/^data:([^;]+);base64,/);
+            const b64Match  = logo.match(/^data:[^;]+;base64,(.+)$/s);
+            if (mimeMatch && b64Match) {
+                let mimeType = mimeMatch[1];
+                let imgBuf   = Buffer.from(b64Match[1].trim(), "base64");
+
+                // Convert SVG (and anything non-PNG/JPEG) to PNG so all email
+                // clients can render it. Gmail blocks SVG data URLs for security.
+                if (mimeType !== "image/png" && mimeType !== "image/jpeg") {
+                    imgBuf   = await sharp(imgBuf).png().toBuffer();
+                    mimeType = "image/png";
+                }
+
+                const b64Out = imgBuf.toString("base64");
+                console.log(`[Email] Logo embedded as base64 ${mimeType} (${Math.round(b64Out.length * 0.75 / 1024)}KB)`);
+                return `<td style="${tdStyle}">
+                  <img src="data:${mimeType};base64,${b64Out}" alt="${alt}"
+                       width="108" height="60"
+                       style="display:block;max-width:108px;height:60px;object-fit:contain;" />
+                </td>`;
+            }
+        } catch (err) {
+            console.error("[Email] Logo base64 embedding failed:", err.message);
+        }
+    }
+
+    // ── 2. External URL (requires backend to be publicly accessible) ─────────────
+    if (backendUrl && entityCode) {
+        const src = `${backendUrl}/api/entities/${entityCode}/logo-image`;
+        console.log(`[Email] Logo falling back to URL: ${src}`);
+        return `<td style="${tdStyle}">
+          <img src="${src}" alt="${alt}" style="height:56px;max-width:108px;object-fit:contain;display:block;" />
+        </td>`;
+    }
+
+    // ── 3. No logo ───────────────────────────────────────────────────────────────
+    console.warn("[Email] No logo available — header will render without logo.");
+    return "";
+};
 
 const resolveHost = (settings) => {
     if (settings.host) return settings.host;
@@ -28,13 +90,7 @@ const resolveFrom = (settings) => {
 };
 
 // ─── Allocation Email ─────────────────────────────────────────────────────────
-const buildAllocationEmailHtml = (data) => {
-    const logoBlock = data.entityLogo
-        ? `<td style="background:#ffffff;padding:14px 18px;border-right:4px solid #f59e0b;vertical-align:middle;width:136px;">
-             <img src="${data.entityLogo}" alt="${safeValue(data.entityName)}"
-                  style="height:56px;max-width:116px;object-fit:contain;display:block;" />
-           </td>`
-        : "";
+const buildAllocationEmailHtml = (data, logoBlock) => {
 
     const row = (label, value) => `
       <tr>
@@ -163,13 +219,7 @@ const buildAllocationEmailHtml = (data) => {
 };
 
 // ─── Return Email ─────────────────────────────────────────────────────────────
-const buildReturnEmailHtml = (data) => {
-    const logoBlock = data.entityLogo
-        ? `<td style="background:#ffffff;padding:14px 18px;border-right:4px solid #10b981;vertical-align:middle;width:136px;">
-             <img src="${data.entityLogo}" alt="${safeValue(data.entityName)}"
-                  style="height:56px;max-width:116px;object-fit:contain;display:block;" />
-           </td>`
-        : "";
+const buildReturnEmailHtml = (data, logoBlock) => {
 
     const row = (label, value) => `
       <tr>
@@ -298,7 +348,7 @@ const buildReturnEmailHtml = (data) => {
 };
 
 // ─── Send Functions ───────────────────────────────────────────────────────────
-const sendAllocationEmail = async ({ settings, employee, asset, entity }) => {
+const sendAllocationEmail = async ({ settings, employee, asset, entity, backendUrl, entityCode }) => {
     if (!settings || !settings.enabled) return;
     if (!settings.smtpUser || !settings.smtpPass || !employee?.email) return;
 
@@ -326,6 +376,7 @@ const sendAllocationEmail = async ({ settings, employee, asset, entity }) => {
 
     const consentPdf = await buildConsentPdf(data);
 
+    const logoBlock = await resolveLogoBlock(data.entityLogo, data.entityName, backendUrl, entityCode, "#f59e0b");
     const transporter = buildTransporter(settings);
     const from = resolveFrom(settings);
 
@@ -338,15 +389,12 @@ const sendAllocationEmail = async ({ settings, employee, asset, entity }) => {
         from,
         to: toRecipients,
         subject: `Asset Allocation — ${safeValue(asset.assetId || asset.name)}`,
-        html: buildAllocationEmailHtml(data),
-        attachments: [{
-            filename: "asset-consent-form.pdf",
-            content: consentPdf
-        }]
+        html: buildAllocationEmailHtml(data, logoBlock),
+        attachments: [{ filename: "asset-consent-form.pdf", content: consentPdf }]
     });
 };
 
-const sendReturnEmail = async ({ settings, employee, asset, entity }) => {
+const sendReturnEmail = async ({ settings, employee, asset, entity, backendUrl, entityCode }) => {
     if (!settings || !settings.enabled) return;
     if (!settings.smtpUser || !settings.smtpPass) return;
 
@@ -372,6 +420,7 @@ const sendReturnEmail = async ({ settings, employee, asset, entity }) => {
         entityLogo:    String(ent.logo || "")
     };
 
+    const logoBlock = await resolveLogoBlock(data.entityLogo, data.entityName, backendUrl, entityCode, "#10b981");
     const transporter = buildTransporter(settings);
     const from = resolveFrom(settings);
 
@@ -379,7 +428,7 @@ const sendReturnEmail = async ({ settings, employee, asset, entity }) => {
         from,
         to: toRecipients,
         subject: `Asset Return — ${safeValue(asset.assetId || asset.name)}`,
-        html: buildReturnEmailHtml(data)
+        html: buildReturnEmailHtml(data, logoBlock)
     });
 };
 

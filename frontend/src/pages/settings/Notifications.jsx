@@ -28,12 +28,15 @@ export default function Notifications() {
         secure: false,
         notifyEmail: "",
         returnToName: "",
-        returnToEmail: ""
+        returnToEmail: "",
+        backendUrl: ""
     });
     const [hasPassword, setHasPassword] = useState(false);
     const [loading, setLoading] = useState(true);
     const [savingEmail, setSavingEmail] = useState(false);
     const [emailError, setEmailError] = useState("");
+    const [testResult, setTestResult] = useState(null);
+    const [testing, setTesting] = useState(false);
 
     useEffect(() => {
         loadData();
@@ -204,8 +207,35 @@ export default function Notifications() {
                     Allocation/return emails are sent automatically to both the employee and the IT team after one-time configuration.
                 </p>
 
+                {/* Google App Password warning */}
+                {(emailSettings.provider === "google" || emailSettings.host === "smtp.gmail.com") && (
+                    <div style={{
+                        background: "#fffbeb", border: "1px solid #f59e0b", borderLeft: "4px solid #f59e0b",
+                        borderRadius: 8, padding: "12px 16px", marginBottom: 16, fontSize: 13, color: "#92400e"
+                    }}>
+                        <strong>Gmail / Google Workspace requires an App Password.</strong><br />
+                        Your regular Google account password will be rejected. Generate a 16-character App Password at:<br />
+                        <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noreferrer"
+                            style={{ color: "#b45309", fontWeight: 600 }}>
+                            myaccount.google.com/apppasswords
+                        </a>
+                        {" "}(2-Step Verification must be enabled on the account first).
+                    </div>
+                )}
+
                 {emailError && (
                     <p className="settings-error">{emailError}</p>
+                )}
+
+                {testResult && (
+                    <div style={{
+                        background: testResult.ok ? "#f0fdf4" : "#fef2f2",
+                        border: `1px solid ${testResult.ok ? "#86efac" : "#fca5a5"}`,
+                        borderRadius: 8, padding: "10px 14px", marginBottom: 12,
+                        fontSize: 13, color: testResult.ok ? "#166534" : "#991b1b"
+                    }}>
+                        {testResult.ok ? "✓ " : "✗ "}{testResult.message}
+                    </div>
                 )}
 
                 <div className="form-grid two">
@@ -357,6 +387,27 @@ export default function Notifications() {
                     </div>
                 </div>
 
+                <div className="form-grid two" style={{ marginTop: 16 }}>
+                    <div className="form-group" style={{ gridColumn: "1 / -1" }}>
+                        <label>Backend Public URL (for Logo in Emails)</label>
+                        <input
+                            name="backendUrl"
+                            value={emailSettings.backendUrl || ""}
+                            onChange={(e) =>
+                                setEmailSettings((prev) => ({
+                                    ...prev,
+                                    backendUrl: e.target.value
+                                }))
+                            }
+                            placeholder="https://your-domain.com (leave blank if emails are sent locally)"
+                        />
+                        <p style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 4, marginBottom: 0 }}>
+                            Set this to your server's public URL so the entity logo appears in emails.
+                            Example: <code>https://itam.yourcompany.com</code> or <code>http://192.168.1.10:5000</code>
+                        </p>
+                    </div>
+                </div>
+
                 <h4 style={{ marginTop: 16 }}>IT Team Recipients</h4>
                 <div className="form-grid two">
                     <div className="form-group">
@@ -405,11 +456,31 @@ export default function Notifications() {
                     </div>
                 </div>
 
-                <div className="form-actions">
+                <div className="form-actions" style={{ gap: 12 }}>
+                    <button
+                        className="btn-secondary"
+                        style={{ border: "1.5px solid var(--border)", background: "var(--bg-elevated)", color: "var(--text-primary)", padding: "9px 18px", borderRadius: 8, cursor: "pointer", fontWeight: 600, fontSize: 13 }}
+                        onClick={async () => {
+                            setTestResult(null);
+                            setTesting(true);
+                            try {
+                                const res = await api.testEmailConnection();
+                                setTestResult({ ok: true, message: res.message || "Connection successful!" });
+                            } catch (err) {
+                                setTestResult({ ok: false, message: err.message || "Connection failed." });
+                            } finally {
+                                setTesting(false);
+                            }
+                        }}
+                        disabled={testing || savingEmail}
+                    >
+                        {testing ? "Testing…" : "Test Connection"}
+                    </button>
                     <button
                         className="btn-primary"
                         onClick={async () => {
                             setEmailError("");
+                            setTestResult(null);
                             try {
                                 if (!emailSettings.smtpUser) {
                                     setEmailError("SMTP username is required.");
@@ -427,6 +498,7 @@ export default function Notifications() {
                                 await api.updateEmailSettings(emailSettings, entity);
                                 setEmailSettings((prev) => ({ ...prev, smtpPass: "" }));
                                 setHasPassword(Boolean(emailSettings.smtpPass) || hasPassword);
+                                toast.success("Email configuration saved!");
                             } catch (err) {
                                 setEmailError(err?.message || "Failed to save email settings.");
                             } finally {
