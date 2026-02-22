@@ -85,7 +85,7 @@ export default function Reports() {
     activity: []
   });
   const [openCustom, setOpenCustom] = useState(false);
-  const [generating, setGenerating] = useState(null); // track which template is generating
+  const [generating, setGenerating] = useState(null);
   const [customReport, setCustomReport] = useState({
     name: "Custom Report",
     type: "assets",
@@ -93,10 +93,9 @@ export default function Reports() {
   });
 
   /* ── Schedule state ─────────────────────────────────────── */
-  const [openScheduler, setOpenScheduler] = useState(false);
+  const [showSchFormModal, setShowSchFormModal] = useState(false);
   const [schedules, setSchedules] = useState([]);
-  const [schLoading, setSchLoading] = useState(false);
-  const [showSchForm, setShowSchForm] = useState(false);
+  const [schLoading, setSchLoading] = useState(true);
   const [editingSchId, setEditingSchId] = useState(null);
   const [schForm, setSchForm] = useState(SCH_EMPTY);
   const [schSaving, setSchSaving] = useState(false);
@@ -130,16 +129,16 @@ export default function Reports() {
     }
   }, [toast]);
 
-  const openSchedulerModal = () => {
-    setOpenScheduler(true);
+  /* Load schedules on mount */
+  useEffect(() => {
     loadSchedules();
-  };
+  }, [loadSchedules]);
 
   const openSchCreate = () => {
     setEditingSchId(null);
     setSchForm({ ...SCH_EMPTY, entityCode: entity !== "ALL" ? entity : "" });
     setSchFormError("");
-    setShowSchForm(true);
+    setShowSchFormModal(true);
   };
 
   const openSchEdit = (s) => {
@@ -156,7 +155,7 @@ export default function Reports() {
       enabled: s.enabled !== false
     });
     setSchFormError("");
-    setShowSchForm(true);
+    setShowSchFormModal(true);
   };
 
   const validateSchForm = () => {
@@ -194,7 +193,7 @@ export default function Reports() {
         await api.createReportSchedule(payload);
         toast.success("Schedule created");
       }
-      setShowSchForm(false);
+      setShowSchFormModal(false);
       loadSchedules();
     } catch (err) {
       setSchFormError(err.message || "Failed to save schedule");
@@ -608,6 +607,14 @@ ${dataRows}
     }
   ];
 
+  /* ── Schedule stats ──────────────────────────────────────── */
+  const schStats = useMemo(() => ({
+    total:   schedules.length,
+    active:  schedules.filter(s => s.enabled).length,
+    ok:      schedules.filter(s => s.lastStatus === "success").length,
+    failed:  schedules.filter(s => s.lastStatus === "failed").length
+  }), [schedules]);
+
   return (
     <div className="reports-page">
       {/* ===== HEADER ===== */}
@@ -623,17 +630,11 @@ ${dataRows}
           <p>Generate audit-ready exports across assets, licenses, and compliance.</p>
         </div>
         <div className="reports-actions">
-          <Button
-            variant="secondary"
-            onClick={openSchedulerModal}
-          >
+          <Button variant="secondary" onClick={openSchCreate}>
             <FaCalendarAlt style={{ marginRight: 6 }} />
-            Schedule Reports
+            New Schedule
           </Button>
-          <Button
-            variant="primary"
-            onClick={() => setOpenCustom(true)}
-          >
+          <Button variant="primary" onClick={() => setOpenCustom(true)}>
             <FaChartBar style={{ marginRight: 6 }} />
             Custom Report
           </Button>
@@ -690,6 +691,158 @@ ${dataRows}
         </Card.Body>
       </Card>
 
+      {/* ===== SCHEDULED REPORTS ===== */}
+      <Card>
+        <Card.Header>
+          <div className="rsch-header-left">
+            <Card.Title>
+              <FaCalendarAlt style={{ marginRight: 8, opacity: 0.8 }} />
+              Scheduled Reports
+            </Card.Title>
+            {/* Stats pills */}
+            <div className="rsch-stats">
+              <span className="rsch-stat">{schStats.total} Total</span>
+              <span className="rsch-stat rsch-stat--active">{schStats.active} Active</span>
+              {schStats.ok > 0 && <span className="rsch-stat rsch-stat--ok">{schStats.ok} Delivered</span>}
+              {schStats.failed > 0 && <span className="rsch-stat rsch-stat--failed">{schStats.failed} Failed</span>}
+            </div>
+          </div>
+          <Button variant="primary" size="sm" onClick={openSchCreate}>
+            <FaPlus style={{ marginRight: 5 }} /> New Schedule
+          </Button>
+        </Card.Header>
+        <Card.Body style={{ padding: 0 }}>
+          {schLoading ? (
+            <div className="reports-empty">Loading schedules…</div>
+          ) : schedules.length === 0 ? (
+            <div className="rsch-empty">
+              <FaCalendarAlt className="rsch-empty-icon" />
+              <div className="rsch-empty-title">No scheduled reports yet</div>
+              <div className="rsch-empty-sub">
+                Automate report delivery to your team on a daily, weekly, or monthly basis.
+              </div>
+              <Button variant="primary" size="sm" onClick={openSchCreate}>
+                <FaPlus style={{ marginRight: 5 }} /> Create First Schedule
+              </Button>
+            </div>
+          ) : (
+            <div style={{ overflowX: "auto" }}>
+              <table className="reports-activity-table rsch-table">
+                <thead>
+                  <tr>
+                    <th>Schedule Name</th>
+                    <th>Report Type</th>
+                    <th>Frequency</th>
+                    <th>Entity</th>
+                    <th>Recipients</th>
+                    <th>Next Run</th>
+                    <th>Last Status</th>
+                    <th style={{ textAlign: "center" }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {schedules.map(s => {
+                    const rt = SCH_REPORT_TYPES.find(r => r.value === s.reportType) || SCH_REPORT_TYPES[0];
+                    const recip = Array.isArray(s.recipients) ? s.recipients : [];
+                    return (
+                      <tr key={s.id} className={!s.enabled ? "rsch-row-paused" : ""}>
+                        {/* Name */}
+                        <td>
+                          <div className="rsch-name">{s.name}</div>
+                          {!s.enabled && <span className="rsch-paused-tag">Paused</span>}
+                        </td>
+                        {/* Type */}
+                        <td>
+                          <span className="rsch-type-badge" style={{ color: rt.color, background: rt.bg }}>
+                            {rt.icon} {rt.label}
+                          </span>
+                        </td>
+                        {/* Frequency */}
+                        <td className="rsch-freq">
+                          <FaClock style={{ opacity: 0.4, marginRight: 5, fontSize: 11 }} />
+                          {getScheduleLabel(s)}
+                        </td>
+                        {/* Entity */}
+                        <td>
+                          <span className="rsch-entity-badge">
+                            {s.entityCode || "All"}
+                          </span>
+                        </td>
+                        {/* Recipients */}
+                        <td className="rsch-recip">
+                          <FaEnvelope style={{ opacity: 0.35, marginRight: 5, fontSize: 11 }} />
+                          <span title={recip.join(", ")}>
+                            {recip.length === 0
+                              ? <em style={{ color: "var(--text-secondary)" }}>None</em>
+                              : recip.length === 1
+                                ? recip[0]
+                                : `${recip[0]} +${recip.length - 1} more`}
+                          </span>
+                        </td>
+                        {/* Next Run */}
+                        <td className="rsch-next-run">
+                          {s.enabled ? formatNextRun(s.nextRun) : "—"}
+                        </td>
+                        {/* Last Status */}
+                        <td>
+                          {!s.lastStatus
+                            ? <Badge variant="neutral">Pending</Badge>
+                            : s.lastStatus === "success"
+                              ? <Badge variant="success"><FaCheckCircle style={{ marginRight: 4 }} />Delivered</Badge>
+                              : <Badge variant="danger" title={s.lastError}><FaExclamationTriangle style={{ marginRight: 4 }} />Failed</Badge>
+                          }
+                        </td>
+                        {/* Actions */}
+                        <td>
+                          <div className="rsch-actions">
+                            {/* Toggle */}
+                            <button
+                              className="rsch-act-btn rsch-act-toggle"
+                              title={s.enabled ? "Disable schedule" : "Enable schedule"}
+                              disabled={schTogglingId === s.id}
+                              onClick={() => handleSchToggle(s)}
+                            >
+                              {s.enabled ? <FaToggleOn style={{ color: "#10b981" }} /> : <FaToggleOff />}
+                            </button>
+                            {/* Run Now */}
+                            <button
+                              className="rsch-act-btn"
+                              title="Run now"
+                              disabled={schRunningId === s.id}
+                              onClick={() => handleSchRunNow(s)}
+                            >
+                              {schRunningId === s.id
+                                ? <span className="rsch-spinner" />
+                                : <FaPlay style={{ color: "#10b981", fontSize: 10 }} />}
+                            </button>
+                            {/* Edit */}
+                            <button
+                              className="rsch-act-btn"
+                              title="Edit schedule"
+                              onClick={() => openSchEdit(s)}
+                            >
+                              <FaEdit style={{ color: "var(--primary)", fontSize: 11 }} />
+                            </button>
+                            {/* Delete */}
+                            <button
+                              className="rsch-act-btn rsch-act-del"
+                              title="Delete schedule"
+                              onClick={() => handleSchDelete(s)}
+                            >
+                              <FaTrash style={{ fontSize: 11 }} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card.Body>
+      </Card>
+
       {/* ===== RECENT ACTIVITY ===== */}
       <Card>
         <Card.Header>
@@ -730,250 +883,138 @@ ${dataRows}
         </Card.Body>
       </Card>
 
-      {/* ===== SCHEDULE REPORTS MODAL ===== */}
-      {openScheduler && (
-        <div className="reports-modal-overlay" style={{ alignItems: "flex-start", overflowY: "auto", padding: "24px 16px" }} onClick={e => { if (e.target === e.currentTarget) { setOpenScheduler(false); setShowSchForm(false); } }}>
-          <div className="reports-modal" style={{ maxWidth: 900, width: "100%" }}>
+      {/* ===== SCHEDULE FORM MODAL ===== */}
+      {showSchFormModal && (
+        <div
+          className="reports-modal-overlay"
+          style={{ alignItems: "flex-start", overflowY: "auto", padding: "24px 16px" }}
+          onClick={e => { if (e.target === e.currentTarget) setShowSchFormModal(false); }}
+        >
+          <div className="reports-modal" style={{ maxWidth: 660, width: "100%" }}>
             {/* Header */}
             <div className="reports-modal-header">
               <div>
-                <h2><FaCalendarAlt style={{ marginRight: 8, color: "var(--primary)" }} />{showSchForm ? (editingSchId ? "Edit Schedule" : "New Report Schedule") : "Report Scheduling"}</h2>
-                <p>{showSchForm ? "Configure automated report delivery via email." : "Manage automated report schedules sent to your team."}</p>
+                <h2>
+                  <FaCalendarAlt style={{ marginRight: 8, color: "var(--primary)" }} />
+                  {editingSchId ? "Edit Schedule" : "New Report Schedule"}
+                </h2>
+                <p>{editingSchId ? "Update the automated report configuration." : "Configure automated report delivery via email."}</p>
               </div>
-              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                {!showSchForm && (
-                  <Button variant="primary" size="sm" onClick={openSchCreate}>
-                    <FaPlus style={{ marginRight: 5 }} /> New Schedule
-                  </Button>
-                )}
-                <button className="reports-modal-close" onClick={() => { setOpenScheduler(false); setShowSchForm(false); }} aria-label="Close">
-                  <FaTimes />
-                </button>
-              </div>
+              <button className="reports-modal-close" onClick={() => setShowSchFormModal(false)} aria-label="Close">
+                <FaTimes />
+              </button>
             </div>
 
-            {/* Body */}
+            {/* Form */}
             <div className="reports-modal-body" style={{ padding: "0 24px 24px" }}>
-              {showSchForm ? (
-                /* ── FORM ── */
-                <form onSubmit={handleSchSave} style={{ display: "flex", flexDirection: "column", gap: 16, paddingTop: 20 }}>
-                  {schFormError && (
-                    <div className="rsch-form-error" style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "#ef4444" }}>
-                      <FaExclamationTriangle /> {schFormError}
-                    </div>
-                  )}
-
-                  {/* Name */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>Schedule Name <span style={{ color: "#ef4444" }}>*</span></label>
-                    <input className="rsch-input" value={schForm.name} onChange={e => setSchForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Weekly Asset Report for IT Team" required style={{ width: "100%", background: "var(--bg-muted)", border: "1.5px solid var(--border)", borderRadius: 10, padding: "9px 13px", color: "var(--text-primary)", fontSize: 14, outline: "none" }} />
+              <form onSubmit={handleSchSave} style={{ display: "flex", flexDirection: "column", gap: 16, paddingTop: 20 }}>
+                {schFormError && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "#ef4444" }}>
+                    <FaExclamationTriangle /> {schFormError}
                   </div>
+                )}
 
-                  {/* Report Type */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>Report Type <span style={{ color: "#ef4444" }}>*</span></label>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                      {SCH_REPORT_TYPES.map(rt => (
-                        <button key={rt.value} type="button" onClick={() => setSchForm(p => ({ ...p, reportType: rt.value }))}
-                          style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 10, border: `1.5px solid ${schForm.reportType === rt.value ? rt.color : "var(--border)"}`, background: schForm.reportType === rt.value ? rt.bg : "var(--bg-muted)", cursor: "pointer", textAlign: "left", fontSize: 13, fontWeight: 500, color: "var(--text-primary)" }}>
-                          <span style={{ width: 30, height: 30, borderRadius: 8, background: rt.bg, color: rt.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>{rt.icon}</span>
-                          <span>{rt.label}</span>
-                          {schForm.reportType === rt.value && <FaCheckCircle style={{ marginLeft: "auto", color: rt.color }} />}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                {/* Name */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>Schedule Name <span style={{ color: "#ef4444" }}>*</span></label>
+                  <input className="reports-input" value={schForm.name} onChange={e => setSchForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Weekly Asset Report for IT Team" required />
+                </div>
 
-                  {/* Entity + Frequency */}
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                      <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>Entity</label>
-                      <select className="rsch-input" value={schForm.entityCode} onChange={e => setSchForm(p => ({ ...p, entityCode: e.target.value }))} style={{ width: "100%", background: "var(--bg-muted)", border: "1.5px solid var(--border)", borderRadius: 10, padding: "9px 13px", color: "var(--text-primary)", fontSize: 14 }}>
-                        <option value="">All Entities</option>
-                        {entities.map(e => <option key={e.code} value={e.code}>{e.code} — {e.name}</option>)}
-                      </select>
-                    </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                      <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>Frequency <span style={{ color: "#ef4444" }}>*</span></label>
-                      <select className="rsch-input" value={schForm.frequency} onChange={e => setSchForm(p => ({ ...p, frequency: e.target.value }))} style={{ width: "100%", background: "var(--bg-muted)", border: "1.5px solid var(--border)", borderRadius: 10, padding: "9px 13px", color: "var(--text-primary)", fontSize: 14 }}>
-                        {SCH_FREQUENCIES.map(f => <option key={f.value} value={f.value}>{f.label} — {f.desc}</option>)}
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Time + Day */}
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                      <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>Send Time <span style={{ color: "#ef4444" }}>*</span></label>
-                      <input type="time" value={schForm.time} onChange={e => setSchForm(p => ({ ...p, time: e.target.value }))} required style={{ width: "100%", background: "var(--bg-muted)", border: "1.5px solid var(--border)", borderRadius: 10, padding: "9px 13px", color: "var(--text-primary)", fontSize: 14 }} />
-                    </div>
-                    {schForm.frequency === "weekly" && (
-                      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                        <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>Day of Week</label>
-                        <select value={schForm.dayOfWeek} onChange={e => setSchForm(p => ({ ...p, dayOfWeek: Number(e.target.value) }))} style={{ width: "100%", background: "var(--bg-muted)", border: "1.5px solid var(--border)", borderRadius: 10, padding: "9px 13px", color: "var(--text-primary)", fontSize: 14 }}>
-                          {DAY_NAMES.map((d, i) => <option key={i} value={i}>{d}</option>)}
-                        </select>
-                      </div>
-                    )}
-                    {["monthly","quarterly"].includes(schForm.frequency) && (
-                      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                        <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>Day of Month</label>
-                        <select value={schForm.dayOfMonth} onChange={e => setSchForm(p => ({ ...p, dayOfMonth: Number(e.target.value) }))} style={{ width: "100%", background: "var(--bg-muted)", border: "1.5px solid var(--border)", borderRadius: 10, padding: "9px 13px", color: "var(--text-primary)", fontSize: 14 }}>
-                          {Array.from({ length: 28 }, (_, i) => i + 1).map(d => <option key={d} value={d}>{d}{ordinal(d)}</option>)}
-                        </select>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Recipients */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>
-                      <FaEnvelope style={{ marginRight: 6, opacity: 0.7 }} />
-                      Recipients <span style={{ color: "#ef4444" }}>*</span>
-                    </label>
-                    <input value={schForm.recipients} onChange={e => setSchForm(p => ({ ...p, recipients: e.target.value }))} placeholder="manager@company.com, it-team@company.com" style={{ width: "100%", background: "var(--bg-muted)", border: "1.5px solid var(--border)", borderRadius: 10, padding: "9px 13px", color: "var(--text-primary)", fontSize: 14 }} />
-                    <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>Separate multiple email addresses with commas.</span>
-                  </div>
-
-                  {/* Enable Toggle */}
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "var(--bg-muted)", border: "1px solid var(--border)", borderRadius: 12, padding: "12px 16px" }}>
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>Enable Schedule</div>
-                      <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>Disabled schedules will not run automatically.</div>
-                    </div>
-                    <button type="button" onClick={() => setSchForm(p => ({ ...p, enabled: !p.enabled }))}
-                      style={{ position: "relative", width: 44, height: 24, borderRadius: 999, border: "none", cursor: "pointer", background: schForm.enabled ? "#10b981" : "var(--border)", transition: "background 0.2s", flexShrink: 0 }}>
-                      <span style={{ position: "absolute", top: 3, left: 3, width: 18, height: 18, background: "#fff", borderRadius: "50%", transition: "transform 0.2s", display: "block", boxShadow: "0 1px 3px rgba(0,0,0,0.2)", transform: schForm.enabled ? "translateX(20px)" : "none" }} />
-                    </button>
-                  </div>
-
-                  {/* Info box */}
-                  <div style={{ display: "flex", alignItems: "flex-start", gap: 10, background: "rgba(59,130,246,0.07)", border: "1px solid rgba(59,130,246,0.2)", borderRadius: 10, padding: "12px 14px", fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.5 }}>
-                    <FaChartBar style={{ color: "var(--primary)", flexShrink: 0 }} />
-                    <div>
-                      <strong style={{ color: "var(--text-primary)" }}>How it works:</strong> The report will be generated with live data and sent as a CSV attachment via your configured SMTP server.
-                      Configure SMTP in <em>Settings → Notifications</em>.
-                    </div>
-                  </div>
-
-                  {/* Footer */}
-                  <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, paddingTop: 8, borderTop: "1px solid var(--border)", marginTop: 4 }}>
-                    <Button type="button" variant="secondary" onClick={() => setShowSchForm(false)}>Back</Button>
-                    <Button type="submit" variant="primary" disabled={schSaving}>
-                      {schSaving ? "Saving…" : editingSchId ? "Update Schedule" : "Create Schedule"}
-                    </Button>
-                  </div>
-                </form>
-              ) : (
-                /* ── SCHEDULES LIST ── */
-                <div style={{ paddingTop: 20 }}>
-                  {/* Stats */}
-                  <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 20 }}>
-                    {[
-                      { label: "Total", value: schedules.length, color: "var(--text-primary)" },
-                      { label: "Active", value: schedules.filter(s => s.enabled).length, color: "#10b981" },
-                      { label: "Last Run OK", value: schedules.filter(s => s.lastStatus === "success").length, color: "#10b981" },
-                      { label: "Failed", value: schedules.filter(s => s.lastStatus === "failed").length, color: "#ef4444" }
-                    ].map(stat => (
-                      <div key={stat.label} style={{ display: "flex", alignItems: "center", gap: 10, background: "var(--bg-muted)", border: "1px solid var(--border)", borderRadius: 12, padding: "12px 20px", flex: 1, minWidth: 120 }}>
-                        <div>
-                          <div style={{ fontSize: 20, fontWeight: 700, color: stat.color }}>{stat.value}</div>
-                          <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>{stat.label}</div>
-                        </div>
-                      </div>
+                {/* Report Type */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>Report Type <span style={{ color: "#ef4444" }}>*</span></label>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {SCH_REPORT_TYPES.map(rt => (
+                      <button key={rt.value} type="button" onClick={() => setSchForm(p => ({ ...p, reportType: rt.value }))}
+                        style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 10, border: `1.5px solid ${schForm.reportType === rt.value ? rt.color : "var(--border)"}`, background: schForm.reportType === rt.value ? rt.bg : "var(--bg-muted)", cursor: "pointer", textAlign: "left", fontSize: 13, fontWeight: 500, color: "var(--text-primary)" }}>
+                        <span style={{ width: 30, height: 30, borderRadius: 8, background: rt.bg, color: rt.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>{rt.icon}</span>
+                        <span>{rt.label}</span>
+                        {schForm.reportType === rt.value && <FaCheckCircle style={{ marginLeft: "auto", color: rt.color }} />}
+                      </button>
                     ))}
                   </div>
+                </div>
 
-                  {schLoading ? (
-                    <div style={{ textAlign: "center", padding: "40px 0", color: "var(--text-secondary)" }}>Loading schedules…</div>
-                  ) : schedules.length === 0 ? (
-                    <div style={{ textAlign: "center", padding: "48px 0", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-                      <FaCalendarAlt style={{ fontSize: 36, color: "var(--primary)", opacity: 0.4 }} />
-                      <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text-primary)" }}>No schedules yet</div>
-                      <div style={{ fontSize: 13, color: "var(--text-secondary)" }}>Create your first automated report schedule to get started.</div>
-                      <Button variant="primary" onClick={openSchCreate}><FaPlus style={{ marginRight: 6 }} /> Create Schedule</Button>
+                {/* Entity + Frequency */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>Entity</label>
+                    <select className="reports-input" value={schForm.entityCode} onChange={e => setSchForm(p => ({ ...p, entityCode: e.target.value }))}>
+                      <option value="">All Entities</option>
+                      {entities.map(e => <option key={e.code} value={e.code}>{e.code} — {e.name}</option>)}
+                    </select>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>Frequency <span style={{ color: "#ef4444" }}>*</span></label>
+                    <select className="reports-input" value={schForm.frequency} onChange={e => setSchForm(p => ({ ...p, frequency: e.target.value }))}>
+                      {SCH_FREQUENCIES.map(f => <option key={f.value} value={f.value}>{f.label} — {f.desc}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Time + Day */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>Send Time <span style={{ color: "#ef4444" }}>*</span></label>
+                    <input type="time" className="reports-input" value={schForm.time} onChange={e => setSchForm(p => ({ ...p, time: e.target.value }))} required />
+                  </div>
+                  {schForm.frequency === "weekly" && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>Day of Week</label>
+                      <select className="reports-input" value={schForm.dayOfWeek} onChange={e => setSchForm(p => ({ ...p, dayOfWeek: Number(e.target.value) }))}>
+                        {DAY_NAMES.map((d, i) => <option key={i} value={i}>{d}</option>)}
+                      </select>
                     </div>
-                  ) : (
-                    <div style={{ overflowX: "auto", borderRadius: 12, border: "1px solid var(--border)" }}>
-                      <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 780 }}>
-                        <thead>
-                          <tr>
-                            {["Schedule","Type","Entity","Frequency","Recipients","Next Run","Status","Actions"].map(h => (
-                              <th key={h} style={{ background: "var(--bg-muted)", color: "var(--text-secondary)", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", padding: "10px 14px", textAlign: "left", borderBottom: "1px solid var(--border)", whiteSpace: "nowrap" }}>{h}</th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {schedules.map(s => {
-                            const rt = SCH_REPORT_TYPES.find(r => r.value === s.reportType) || SCH_REPORT_TYPES[0];
-                            const recip = Array.isArray(s.recipients) ? s.recipients : [];
-                            return (
-                              <tr key={s.id} style={{ opacity: s.enabled ? 1 : 0.55 }}>
-                                <td style={{ padding: "12px 14px", fontSize: 13, borderBottom: "1px solid var(--border)" }}>
-                                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                    <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{s.name}</span>
-                                    {!s.enabled && <Badge variant="neutral">Paused</Badge>}
-                                  </div>
-                                </td>
-                                <td style={{ padding: "12px 14px", fontSize: 13, borderBottom: "1px solid var(--border)" }}>
-                                  <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600, padding: "4px 10px", borderRadius: 999, color: rt.color, background: rt.bg }}>{rt.icon} {rt.label}</span>
-                                </td>
-                                <td style={{ padding: "12px 14px", fontSize: 13, borderBottom: "1px solid var(--border)" }}>
-                                  <span style={{ fontSize: 12, fontWeight: 600, color: "var(--primary)", background: "rgba(59,130,246,0.1)", padding: "3px 8px", borderRadius: 6 }}>{s.entityCode || "All"}</span>
-                                </td>
-                                <td style={{ padding: "12px 14px", fontSize: 13, borderBottom: "1px solid var(--border)", whiteSpace: "nowrap" }}>
-                                  <FaClock style={{ opacity: 0.5, marginRight: 5 }} />{getScheduleLabel(s)}
-                                </td>
-                                <td style={{ padding: "12px 14px", fontSize: 12, borderBottom: "1px solid var(--border)", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                  <FaEnvelope style={{ opacity: 0.4, marginRight: 5 }} />
-                                  <span title={recip.join(", ")}>
-                                    {recip.length === 0 ? <em style={{ color: "var(--text-secondary)" }}>None</em> : recip.length === 1 ? recip[0] : `${recip[0]} +${recip.length - 1}`}
-                                  </span>
-                                </td>
-                                <td style={{ padding: "12px 14px", fontSize: 12, borderBottom: "1px solid var(--border)", color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
-                                  {s.enabled ? formatNextRun(s.nextRun) : "—"}
-                                </td>
-                                <td style={{ padding: "12px 14px", fontSize: 13, borderBottom: "1px solid var(--border)" }}>
-                                  {!s.lastStatus
-                                    ? <Badge variant="neutral">Pending</Badge>
-                                    : s.lastStatus === "success"
-                                      ? <Badge variant="success"><FaCheckCircle style={{ marginRight: 4 }} />Delivered</Badge>
-                                      : <Badge variant="danger" title={s.lastError}><FaExclamationTriangle style={{ marginRight: 4 }} />Failed</Badge>
-                                  }
-                                </td>
-                                <td style={{ padding: "12px 14px", borderBottom: "1px solid var(--border)" }}>
-                                  <div style={{ display: "flex", alignItems: "center", gap: 4, justifyContent: "center" }}>
-                                    {/* Toggle */}
-                                    <button title={s.enabled ? "Disable" : "Enable"} disabled={schTogglingId === s.id} onClick={() => handleSchToggle(s)}
-                                      style={{ background: "none", border: "none", cursor: "pointer", fontSize: 22, color: s.enabled ? "#10b981" : "var(--text-secondary)", padding: 4, display: "flex", alignItems: "center" }}>
-                                      {s.enabled ? <FaToggleOn /> : <FaToggleOff />}
-                                    </button>
-                                    {/* Run Now */}
-                                    <button title="Run now" disabled={schRunningId === s.id} onClick={() => handleSchRunNow(s)}
-                                      style={{ width: 28, height: 28, borderRadius: 8, border: "1px solid var(--border)", background: "var(--bg-muted)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#10b981" }}>
-                                      {schRunningId === s.id ? <span style={{ width: 10, height: 10, border: "2px solid currentColor", borderTopColor: "transparent", borderRadius: "50%", display: "inline-block", animation: "spin 0.7s linear infinite" }} /> : <FaPlay />}
-                                    </button>
-                                    {/* Edit */}
-                                    <button title="Edit" onClick={() => openSchEdit(s)}
-                                      style={{ width: 28, height: 28, borderRadius: 8, border: "1px solid var(--border)", background: "var(--bg-muted)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "var(--primary)" }}>
-                                      <FaEdit />
-                                    </button>
-                                    {/* Delete */}
-                                    <button title="Delete" onClick={() => handleSchDelete(s)}
-                                      style={{ width: 28, height: 28, borderRadius: 8, border: "1px solid var(--border)", background: "var(--bg-muted)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#ef4444" }}>
-                                      <FaTrash />
-                                    </button>
-                                  </div>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
+                  )}
+                  {["monthly","quarterly"].includes(schForm.frequency) && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>Day of Month</label>
+                      <select className="reports-input" value={schForm.dayOfMonth} onChange={e => setSchForm(p => ({ ...p, dayOfMonth: Number(e.target.value) }))}>
+                        {Array.from({ length: 28 }, (_, i) => i + 1).map(d => <option key={d} value={d}>{d}{ordinal(d)}</option>)}
+                      </select>
                     </div>
                   )}
                 </div>
-              )}
+
+                {/* Recipients */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>
+                    <FaEnvelope style={{ marginRight: 6, opacity: 0.7 }} />
+                    Recipients <span style={{ color: "#ef4444" }}>*</span>
+                  </label>
+                  <input className="reports-input" value={schForm.recipients} onChange={e => setSchForm(p => ({ ...p, recipients: e.target.value }))} placeholder="manager@company.com, it-team@company.com" />
+                  <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>Separate multiple email addresses with commas.</span>
+                </div>
+
+                {/* Enable Toggle */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "var(--bg-muted)", border: "1px solid var(--border)", borderRadius: 12, padding: "12px 16px" }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>Enable Schedule</div>
+                    <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>Disabled schedules will not run automatically.</div>
+                  </div>
+                  <button type="button" onClick={() => setSchForm(p => ({ ...p, enabled: !p.enabled }))}
+                    style={{ position: "relative", width: 44, height: 24, borderRadius: 999, border: "none", cursor: "pointer", background: schForm.enabled ? "#10b981" : "var(--border)", transition: "background 0.2s", flexShrink: 0 }}>
+                    <span style={{ position: "absolute", top: 3, left: 3, width: 18, height: 18, background: "#fff", borderRadius: "50%", transition: "transform 0.2s", display: "block", boxShadow: "0 1px 3px rgba(0,0,0,0.2)", transform: schForm.enabled ? "translateX(20px)" : "none" }} />
+                  </button>
+                </div>
+
+                {/* Info box */}
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 10, background: "rgba(59,130,246,0.07)", border: "1px solid rgba(59,130,246,0.2)", borderRadius: 10, padding: "12px 14px", fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.5 }}>
+                  <FaChartBar style={{ color: "var(--primary)", flexShrink: 0 }} />
+                  <div>
+                    <strong style={{ color: "var(--text-primary)" }}>How it works:</strong> The report will be generated with live data and sent as a CSV attachment via your configured SMTP server.
+                    Configure SMTP in <em>Settings → Notifications</em>.
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, paddingTop: 8, borderTop: "1px solid var(--border)", marginTop: 4 }}>
+                  <Button type="button" variant="secondary" onClick={() => setShowSchFormModal(false)}>Cancel</Button>
+                  <Button type="submit" variant="primary" disabled={schSaving}>
+                    {schSaving ? "Saving…" : editingSchId ? "Update Schedule" : "Create Schedule"}
+                  </Button>
+                </div>
+              </form>
             </div>
           </div>
         </div>
@@ -1061,6 +1102,7 @@ ${dataRows}
           </div>
         </div>
       )}
+
       {/* ===== SCHEDULE DELETE CONFIRM ===== */}
       <ConfirmDialog
         open={schDeleteConfirm.open}

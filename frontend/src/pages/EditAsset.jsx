@@ -313,7 +313,7 @@ export default function EditAsset() {
             />
           </Field>
           <Field label="Asset Price">
-            <input name="price" value={formData.price} onChange={handleChange} />
+            <input name="price" value={formData.price} onChange={handleChange} placeholder="₹ 75,000" />
           </Field>
           <Field label="Invoice Number">
             <input name="invoiceNumber" value={formData.invoiceNumber} onChange={handleChange} />
