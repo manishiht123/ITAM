@@ -153,6 +153,46 @@ const ensureUserPermissionColumns = async () => {
   }
 };
 
+const ensureUserLockoutColumns = async () => {
+  const [rows] = await sequelize.query(`
+    SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = "Users"
+      AND COLUMN_NAME IN ("failedLoginAttempts", "lockedUntil", "lastPasswordChange")
+  `);
+  const existing = new Set(rows.map((r) => r.COLUMN_NAME));
+  if (!existing.has('failedLoginAttempts')) {
+    await sequelize.query("ALTER TABLE `Users` ADD COLUMN `failedLoginAttempts` INT NOT NULL DEFAULT 0;");
+  }
+  if (!existing.has('lockedUntil')) {
+    await sequelize.query("ALTER TABLE `Users` ADD COLUMN `lockedUntil` DATETIME NULL;");
+  }
+  if (!existing.has('lastPasswordChange')) {
+    await sequelize.query("ALTER TABLE `Users` ADD COLUMN `lastPasswordChange` DATETIME NULL;");
+  }
+};
+
+const ensureSystemPreferenceColumns = async () => {
+  const [rows] = await sequelize.query(`
+    SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = "SystemPreferences"
+      AND COLUMN_NAME IN (
+        "passwordMaxLength", "passwordLockoutDurationMins", "allowedLoginDomains"
+      )
+  `);
+  const existing = new Set(rows.map((r) => r.COLUMN_NAME));
+  if (!existing.has('passwordMaxLength')) {
+    await sequelize.query("ALTER TABLE `SystemPreferences` ADD COLUMN `passwordMaxLength` INT NOT NULL DEFAULT 128;");
+  }
+  if (!existing.has('passwordLockoutDurationMins')) {
+    await sequelize.query("ALTER TABLE `SystemPreferences` ADD COLUMN `passwordLockoutDurationMins` INT NOT NULL DEFAULT 15;");
+  }
+  if (!existing.has('allowedLoginDomains')) {
+    await sequelize.query("ALTER TABLE `SystemPreferences` ADD COLUMN `allowedLoginDomains` TEXT NULL;");
+  }
+};
+
 
 const PORT = process.env.PORT || 5000;
 
@@ -195,6 +235,8 @@ const startServer = async () => {
     await ensureAssetColumns(sequelize);
     await ensureAssetStatusEnum(sequelize);
     await ensureUserPermissionColumns();
+    await ensureUserLockoutColumns();
+    await ensureSystemPreferenceColumns();
     await ensureEntityLogoColumn();
     await ensureEmailSettingsBackendUrlColumn();
     await sequelize.query("ALTER TABLE `Departments` MODIFY COLUMN `location` VARCHAR(255) NULL;").catch(() => { });

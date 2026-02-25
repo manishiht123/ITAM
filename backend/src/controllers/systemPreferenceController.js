@@ -25,12 +25,14 @@ exports.updateSystemPreferences = async (req, res) => {
 
     const stringFields = [
       "allocationWarningMessage", "backupFrequency", "backupTime",
-      "backupType", "backupLocation", "fiscalYearStart", "depreciationMethod"
+      "backupType", "backupLocation", "fiscalYearStart", "depreciationMethod",
+      "allowedLoginDomains"
     ];
     const numberFields = [
       "maxAssetsPerEmployee", "backupRetentionDays", "defaultUsefulLife",
       "salvageValuePercent", "capexThreshold", "passwordMinLength",
-      "passwordExpiryDays", "passwordReuseLimit", "passwordLockoutAttempts"
+      "passwordMaxLength", "passwordExpiryDays", "passwordReuseLimit",
+      "passwordLockoutAttempts", "passwordLockoutDurationMins"
     ];
     const booleanFields = [
       "overuseProtectionEnabled", "autoRenewalReviewEnabled", "auditTrailEnabled",

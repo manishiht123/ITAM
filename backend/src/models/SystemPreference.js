@@ -20,15 +20,19 @@ const SystemPreferenceSchema = {
   defaultUsefulLife: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 36 },
   salvageValuePercent: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 5 },
   capexThreshold: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 50000 },
-  // Password policy
-  passwordMinLength: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 10 },
+  // Password policy — NIST SP 800-63B · ISO 27001 A.9.4 · PCI-DSS 8.3
+  passwordMinLength: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 12 },
+  passwordMaxLength: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 128 },
   passwordRequireUpper: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
   passwordRequireLower: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
   passwordRequireNumber: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
   passwordRequireSpecial: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
   passwordExpiryDays: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 90 },
-  passwordReuseLimit: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 5 },
-  passwordLockoutAttempts: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 5 }
+  passwordReuseLimit: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 12 },
+  passwordLockoutAttempts: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 5 },
+  passwordLockoutDurationMins: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 15 },
+  // Domain restriction — comma-separated allowed domains (null/empty = allow all)
+  allowedLoginDomains: { type: DataTypes.TEXT, allowNull: true, defaultValue: null }
 };
 
 const SystemPreference = sequelize.define("SystemPreference", SystemPreferenceSchema);

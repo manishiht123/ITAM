@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
+import { GoogleLogin } from "@react-oauth/google";
 import "../styles/login.css";
 import CompanyLogo from "../assets/logos/default.svg";
 import api from "../services/api";
@@ -14,6 +15,22 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  const handleGoogleSuccess = async (googleResponse) => {
+    setError("");
+    setLoading(true);
+    try {
+      const data = await api.googleLogin(googleResponse.credential);
+      localStorage.setItem("authToken", data.token);
+      localStorage.setItem("authUser", JSON.stringify(data.user));
+      refresh();
+      navigate("/dashboard");
+    } catch (err) {
+      setError(err?.message || "Google sign-in failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -130,6 +147,26 @@ export default function Login() {
               )}
             </button>
           </form>
+
+          {/* Divider */}
+          <div className="login-divider">
+            <span className="login-divider-line" />
+            <span className="login-divider-text">or continue with</span>
+            <span className="login-divider-line" />
+          </div>
+
+          {/* Google Sign-In */}
+          <div className="login-google-wrap">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => setError("Google sign-in failed. Please try again.")}
+              theme={document.documentElement.getAttribute("data-theme") === "dark" ? "filled_black" : "outline"}
+              size="large"
+              width="376"
+              text="signin_with_google"
+              shape="rectangular"
+            />
+          </div>
 
           {/* Footer */}
           <p className="login-footer">

@@ -3,20 +3,18 @@ import { NavLink, useNavigate } from "react-router-dom";
 import {
   FaTachometerAlt,
   FaBoxOpen,
-  FaTags,
   FaUsers,
   FaCog,
   FaChevronDown,
   FaChevronLeft,
   FaChevronRight,
   FaSignOutAlt,
-  FaBuilding,
   FaLayerGroup,
-  FaRobot
+  FaRobot,
+  FaSitemap
 } from "react-icons/fa";
 
 import "../../styles/sidebar.css";
-import { FaLocationPin } from "react-icons/fa6";
 import { useAuth } from "../../context/AuthContext";
 
 export default function Sidebar() {
@@ -103,23 +101,9 @@ export default function Sidebar() {
         )}
 
         {showAssets && (
-          <NavLink to="/departments" className="menu-item">
-            <FaBuilding />
-            {!collapsed && <span>Department</span>}
-          </NavLink>
-        )}
-
-        {showAssets && (
-          <NavLink to="/locations" className="menu-item">
-            <FaLocationPin />
-            {!collapsed && <span>Locations</span>}
-          </NavLink>
-        )}
-
-        {showAssets && (
-          <NavLink to="/asset-categories" className="menu-item">
-            <FaTags />
-            {!collapsed && <span>Asset Category</span>}
+          <NavLink to="/org-settings" className="menu-item">
+            <FaSitemap />
+            {!collapsed && <span>Configuration</span>}
           </NavLink>
         )}
 

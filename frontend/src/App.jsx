@@ -20,11 +20,8 @@ const Software = lazy(() => import("./pages/Software"));
 const Profile = lazy(() => import("./pages/Profile"));
 const ChangePassword = lazy(() => import("./pages/ChangePassword"));
 
-// Organization Pages
-const Locations = lazy(() => import("./pages/Locations"));
-const Departments = lazy(() => import("./pages/Departments"));
-const AssetCategories = lazy(() => import("./pages/AssetCategories"));
-const AddAssetCategory = lazy(() => import("./pages/AddAssetCategory"));
+// Organization Pages (merged into one)
+const OrgSettings = lazy(() => import("./pages/OrgSettings"));
 
 // Settings Pages
 const OrganizationEntities = lazy(() => import("./pages/settings/OrganizationEntities"));
@@ -152,39 +149,20 @@ export default function App() {
           }
         />
 
-        {/* Organization Pages — requires assets access */}
+        {/* Organisation Configuration — Departments, Locations, Asset Categories (merged) */}
         <Route
-          path="locations"
+          path="org-settings"
           element={
             <Suspense fallback={<PageLoader />}>
-              <RoleGuard module="assets"><Locations /></RoleGuard>
+              <RoleGuard module="assets"><OrgSettings /></RoleGuard>
             </Suspense>
           }
         />
-        <Route
-          path="departments"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <RoleGuard module="assets"><Departments /></RoleGuard>
-            </Suspense>
-          }
-        />
-        <Route
-          path="asset-categories"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <RoleGuard module="assets"><AssetCategories /></RoleGuard>
-            </Suspense>
-          }
-        />
-        <Route
-          path="asset-categories/add"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <RoleGuard module="assets"><AddAssetCategory /></RoleGuard>
-            </Suspense>
-          }
-        />
+        {/* Legacy redirects so old bookmarks still work */}
+        <Route path="departments"        element={<Navigate to="/org-settings" />} />
+        <Route path="locations"          element={<Navigate to="/org-settings" />} />
+        <Route path="asset-categories"   element={<Navigate to="/org-settings" />} />
+        <Route path="asset-categories/add" element={<Navigate to="/org-settings" />} />
 
         {/* Settings Routes — admin only */}
         <Route

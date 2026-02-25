@@ -12,41 +12,11 @@ ChartJS.register(ArcElement, Tooltip, Legend);
 const STATUS_ORDER = ["In Use", "Available", "Under Repair", "Retired", "Unknown"];
 
 const STATUS_COLORS = {
-  "In Use":       "#10d9a4",
-  "Available":    "#22c55e",
-  "Under Repair": "#f97316",
-  "Retired":      "#a78bfa",
-  "Unknown":      "#64748b",
-};
-
-// Center text plugin — shows total count + label
-const centerTextPlugin = {
-  id: "centerText",
-  afterDraw(chart) {
-    const { ctx, data, chartArea } = chart;
-    if (!chartArea) return;
-    const total = (data.datasets[0]?.data || []).reduce((s, v) => s + (Number(v) || 0), 0);
-    if (!total) return;
-
-    const cx = (chartArea.left + chartArea.right) / 2;
-    const cy = (chartArea.top + chartArea.bottom) / 2;
-
-    const styles = getComputedStyle(document.documentElement);
-    const textColor = styles.getPropertyValue("--text-primary").trim() || "#0f172a";
-    const subColor  = styles.getPropertyValue("--text-secondary").trim() || "#64748b";
-
-    ctx.save();
-    ctx.font = "bold 30px Inter, sans-serif";
-    ctx.fillStyle = textColor;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(total, cx, cy - 11);
-
-    ctx.font = "500 11px Inter, sans-serif";
-    ctx.fillStyle = subColor;
-    ctx.fillText("Total Assets", cx, cy + 13);
-    ctx.restore();
-  }
+  "In Use":       "#2563eb",   // blue  — clearly distinct from Available
+  "Available":    "#22c55e",   // green
+  "Under Repair": "#f97316",   // orange
+  "Retired":      "#a78bfa",   // lavender
+  "Unknown":      "#64748b",   // slate
 };
 
 export default function AssetStatusPie({ data }) {
@@ -57,38 +27,40 @@ export default function AssetStatusPie({ data }) {
 
   const total = finalData.reduce((s, e) => s + (Number(e.value) || 0), 0);
 
-  // dep on `data` so memo actually caches
-  const chartData = useMemo(() => ({
-    labels: finalData.map(e => e.label),
-    datasets: [{
-      data: finalData.map(e => e.value),
-      backgroundColor: finalData.map(e => STATUS_COLORS[e.label] || "#64748b"),
-      // borderColor matching card bg creates clean gaps between segments
-      borderColor: "rgba(13,20,38,0.95)",
-      borderWidth: 2.5,
-      hoverOffset: 12,
-      hoverBorderWidth: 0,
-    }]
+  const chartData = useMemo(() => {
+    // Match card background per theme so segment gaps are invisible
+    const cardBg = document.documentElement.getAttribute("data-theme") === "dark" ? "#0f2034" : "#ffffff";
+    return {
+      labels: finalData.map(e => e.label),
+      datasets: [{
+        data: finalData.map(e => e.value),
+        backgroundColor: finalData.map(e => STATUS_COLORS[e.label] || "#64748b"),
+        borderColor: cardBg,
+        borderWidth: 3,
+        hoverOffset: 16,
+        hoverBorderWidth: 0,
+      }]
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [data]);
+  }, [data]);
 
   const options = {
     responsive: true,
     maintainAspectRatio: false,
-    cutout: "72%",
+    cutout: "66%",
     animation: {
       animateRotate: true,
-      animateScale: false,
+      animateScale: true,
       duration: 900,
       easing: "easeInOutQuart"
     },
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor: "rgba(13,20,38,0.95)",
+        backgroundColor: "rgba(10,17,32,0.96)",
         titleColor: "#f1f5f9",
         bodyColor: "#94a3b8",
-        borderColor: "rgba(255,255,255,0.07)",
+        borderColor: "rgba(26,159,231,0.25)",
         borderWidth: 1,
         padding: 12,
         cornerRadius: 10,
@@ -110,7 +82,14 @@ export default function AssetStatusPie({ data }) {
   return (
     <div className="digital-pie-wrap">
       <div className="digital-pie-canvas">
-        <Doughnut data={chartData} options={options} plugins={[centerTextPlugin]} />
+        <Doughnut data={chartData} options={options} plugins={[]} />
+        {total > 0 && (
+          <div className="dpc-center">
+            <span className="dpc-num">{total}</span>
+            <div className="dpc-line" />
+            <span className="dpc-lbl">Total Assets</span>
+          </div>
+        )}
       </div>
 
       <div className="digital-pie-legend">

@@ -5,13 +5,17 @@ import api from "../../services/api";
 import { Button } from "../../components/ui";
 import "./SystemPreferences.css";
 
+// Capitalise first letter so it matches the select option values ("Light" / "Dark")
+const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+
 export default function SystemPreferences() {
-  const { setTheme } = useTheme();
+  const { theme: currentTheme, setTheme } = useTheme();
   const toast = useToast();
   const [prefs, setPrefs] = useState({
     timezone: "Asia/Kolkata",
     dateFormat: "DD/MM/YYYY",
-    theme: "Light",
+    // Initialise from the live ThemeContext value so navigating here never flips the theme
+    theme: capitalize(currentTheme === "system" ? "light" : currentTheme),
     language: "English",
     autoBackupEnabled: false,
     backupFrequency: "daily",
@@ -61,13 +65,6 @@ export default function SystemPreferences() {
     loadServerPrefs();
     loadBackups();
   }, [loadBackups]);
-
-  useEffect(() => {
-    const prefTheme = prefs.theme.toLowerCase();
-    if (prefTheme === "light" || prefTheme === "dark" || prefTheme === "system") {
-      setTheme(prefTheme);
-    }
-  }, [prefs.theme, setTheme]);
 
   const handleSave = async () => {
     localStorage.setItem("systemPreferences", JSON.stringify(prefs));
@@ -173,7 +170,11 @@ export default function SystemPreferences() {
               <label>Theme</label>
               <select
                 value={prefs.theme}
-                onChange={(e) => setPrefs((prev) => ({ ...prev, theme: e.target.value }))}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setPrefs((prev) => ({ ...prev, theme: val }));
+                  setTheme(val.toLowerCase());
+                }}
               >
                 <option>Light</option>
                 <option>Dark</option>

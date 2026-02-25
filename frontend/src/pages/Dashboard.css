@@ -119,11 +119,54 @@
 
 .digital-pie-canvas {
   flex-shrink: 0;
-  width: 195px;
-  height: 195px;
+  width: 200px;
+  height: 200px;
   position: relative;
-  /* Subtle depth shadow around the entire ring */
-  filter: drop-shadow(0 4px 18px rgba(0, 0, 0, 0.45));
+  /* Layered glow: brand-tinted halo + soft base shadow */
+  filter:
+    drop-shadow(0 0 22px rgba(26, 159, 231, 0.22))
+    drop-shadow(0 4px 12px rgba(0, 0, 0, 0.10));
+  transition: filter 0.3s ease;
+}
+
+.digital-pie-canvas:hover {
+  filter:
+    drop-shadow(0 0 28px rgba(26, 159, 231, 0.34))
+    drop-shadow(0 6px 16px rgba(0, 0, 0, 0.13));
+}
+
+/* HTML center overlay — replaces canvas-drawn text for reliable theming */
+.dpc-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none; /* let chart hover still work */
+}
+
+.dpc-num {
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text-primary);
+}
+
+.dpc-line {
+  width: 32px;
+  height: 1px;
+  background: var(--border-strong);
+  margin: 5px 0;
+  opacity: 0.6;
+}
+
+.dpc-lbl {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 /* Custom Legend */
@@ -131,15 +174,24 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 2px;
   min-width: 0;
 }
 
-/* Each row: top line (dot + label + count + pct) + bar below */
+/* Each legend row — hoverable card feel */
 .dpl-row {
   display: flex;
   flex-direction: column;
   gap: 5px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  margin: 0 -8px;
+  transition: background 0.15s;
+  cursor: default;
+}
+
+.dpl-row:hover {
+  background: var(--hover-overlay);
 }
 
 .dpl-row-top {
@@ -148,11 +200,11 @@
   gap: 8px;
 }
 
-/* Rounded-square dot — feels more "digital" than a circle */
+/* Circle colour swatch */
 .dpl-dot {
   width: 10px;
   height: 10px;
-  border-radius: 3px;
+  border-radius: 50%;
   flex-shrink: 0;
 }
 
@@ -173,16 +225,22 @@
   white-space: nowrap;
 }
 
+/* Pill badge for percentage — adapts to dark mode via --bg-elevated */
 .dpl-pct {
-  font-size: 11px;
+  font-size: 10px;
+  font-weight: 700;
   color: var(--text-secondary);
-  min-width: 38px;
-  text-align: right;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  padding: 1px 7px;
+  border-radius: 99px;
+  min-width: 44px;
+  text-align: center;
   white-space: nowrap;
 }
 
 .dpl-bar-wrap {
-  height: 5px;
+  height: 6px;
   background: var(--border);
   border-radius: 99px;
   overflow: hidden;

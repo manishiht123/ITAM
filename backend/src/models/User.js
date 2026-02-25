@@ -11,7 +11,11 @@ const User = sequelize.define("User", {
   phone: { type: DataTypes.STRING, allowNull: true },
   title: { type: DataTypes.STRING, allowNull: true },
   allowedEntities: { type: DataTypes.TEXT, allowNull: true },
-  entityPermissions: { type: DataTypes.TEXT, allowNull: true }
+  entityPermissions: { type: DataTypes.TEXT, allowNull: true },
+  // Password security fields (ISO 27001 / PCI-DSS)
+  failedLoginAttempts: { type: DataTypes.INTEGER, defaultValue: 0 },
+  lockedUntil: { type: DataTypes.DATE, allowNull: true },
+  lastPasswordChange: { type: DataTypes.DATE, allowNull: true }
 });
 
 module.exports = User;

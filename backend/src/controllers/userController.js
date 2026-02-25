@@ -1,5 +1,35 @@
 const User = require("../models/User");
+const SystemPreference = require("../models/SystemPreference");
 const bcrypt = require("bcryptjs");
+
+// Validate a plaintext password against the stored system policy.
+// Returns an array of human-readable violation messages (empty = valid).
+async function validatePasswordPolicy(password) {
+  let policy;
+  try {
+    policy = await SystemPreference.findOne();
+  } catch (_) { /* skip enforcement if DB unavailable */ }
+  if (!policy) return [];
+
+  const errors = [];
+  const minLen = policy.passwordMinLength ?? 12;
+  const maxLen = policy.passwordMaxLength ?? 128;
+
+  if (password.length < minLen)
+    errors.push(`at least ${minLen} characters`);
+  if (password.length > maxLen)
+    errors.push(`at most ${maxLen} characters`);
+  if (policy.passwordRequireUpper && !/[A-Z]/.test(password))
+    errors.push("one uppercase letter (A-Z)");
+  if (policy.passwordRequireLower && !/[a-z]/.test(password))
+    errors.push("one lowercase letter (a-z)");
+  if (policy.passwordRequireNumber && !/[0-9]/.test(password))
+    errors.push("one number (0-9)");
+  if (policy.passwordRequireSpecial && !/[!@#$%^&*()\-_=+[\]{};':",.<>/?\\|`~]/.test(password))
+    errors.push("one special character (!@#$…)");
+
+  return errors;
+}
 
 const parseJsonField = (value, fallback) => {
     if (!value) return fallback;
@@ -37,7 +67,13 @@ exports.getUsers = async (req, res) => {
 exports.createUser = async (req, res) => {
     try {
         const { name, email, password, role, status, allowedEntities, entityPermissions } = req.body;
-        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const policyErrors = await validatePasswordPolicy(password || "");
+        if (policyErrors.length > 0) {
+            return res.status(400).json({ error: `Password must contain: ${policyErrors.join(", ")}.` });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 12);
         const user = await User.create({
             name,
             email,
@@ -88,7 +124,12 @@ exports.updateUser = async (req, res) => {
         };
 
         if (password) {
-            updates.password = await bcrypt.hash(password, 10);
+            const policyErrors = await validatePasswordPolicy(password);
+            if (policyErrors.length > 0) {
+                return res.status(400).json({ error: `Password must contain: ${policyErrors.join(", ")}.` });
+            }
+            updates.password = await bcrypt.hash(password, 12);
+            updates.lastPasswordChange = new Date();
         }
 
         await User.update(updates, { where: { id: req.params.id } });

@@ -506,6 +506,12 @@ const api = {
         body: JSON.stringify(payload),
     })),
 
+    googleLogin: async (credential) => handleResponse(await fetch(`${BASE_URL}/auth/google`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ credential }),
+    })),
+
     // --- AI ENGINE ---
     getAIInsights: async (entityCode) => handleResponse(await fetch(`${BASE_URL}/ai/insights`, {
         headers: buildHeaders(entityCode)

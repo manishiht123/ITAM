@@ -74,9 +74,10 @@ export default function AssetAllocation() {
     const fetchSuggestions = async () => {
       setAiLoading(true);
       try {
+        const emp = employees.find(e => empKey(e) === selectedEmpId);
         const isAll = entity === "ALL";
-        const entityCode = isAll ? null : entity;
-        const result = await api.getAllocationSuggestions(selectedEmpId, entityCode);
+        const entityCode = isAll ? (emp?.entity || null) : entity;
+        const result = await api.getAllocationSuggestions(emp?.employeeId || selectedEmpId, entityCode);
         setAiSuggestions(result);
       } catch {
         setAiSuggestions(null);
@@ -175,13 +176,15 @@ export default function AssetAllocation() {
     }
   };
 
+  // Unique key that prevents ID collisions when employees from multiple entities are merged
+  const empKey = (emp) => `${emp.entity || ""}_${emp.id}`;
+
   const performAllocation = async () => {
-    const emp = employees.find(e => e.id == selectedEmpId);
+    const emp = employees.find(e => empKey(e) === selectedEmpId);
     const selectedAsset = availableAssets.find(a => String(a.id) === String(selectedAssetId));
     try {
-      // Use the asset's own entity code for the correct tenant DB
-      const assetEntity = selectedAsset?.entity || null;
-      const entityCode = entity === "ALL" ? assetEntity : entity;
+      // Use the employee's entity so the backend looks up the correct tenant DB for the consent email
+      const entityCode = entity === "ALL" ? (emp?.entity || selectedAsset?.entity || null) : entity;
       await api.updateAsset(selectedAssetId, {
         status: "In Use",
         employeeId: emp?.employeeId || emp?.email || "Unknown",
@@ -208,7 +211,7 @@ export default function AssetAllocation() {
       return;
     }
 
-    const emp = employees.find(e => e.id == selectedEmpId);
+    const emp = employees.find(e => empKey(e) === selectedEmpId);
     const employeeKey = (emp?.employeeId || emp?.email || "").toString().trim().toLowerCase();
     if (!employeeKey) {
       toast.warning("Employee details are missing. Please select a valid employee.");
@@ -236,7 +239,7 @@ export default function AssetAllocation() {
   };
 
   const getSelectedAssetDetails = () => availableAssets.find(a => a.id == selectedAssetId) || {};
-  const getSelectedEmpDetails = () => employees.find(e => e.id == selectedEmpId) || {};
+  const getSelectedEmpDetails = () => employees.find(e => empKey(e) === selectedEmpId) || {};
 
   const allocationHistory = allAssets
     .filter((asset) => asset.employeeId || asset.status === "In Use" || asset.status === "Allocated")
@@ -396,7 +399,7 @@ export default function AssetAllocation() {
             <select value={selectedEmpId} onChange={e => setSelectedEmpId(e.target.value)}>
               <option value="">Select Employee</option>
               {employees.map(emp => (
-                <option key={emp.id} value={emp.id}>
+                <option key={empKey(emp)} value={empKey(emp)}>
                   {emp.name} ({emp.employeeId || emp.email})
                 </option>
               ))}

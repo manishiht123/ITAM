@@ -1,0 +1,76 @@
+/* ── Tab bar ────────────────────────────────────────────────────────────────── */
+.orgs-tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--bg-elevated, #f1f5f9);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 10px;
+    padding: 4px;
+    margin-bottom: var(--space-lg, 20px);
+    width: fit-content;
+}
+
+.orgs-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 20px;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--text-secondary, #64748b);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    white-space: nowrap;
+}
+
+.orgs-tab:hover {
+    background: var(--bg-card, #fff);
+    color: var(--text-primary, #1e293b);
+}
+
+.orgs-tab.active {
+    background: var(--bg-card, #fff);
+    color: var(--primary, #2563eb);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    font-weight: 600;
+}
+
+.orgs-tab svg {
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+/* ── Row utilities ──────────────────────────────────────────────────────────── */
+.orgs-row-actions {
+    display: flex;
+    gap: var(--space-sm, 6px);
+}
+
+.orgs-count-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    background: var(--primary-soft, #eff6ff);
+    color: var(--primary, #2563eb);
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .orgs-tabs {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .orgs-tab span {
+        display: none;
+    }
+
+    .orgs-tab {
+        padding: 8px 14px;
+    }
+}

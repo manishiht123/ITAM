@@ -318,6 +318,39 @@
   to { transform: rotate(360deg); }
 }
 
+/* ================= OR DIVIDER ================= */
+.login-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0 16px;
+}
+
+.login-divider-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.login-divider-text {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* ================= GOOGLE BUTTON WRAP ================= */
+.login-google-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+/* Force Google button to fill available width */
+.login-google-wrap > div {
+  width: 100% !important;
+}
+
 /* ================= FOOTER ================= */
 .login-footer {
   margin: var(--space-xl) 0 0;
