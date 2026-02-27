@@ -182,6 +182,25 @@ const api = {
         }));
     },
 
+    // --- ASSET LIFECYCLE ---
+    retireAsset: async (id, disposalData, entityCode) => {
+        return handleResponse(await fetch(`${BASE_URL}/assets/${id}/retire`, {
+            method: "POST",
+            headers: buildHeaders(entityCode, { "Content-Type": "application/json" }),
+            body: JSON.stringify(disposalData)
+        }));
+    },
+    getAssetHistory: async (id, entityCode) => {
+        return handleResponse(await fetch(`${BASE_URL}/assets/${id}/history`, {
+            headers: buildHeaders(entityCode)
+        }));
+    },
+    getAssetDisposals: async (entityCode) => {
+        return handleResponse(await fetch(`${BASE_URL}/assets/disposals`, {
+            headers: buildHeaders(entityCode)
+        }));
+    },
+
     // --- ASSET CATEGORIES ---
     getAssetCategories: async (entityCode) => handleResponse(await fetch(`${BASE_URL}/asset-categories`, {
         headers: buildHeaders(entityCode)
@@ -399,6 +418,27 @@ const api = {
     deleteBackup: async (filename) => {
         return handleResponse(await fetch(`${BASE_URL}/backups/${encodeURIComponent(filename)}`, {
             method: "DELETE",
+            headers: buildHeaders()
+        }));
+    },
+    downloadBackup: async (filename) => {
+        const response = await fetch(`${BASE_URL}/backups/${encodeURIComponent(filename)}`, {
+            headers: buildHeaders()
+        });
+        if (!response.ok) throw new Error("Download failed");
+        const blob = await response.blob();
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement("a");
+        a.href     = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    },
+    restoreBackup: async (filename) => {
+        return handleResponse(await fetch(`${BASE_URL}/backups/restore/${encodeURIComponent(filename)}`, {
+            method: "POST",
             headers: buildHeaders()
         }));
     },

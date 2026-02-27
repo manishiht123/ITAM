@@ -89,8 +89,18 @@
   align-items: start;
 }
 
+.assets-charts-two-col {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .assets-charts .chart-card {
   min-height: 300px;
+}
+
+@media (max-width: 900px) {
+  .assets-charts-two-col {
+    grid-template-columns: 1fr;
+  }
 }
 
 
@@ -279,13 +289,14 @@
 
 .sort-indicator {
   margin-left: var(--space-xs);
-  font-size: 10px;
-  opacity: 0.5;
+  font-size: 14px;
+  opacity: 0.7;
 }
 
 .sort-indicator.active {
   color: var(--primary);
   opacity: 1;
+  font-size: 15px;
 }
 
 /* ================= RESPONSIVE ================= */
@@ -430,6 +441,34 @@
 
 [data-theme="dark"] .asset-icon-btn.transfer {
   background: rgba(124, 58, 237, 0.15);
+}
+
+.asset-icon-btn.history {
+  color: #0891b2;
+  background: #cffafe;
+}
+
+.asset-icon-btn.history:hover {
+  background: #0891b2;
+  color: #fff;
+}
+
+.asset-icon-btn.retire {
+  color: #dc2626;
+  background: #fee2e2;
+}
+
+.asset-icon-btn.retire:hover {
+  background: #dc2626;
+  color: #fff;
+}
+
+[data-theme="dark"] .asset-icon-btn.history {
+  background: rgba(8, 145, 178, 0.15);
+}
+
+[data-theme="dark"] .asset-icon-btn.retire {
+  background: rgba(220, 38, 38, 0.15);
 }
 
 /* ================= TRANSFER MODAL ================= */

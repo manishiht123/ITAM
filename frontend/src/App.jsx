@@ -15,6 +15,7 @@ const AddAsset = lazy(() => import("./pages/AddAsset"));
 const EditAsset = lazy(() => import("./pages/EditAsset"));
 const AssetAllocation = lazy(() => import("./pages/AssetAllocation"));
 const AssetHandover = lazy(() => import("./pages/AssetHandover"));
+const Disposals     = lazy(() => import("./pages/Disposals"));
 const Employees = lazy(() => import("./pages/Employees"));
 const Software = lazy(() => import("./pages/Software"));
 const Profile = lazy(() => import("./pages/Profile"));
@@ -34,6 +35,7 @@ const SecurityAudit = lazy(() => import("./pages/settings/SecurityAudit"));
 const SystemPreferences = lazy(() => import("./pages/settings/SystemPreferences"));
 const PasswordPolicy = lazy(() => import("./pages/settings/PasswordPolicy"));
 const Reports = lazy(() => import("./pages/settings/Reports"));
+const BackupRestore = lazy(() => import("./pages/settings/BackupRestore"));
 const AIIntelligence = lazy(() => import("./pages/AIIntelligence"));
 
 // Loading fallback component
@@ -97,6 +99,14 @@ export default function App() {
           element={
             <Suspense fallback={<PageLoader />}>
               <RoleGuard module="assets"><AssetHandover /></RoleGuard>
+            </Suspense>
+          }
+        />
+        <Route
+          path="/assets/disposals"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <RoleGuard module="assets"><Disposals /></RoleGuard>
             </Suspense>
           }
         />
@@ -242,6 +252,14 @@ export default function App() {
           element={
             <Suspense fallback={<PageLoader />}>
               <RoleGuard adminOnly><PasswordPolicy /></RoleGuard>
+            </Suspense>
+          }
+        />
+        <Route
+          path="settings/backup"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <RoleGuard adminOnly><BackupRestore /></RoleGuard>
             </Suspense>
           }
         />

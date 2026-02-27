@@ -1,12 +1,16 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useEntity } from "../context/EntityContext";
 import "./Assets.css";
-import { FaPencilAlt, FaUserPlus, FaUndoAlt, FaCheckCircle, FaExchangeAlt, FaHistory } from "react-icons/fa";
+import { FaPencilAlt, FaUserPlus, FaUndoAlt, FaCheckCircle, FaExchangeAlt, FaHistory, FaTrashAlt } from "react-icons/fa";
+import { MdTimeline } from "react-icons/md";
 import { KpiCard, Card, Button, Badge, ConfirmDialog } from "../components/ui";
 import ChartCard from "../components/ChartCard";
+import GenericDoughnutPie from "../components/charts/GenericDoughnutPie";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import api from "../services/api";
 import { useToast } from "../context/ToastContext";
+import AssetRetireModal from "../components/AssetRetireModal";
+import AssetLifecycleDrawer from "../components/AssetLifecycleDrawer";
 
 export default function Assets() {
   const navigate = useNavigate();
@@ -34,6 +38,13 @@ export default function Assets() {
   const [allocationData, setAllocationData] = useState({ employeeId: "" });
   const [returnConfirm, setReturnConfirm] = useState({ open: false, asset: null });
   const [repairConfirm, setRepairConfirm] = useState({ open: false, asset: null });
+
+  // Retirement modal state
+  const [retireModal, setRetireModal] = useState({ open: false, asset: null });
+  const [retiring, setRetiring] = useState(false);
+
+  // Lifecycle history drawer state
+  const [lifecycleDrawer, setLifecycleDrawer] = useState({ open: false, data: null, loading: false });
 
   // Transfer modal state
   const [showTransferModal, setShowTransferModal] = useState(false);
@@ -185,9 +196,25 @@ export default function Assets() {
     "In Stock": "#22c55e",
     "Under Repair": "#f97316",
     "Retired": "#ef4444",
-    "Theft/Missing": "#ef4444",
+    "Theft/Missing": "#db2777",
     "Not Submitted": "#f59e0b"
   };
+
+  // Pie chart data
+  const statusPieData = Object.entries(statusCounts)
+    .filter(([, v]) => v > 0)
+    .map(([label, value]) => ({ label, value }));
+
+  const categoryPieData = useMemo(() => {
+    const counts = {};
+    normalizedAssets.forEach(a => {
+      const cat = a.category || "Uncategorized";
+      counts[cat] = (counts[cat] || 0) + 1;
+    });
+    return Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .map(([label, value]) => ({ label, value }));
+  }, [normalizedAssets]);
 
   // --- ACTIONS ---
 
@@ -228,6 +255,43 @@ export default function Assets() {
       loadData();
     } catch (err) {
       toast.error(err.message || "Failed to update asset status");
+    }
+  };
+
+  // ── Retire asset ──
+  const openRetireModal  = (asset) => setRetireModal({ open: true, asset });
+  const closeRetireModal = () => setRetireModal({ open: false, asset: null });
+
+  const handleRetireConfirm = async (disposalData) => {
+    const asset = retireModal.asset;
+    setRetiring(true);
+    try {
+      const entityCode = (selectedEntityCode && selectedEntityCode !== "ALL")
+        ? selectedEntityCode
+        : (asset.entity || null);
+      await api.retireAsset(asset.id, disposalData, entityCode);
+      toast.success(`Asset "${asset.name}" has been retired.`);
+      closeRetireModal();
+      loadData();
+    } catch (err) {
+      toast.error(err.message || "Failed to retire asset.");
+    } finally {
+      setRetiring(false);
+    }
+  };
+
+  // ── Lifecycle history drawer ──
+  const openLifecycleDrawer = async (asset) => {
+    setLifecycleDrawer({ open: true, data: null, loading: true });
+    try {
+      const entityCode = (selectedEntityCode && selectedEntityCode !== "ALL")
+        ? selectedEntityCode
+        : (asset.entity || null);
+      const data = await api.getAssetHistory(asset.id, entityCode);
+      setLifecycleDrawer({ open: true, data, loading: false });
+    } catch (err) {
+      toast.error(err.message || "Failed to load asset history.");
+      setLifecycleDrawer({ open: false, data: null, loading: false });
     }
   };
 
@@ -518,28 +582,21 @@ export default function Assets() {
       </div>
 
       {/* ================= CHARTS ROW ================= */}
-      <div className="assets-charts">
-        {/* Assets by Status */}
+      <div className="assets-charts assets-charts-two-col">
         <ChartCard title="Assets by Status">
-          {Object.entries(statusCounts).map(([status, count]) => (
-            <div key={status} className="status-row">
-              <span>{status}</span>
-
-              <div className="status-bar">
-                <div
-                  className="fill"
-                  style={{
-                    width: `${kpis.total > 0 ? (count / kpis.total) * 100 : 0}%`,
-                    background: STATUS_COLORS[status],
-                  }}
-                />
-              </div>
-
-              <strong>{count}</strong>
-            </div>
-          ))}
+          <GenericDoughnutPie
+            data={statusPieData}
+            colors={STATUS_COLORS}
+            centerLabel="Assets"
+          />
         </ChartCard>
 
+        <ChartCard title="Assets by Category">
+          <GenericDoughnutPie
+            data={categoryPieData}
+            centerLabel="Assets"
+          />
+        </ChartCard>
       </div>
 
       {/* ================= FILTERS ================= */}
@@ -679,7 +736,7 @@ export default function Assets() {
                         <button
                           className="asset-icon-btn allocate"
                           title="Allocate Asset"
-                          onClick={() => navigate(`/assets/allocate?assetId=${encodeURIComponent(asset.id)}`)}
+                          onClick={() => navigate(`/assets/allocate?assetId=${encodeURIComponent(asset.assetId || asset.id)}&entity=${encodeURIComponent(asset.entity || "")}`)}
                         >
                           <FaUserPlus />
                         </button>
@@ -711,6 +768,22 @@ export default function Assets() {
                           <FaExchangeAlt />
                         </button>
                       )}
+                      {!["Retired", "Theft/Missing"].includes(asset.status) && (
+                        <button
+                          className="asset-icon-btn retire"
+                          title="Retire Asset"
+                          onClick={() => openRetireModal(asset)}
+                        >
+                          <FaTrashAlt />
+                        </button>
+                      )}
+                      <button
+                        className="asset-icon-btn history"
+                        title="View Lifecycle History"
+                        onClick={() => openLifecycleDrawer(asset)}
+                      >
+                        <MdTimeline />
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -791,6 +864,25 @@ export default function Assets() {
         onConfirm={confirmMarkAvailable}
         onCancel={() => setRepairConfirm({ open: false, asset: null })}
       />
+
+      {/* ================= RETIRE ASSET MODAL ================= */}
+      {retireModal.open && (
+        <AssetRetireModal
+          asset={retireModal.asset}
+          loading={retiring}
+          onConfirm={handleRetireConfirm}
+          onCancel={closeRetireModal}
+        />
+      )}
+
+      {/* ================= LIFECYCLE HISTORY DRAWER ================= */}
+      {lifecycleDrawer.open && (
+        <AssetLifecycleDrawer
+          data={lifecycleDrawer.data}
+          loading={lifecycleDrawer.loading}
+          onClose={() => setLifecycleDrawer({ open: false, data: null, loading: false })}
+        />
+      )}
 
       {/* ================= TRANSFER MODAL ================= */}
       {showTransferModal && (

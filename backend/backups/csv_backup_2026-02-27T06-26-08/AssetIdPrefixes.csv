@@ -1,0 +1,12 @@
+id,entityCode,categoryName,shortCode,createdAt,updatedAt
+"1","OFB","Laptop","ITL","Fri Feb 20 2026 11:02:55 GMT+0530 (India Standard Time)","Fri Feb 20 2026 11:02:55 GMT+0530 (India Standard Time)"
+"2","OFB","Desktop","ITD","Fri Feb 20 2026 11:03:12 GMT+0530 (India Standard Time)","Fri Feb 20 2026 11:03:12 GMT+0530 (India Standard Time)"
+"3","OFB","Printer","ITPR","Fri Feb 20 2026 11:03:27 GMT+0530 (India Standard Time)","Fri Feb 20 2026 11:03:27 GMT+0530 (India Standard Time)"
+"4","OFB","Access Points","ITAP","Fri Feb 20 2026 11:04:03 GMT+0530 (India Standard Time)","Fri Feb 20 2026 11:04:03 GMT+0530 (India Standard Time)"
+"5","OFB","Switch","ITSW","Fri Feb 20 2026 11:04:17 GMT+0530 (India Standard Time)","Fri Feb 20 2026 11:04:17 GMT+0530 (India Standard Time)"
+"6","OFB","Mouse","ITM","Fri Feb 20 2026 11:04:28 GMT+0530 (India Standard Time)","Fri Feb 20 2026 11:04:28 GMT+0530 (India Standard Time)"
+"7","OXYZO","Laptop","ITL","Fri Feb 20 2026 11:04:56 GMT+0530 (India Standard Time)","Fri Feb 20 2026 11:04:56 GMT+0530 (India Standard Time)"
+"8","OXYZO","Desktop","ITD","Fri Feb 20 2026 11:05:06 GMT+0530 (India Standard Time)","Fri Feb 20 2026 11:05:06 GMT+0530 (India Standard Time)"
+"9","OXYZO","Access Points","ITAP","Fri Feb 20 2026 11:05:55 GMT+0530 (India Standard Time)","Fri Feb 20 2026 11:05:55 GMT+0530 (India Standard Time)"
+"10","OXYZO","Printer","ITPR","Fri Feb 20 2026 11:06:14 GMT+0530 (India Standard Time)","Fri Feb 20 2026 11:06:14 GMT+0530 (India Standard Time)"
+"11","OXYZO","Switch","ITSW","Fri Feb 20 2026 11:10:53 GMT+0530 (India Standard Time)","Fri Feb 20 2026 11:10:53 GMT+0530 (India Standard Time)"

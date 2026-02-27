@@ -1,0 +1,2 @@
+id,smtpUser,smtpPass,fromName,fromEmail,host,port,secure,notifyEmail,returnToName,returnToEmail,enabled,createdAt,updatedAt,provider,backendUrl
+"1","itsupport@ofbusiness.in","zegi nezj omnd vdzs","IT Support","itsupport@ofbusiness.in","smtp.gmail.com","587","0","it-team@ofbusiness.in","IT Team","it-team@ofbusiness.in","1","Thu Feb 19 2026 17:37:00 GMT+0530 (India Standard Time)","Fri Feb 20 2026 14:15:47 GMT+0530 (India Standard Time)","custom",""

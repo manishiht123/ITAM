@@ -11,7 +11,8 @@ import {
   FaSignOutAlt,
   FaLayerGroup,
   FaRobot,
-  FaSitemap
+  FaSitemap,
+  FaRecycle
 } from "react-icons/fa";
 
 import "../../styles/sidebar.css";
@@ -101,6 +102,13 @@ export default function Sidebar() {
         )}
 
         {showAssets && (
+          <NavLink to="/assets/disposals" className="menu-item">
+            <FaRecycle />
+            {!collapsed && <span>Disposals</span>}
+          </NavLink>
+        )}
+
+        {showAssets && (
           <NavLink to="/org-settings" className="menu-item">
             <FaSitemap />
             {!collapsed && <span>Configuration</span>}
@@ -136,6 +144,7 @@ export default function Sidebar() {
                 <NavLink to="/settings/reports">Reports</NavLink>
                 <NavLink to="/settings/system">System Preferences</NavLink>
                 <NavLink to="/settings/password">Password Policy</NavLink>
+                <NavLink to="/settings/backup">Backup &amp; Restore</NavLink>
               </div>
             )}
           </>

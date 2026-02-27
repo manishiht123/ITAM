@@ -19,6 +19,7 @@ const SystemPreference = require("./models/SystemPreference");
 const Role = require("./models/Role");
 const AlertRule = require("./models/AlertRule");
 const AssetTransfer = require("./models/AssetTransfer");
+const AssetDisposal = require("./models/AssetDisposal");
 require("./models/Entity");
 require("./models/Organization");
 require("./models/AssetIdPrefix");
@@ -232,6 +233,7 @@ const startServer = async () => {
     });
     await AlertRule.sync();
     await AssetTransfer.sync();
+    await AssetDisposal.sync();
     await ensureAssetColumns(sequelize);
     await ensureAssetStatusEnum(sequelize);
     await ensureUserPermissionColumns();
@@ -246,6 +248,10 @@ const startServer = async () => {
     // Start the report scheduler (non-blocking)
     require("./services/reportScheduler").startScheduler().catch(err =>
         console.error("[Scheduler] Startup error:", err.message)
+    );
+    // Start the backup scheduler (non-blocking)
+    require("./services/backupScheduler").startScheduler().catch(err =>
+        console.error("[BackupScheduler] Startup error:", err.message)
     );
 
     const admin = await User.findOne({

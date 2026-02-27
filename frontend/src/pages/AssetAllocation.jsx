@@ -138,22 +138,28 @@ export default function AssetAllocation() {
       let preSelectedId = "";
       if (assetParam || assetIdParam) {
         const target = assetParam || assetIdParam;
-        const match = assetsData.find(
-          (asset) =>
-            String(asset.assetId || "").toLowerCase() === String(target).toLowerCase() ||
-            String(asset.id) === String(target)
-        );
+        const entityParam = searchParams.get("entity") || "";
+        const match = assetsData.find((asset) => {
+          // Match by ITAM assetId first (globally unique), fall back to numeric id
+          const byItamId = String(asset.assetId || "").toLowerCase() === String(target).toLowerCase();
+          const byNumericId = String(asset.id) === String(target);
+          if (!byItamId && !byNumericId) return false;
+          // When entity param is present, also scope to that entity to avoid cross-entity ID collisions
+          if (entityParam) {
+            return String(asset.entity || "").toLowerCase() === entityParam.toLowerCase();
+          }
+          return true;
+        });
         if (match) {
           const matchStatus = String(match.status || "").trim().toLowerCase();
           if (NON_ALLOCATABLE.includes(matchStatus)) {
-            // Show a toast after state settles — we pass a flag via a small timeout
             setTimeout(() => {
               toast.error(`Asset "${match.name || match.assetId}" cannot be allocated. Its current status is "${match.status}".`);
             }, 300);
           } else {
             preSelectedId = String(match.id);
             // If it's not already in the available list, add it (e.g. Under Repair)
-            if (!available.some((a) => String(a.id) === preSelectedId)) {
+            if (!available.some((a) => String(a.id) === preSelectedId && String(a.entity || "") === String(match.entity || ""))) {
               available.unshift(match);
             }
           }

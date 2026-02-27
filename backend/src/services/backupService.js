@@ -2,17 +2,35 @@ const fs = require("fs");
 const path = require("path");
 const sequelize = require("../config/db");
 
+// Fixed backup directory — override with BACKUP_DIR env var if needed
+const BACKUP_DIR = process.env.BACKUP_DIR
+  ? path.resolve(process.env.BACKUP_DIR)
+  : path.resolve(__dirname, "../../backups");
+
+// All tables in the main itamdb MySQL database (Sequelize auto-pluralises model names)
 const TABLES_TO_EXPORT = [
-  "Assets",
+  "AlertRules",
+  "AnalyticsEvents",
   "AssetCategories",
-  "Employees",
+  "AssetDisposals",
+  "AssetIdPrefixes",
+  "Assets",
+  "AssetTransfers",
+  "AuditLogs",
   "Departments",
-  "Locations",
-  "SoftwareLicenses",
-  "SoftwareAssignments",
+  "EmailSettings",
+  "Employees",
   "Entities",
-  "Users",
-  "AuditLogs"
+  "Licenses",
+  "Locations",
+  "NotificationSettings",
+  "Organizations",
+  "ReportSchedules",
+  "Roles",
+  "SoftwareAssignments",
+  "SoftwareLicenses",
+  "SystemPreferences",
+  "Users"
 ];
 
 function ensureDir(dir) {
@@ -153,7 +171,7 @@ async function exportCsv(backupDir) {
  * Run backup based on type preference
  */
 async function runBackup(backupType, backupLocation) {
-  const dir = backupLocation || "./backups";
+  const dir = backupLocation || BACKUP_DIR;
   const results = [];
 
   if (backupType === "database" || backupType === "both") {
@@ -173,7 +191,7 @@ async function runBackup(backupType, backupLocation) {
  * List existing backups in the backup directory
  */
 function listBackups(backupLocation) {
-  const dir = path.resolve(backupLocation || "./backups");
+  const dir = path.resolve(backupLocation || BACKUP_DIR);
   if (!fs.existsSync(dir)) return [];
 
   const entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -216,7 +234,7 @@ function listBackups(backupLocation) {
  * Delete backups older than retentionDays
  */
 function cleanOldBackups(backupLocation, retentionDays) {
-  const dir = path.resolve(backupLocation || "./backups");
+  const dir = path.resolve(backupLocation || BACKUP_DIR);
   if (!fs.existsSync(dir)) return 0;
 
   const cutoff = new Date();
@@ -241,4 +259,4 @@ function cleanOldBackups(backupLocation, retentionDays) {
   return removed;
 }
 
-module.exports = { runBackup, listBackups, cleanOldBackups, dumpDatabase, exportCsv };
+module.exports = { BACKUP_DIR, runBackup, listBackups, cleanOldBackups, dumpDatabase, exportCsv };

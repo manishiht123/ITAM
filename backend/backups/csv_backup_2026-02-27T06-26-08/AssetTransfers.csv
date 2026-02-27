@@ -1,0 +1,4 @@
+id,sourceAssetId,assetName,category,serialNumber,makeModel,fromEntity,toEntity,reason,notes,authorizedBy,transferDate,targetAssetId,status,createdAt,updatedAt
+"1","AST-2944","OXYZOL-1226","Laptop","NA","Lenovo","OXYZO","OFB","Employee Transfer","","Manish Kumar Bhaskar","2026-02-20","AST-2944","Completed","Fri Feb 20 2026 10:26:53 GMT+0530 (India Standard Time)","Fri Feb 20 2026 10:26:53 GMT+0530 (India Standard Time)"
+"2","AST-4812","Dell 3420","Laptop","1234ZAQ1","Dell 3420","OFB","OXYZO","Employee Transfer","","Manish Kumar Bhaskar","2026-02-20","OXYZO/ITL/001","Completed","Fri Feb 20 2026 11:11:33 GMT+0530 (India Standard Time)","Fri Feb 20 2026 11:11:33 GMT+0530 (India Standard Time)"
+"3","AST-5844","OFB/ITL/009","Laptop","xyz","Thinkpad E14","OFB","OXYZO","Employee Transfer","","Manish Kumar Bhaskar","2026-02-20","OXYZO/ITL/002","Completed","Fri Feb 20 2026 11:12:12 GMT+0530 (India Standard Time)","Fri Feb 20 2026 11:12:12 GMT+0530 (India Standard Time)"

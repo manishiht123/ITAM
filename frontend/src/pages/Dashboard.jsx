@@ -148,6 +148,13 @@ export default function Dashboard() {
             onClick={canAccess("assets") ? () => navigate("/assets?status=Under%20Repair") : undefined}
             variant="warning"
           />
+          <KpiCard
+            label="Retired"
+            value={dashboardData?.kpis?.retired ?? "—"}
+            size="sm"
+            onClick={canAccess("assets") ? () => navigate("/assets?status=Retired") : undefined}
+            variant="danger"
+          />
           {isAdmin && (
             <KpiCard
               label="Total Licenses"
@@ -183,7 +190,7 @@ export default function Dashboard() {
               <Card.Title>License Usage Overview</Card.Title>
             </Card.Header>
             <Card.Body>
-              <LicenseUsagePie data={dashboardData?.licenseUsage} />
+              <LicenseUsagePie data={dashboardData?.licenseByProduct} />
             </Card.Body>
           </Card>
         </div>

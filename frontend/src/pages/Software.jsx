@@ -17,6 +17,8 @@ import {
   Grid,
   ConfirmDialog
 } from "../components/ui";
+import LicenseUsagePie from "../components/charts/LicenseUsagePie";
+import SoftwareLicenseTypePie from "../components/charts/SoftwareLicenseTypePie";
 import "./Software.css";
 
 export default function Software() {
@@ -25,6 +27,7 @@ export default function Software() {
   const [loading, setLoading] = useState(true);
   const [inventory, setInventory] = useState({ licenses: [], assignments: [] });
   const [search, setSearch] = useState("");
+  const [licenseSearch, setLicenseSearch] = useState("");
   const [openLicense, setOpenLicense] = useState(false);
   const [openAssign, setOpenAssign] = useState(false);
   const [entities, setEntities] = useState([]);
@@ -114,6 +117,17 @@ export default function Software() {
     }
   };
 
+  const filteredLicenses = useMemo(() => {
+    const rows = inventory.licenses || [];
+    if (!licenseSearch) return rows;
+    const needle = licenseSearch.toLowerCase();
+    return rows.filter((row) =>
+      [row.product, row.vendor, row.version, row.status]
+        .filter(Boolean)
+        .some((v) => String(v).toLowerCase().includes(needle))
+    );
+  }, [inventory.licenses, licenseSearch]);
+
   const filteredAssignments = useMemo(() => {
     const rows = inventory.assignments || [];
     if (!search) return rows;
@@ -130,6 +144,26 @@ export default function Software() {
         .some((value) => String(value).toLowerCase().includes(needle));
     });
   }, [inventory.assignments, search]);
+
+  // Chart data: seat usage per license
+  const licenseChartData = useMemo(() =>
+    (inventory.licenses || []).map(l => ({
+      name: l.product,
+      seatsUsed: l.seatsUsed || 0,
+      seatsOwned: l.seatsOwned || 0,
+    })),
+    [inventory.licenses]
+  );
+
+  // Chart data: license status distribution
+  const licenseTypeData = useMemo(() => {
+    const counts = {};
+    (inventory.licenses || []).forEach(l => {
+      const status = l.status || "Unknown";
+      counts[status] = (counts[status] || 0) + 1;
+    });
+    return Object.entries(counts).map(([label, value]) => ({ label, value }));
+  }, [inventory.licenses]);
 
   const handleCreateLicense = async () => {
     const destinationEntity = entity === "ALL" ? targetEntity : entity;
@@ -388,15 +422,44 @@ export default function Software() {
       />
 
       <PageLayout.Content>
+        {/* Charts row */}
+        <Grid columns={2} gap="xl" style={{ marginBottom: "var(--space-xl)" }}>
+          <Card>
+            <Card.Header>
+              <Card.Title>Seat Usage by License</Card.Title>
+            </Card.Header>
+            <Card.Body>
+              <LicenseUsagePie data={licenseChartData} />
+            </Card.Body>
+          </Card>
+          <Card>
+            <Card.Header>
+              <Card.Title>License Status Distribution</Card.Title>
+            </Card.Header>
+            <Card.Body>
+              <SoftwareLicenseTypePie data={licenseTypeData} />
+            </Card.Body>
+          </Card>
+        </Grid>
+
+        {/* Tables row */}
         <Grid columns={2} gap="xl">
         <Card padding="none">
           <Card.Header>
             <Card.Title>License Catalog</Card.Title>
           </Card.Header>
+          <div style={{ padding: 'var(--space-lg)' }}>
+            <Input
+              placeholder="Search product, vendor, status..."
+              value={licenseSearch}
+              onChange={(e) => setLicenseSearch(e.target.value)}
+              fullWidth
+            />
+          </div>
           <Table
-            data={inventory.licenses || []}
+            data={filteredLicenses}
             columns={licenseColumns}
-            emptyMessage="No licenses added."
+            emptyMessage="No licenses found."
           />
         </Card>
 
@@ -418,7 +481,7 @@ export default function Software() {
             emptyMessage="No assignments found."
           />
         </Card>
-        </Grid>
+        </Grid> {/* end tables Grid */}
       </PageLayout.Content>
 
       {/* License Drawer */}

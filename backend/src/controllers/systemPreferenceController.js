@@ -1,4 +1,5 @@
-const SystemPreference = require("../models/SystemPreference");
+const SystemPreference   = require("../models/SystemPreference");
+const backupScheduler    = require("../services/backupScheduler");
 
 const getOrCreatePreferences = async () => {
   let prefs = await SystemPreference.findOne();
@@ -45,6 +46,13 @@ exports.updateSystemPreferences = async (req, res) => {
     booleanFields.forEach((f) => { if (body[f] !== undefined) updates[f] = Boolean(body[f]); });
 
     await prefs.update(updates);
+
+    // Restart backup scheduler if any schedule-related field changed
+    const scheduleFields = ["autoBackupEnabled", "backupFrequency", "backupTime", "backupRetentionDays", "backupType"];
+    if (scheduleFields.some(f => updates[f] !== undefined)) {
+      backupScheduler.startScheduler().catch(() => {});
+    }
+
     res.json(prefs);
   } catch (error) {
     res.status(500).json({ error: error.message });

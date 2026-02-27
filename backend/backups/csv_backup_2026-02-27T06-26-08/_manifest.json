@@ -1,0 +1,21 @@
+{
+  "created": "2026-02-27T06:26:08.415Z",
+  "tables": [
+    "AssetCategories.csv",
+    "AssetIdPrefixes.csv",
+    "AssetTransfers.csv",
+    "AuditLogs.csv",
+    "Departments.csv",
+    "EmailSettings.csv",
+    "Entities.csv",
+    "Licenses.csv",
+    "Locations.csv",
+    "NotificationSettings.csv",
+    "Organizations.csv",
+    "ReportSchedules.csv",
+    "Roles.csv",
+    "SystemPreferences.csv",
+    "Users.csv"
+  ],
+  "totalTables": 15
+}

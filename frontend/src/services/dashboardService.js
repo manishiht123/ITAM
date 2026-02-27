@@ -148,7 +148,8 @@ const buildDashboardData = (assets, employees, licenses, entityCode) => {
     totalAssets: scopedAssets.length,
     allocated: statusCounts["In Use"] || 0,
     available: statusCounts["Available"] || 0,
-    underRepair: statusCounts["Under Repair"] || 0
+    underRepair: statusCounts["Under Repair"] || 0,
+    retired: statusCounts["Retired"] || 0
   };
 
   const licenseTotals = scopedLicenses.reduce(
@@ -170,6 +171,15 @@ const buildDashboardData = (assets, employees, licenses, entityCode) => {
       { name: "Over-allocated", value: licenseTotals.overused }
     ]
     : [];
+
+  const licenseByProduct = scopedLicenses
+    .filter((row) => Number(row.seatsOwned || 0) > 0 || Number(row.seatsUsed || 0) > 0)
+    .map((row) => ({
+      name: row.product || row.softwareName || "Unknown",
+      seatsUsed: Number(row.seatsUsed || 0),
+      seatsOwned: Number(row.seatsOwned || 0),
+    }))
+    .sort((a, b) => b.seatsUsed - a.seatsUsed);
 
   const alerts = [
     {
@@ -208,6 +218,7 @@ const buildDashboardData = (assets, employees, licenses, entityCode) => {
     categoryBreakdown,
     osBreakdown,
     licenseUsage,
+    licenseByProduct,
     alerts,
     compliance,
     assignments,

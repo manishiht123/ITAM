@@ -9,22 +9,20 @@ import { useMemo } from "react";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
-// Tooltip follows the cursor so it never overlaps the center label
+// Shared cursor positioner (safe to re-register)
 Tooltip.positioners.cursor = function(_, eventPosition) {
   return { x: eventPosition.x, y: eventPosition.y };
 };
 
-const STATUS_ORDER = ["In Use", "Available", "Under Repair", "Retired", "Unknown"];
-
 const STATUS_COLORS = {
-  "In Use":       "#2563eb",   // blue  — clearly distinct from Available
-  "Available":    "#22c55e",   // green
-  "Under Repair": "#f97316",   // orange
-  "Retired":      "#a78bfa",   // lavender
-  "Unknown":      "#64748b",   // slate
+  "Active":    "#22c55e",
+  "Expired":   "#ef4444",
+  "Suspended": "#f97316",
+  "Unknown":   "#64748b",
 };
+const STATUS_ORDER = ["Active", "Expired", "Suspended"];
 
-export default function AssetStatusPie({ data }) {
+export default function SoftwareLicenseTypePie({ data }) {
   const normalized = Array.isArray(data) ? data : [];
   const ordered = STATUS_ORDER.flatMap(s => normalized.find(e => e.label === s) || []);
   const extras  = normalized.filter(e => !STATUS_ORDER.includes(e.label));
@@ -33,8 +31,9 @@ export default function AssetStatusPie({ data }) {
   const total = finalData.reduce((s, e) => s + (Number(e.value) || 0), 0);
 
   const chartData = useMemo(() => {
-    // Match card background per theme so segment gaps are invisible
-    const cardBg = document.documentElement.getAttribute("data-theme") === "dark" ? "#0f2034" : "#ffffff";
+    const cardBg = document.documentElement.getAttribute("data-theme") === "dark"
+      ? "#0f2034"
+      : "#ffffff";
     return {
       labels: finalData.map(e => e.label),
       datasets: [{
@@ -42,7 +41,7 @@ export default function AssetStatusPie({ data }) {
         backgroundColor: finalData.map(e => STATUS_COLORS[e.label] || "#64748b"),
         borderColor: cardBg,
         borderWidth: 3,
-        hoverOffset: 16,
+        hoverOffset: 14,
         hoverBorderWidth: 0,
       }]
     };
@@ -54,12 +53,7 @@ export default function AssetStatusPie({ data }) {
     maintainAspectRatio: false,
     cutout: "52%",
     layout: { padding: 12 },
-    animation: {
-      animateRotate: true,
-      animateScale: true,
-      duration: 900,
-      easing: "easeInOutQuart"
-    },
+    animation: { animateRotate: true, animateScale: true, duration: 900, easing: "easeInOutQuart" },
     plugins: {
       legend: { display: false },
       tooltip: {
@@ -73,9 +67,8 @@ export default function AssetStatusPie({ data }) {
         cornerRadius: 10,
         callbacks: {
           label(ctx) {
-            const val = ctx.parsed;
-            const pct = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
-            return `  ${val} assets  ·  ${pct}%`;
+            const pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : 0;
+            return `  ${ctx.parsed} license${ctx.parsed !== 1 ? "s" : ""}  ·  ${pct}%`;
           }
         }
       }
@@ -83,7 +76,7 @@ export default function AssetStatusPie({ data }) {
   };
 
   if (!finalData.length) {
-    return <p style={{ color: "var(--text-secondary)", padding: 16 }}>No asset status data yet.</p>;
+    return <p style={{ color: "var(--text-secondary)", padding: 16 }}>No license data yet.</p>;
   }
 
   return (
@@ -94,7 +87,7 @@ export default function AssetStatusPie({ data }) {
           <div className="dpc-center">
             <span className="dpc-num">{total}</span>
             <div className="dpc-line" />
-            <span className="dpc-lbl">Total Assets</span>
+            <span className="dpc-lbl">Licenses</span>
           </div>
         )}
       </div>
