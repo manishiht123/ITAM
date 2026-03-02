@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useEntity } from "../context/EntityContext";
 import "./Assets.css";
-import { FaPencilAlt, FaUserPlus, FaUndoAlt, FaCheckCircle, FaExchangeAlt, FaHistory, FaTrashAlt } from "react-icons/fa";
+import { FaPencilAlt, FaUserPlus, FaUndoAlt, FaCheckCircle, FaExchangeAlt, FaHistory, FaTrashAlt, FaRecycle, FaQrcode } from "react-icons/fa";
 import { MdTimeline } from "react-icons/md";
-import { KpiCard, Card, Button, Badge, ConfirmDialog } from "../components/ui";
+import { KpiCard, Card, Button, Badge, ConfirmDialog, Spinner } from "../components/ui";
 import ChartCard from "../components/ChartCard";
 import GenericDoughnutPie from "../components/charts/GenericDoughnutPie";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -11,6 +11,8 @@ import api from "../services/api";
 import { useToast } from "../context/ToastContext";
 import AssetRetireModal from "../components/AssetRetireModal";
 import AssetLifecycleDrawer from "../components/AssetLifecycleDrawer";
+import AssetQRModal from "../components/AssetQRModal";
+import { useEscClose } from "../hooks/useEscClose";
 
 export default function Assets() {
   const navigate = useNavigate();
@@ -28,6 +30,7 @@ export default function Assets() {
   const [assets, setAssets] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [qrAsset, setQrAsset] = useState(null);
   const [statusFilter, setStatusFilter] = useState("");
   const [sortKey, setSortKey] = useState("assetId");
   const [sortDir, setSortDir] = useState("asc");
@@ -45,6 +48,15 @@ export default function Assets() {
 
   // Lifecycle history drawer state
   const [lifecycleDrawer, setLifecycleDrawer] = useState({ open: false, data: null, loading: false });
+
+  // Batch selection: Map of id → {id, entity, assetId, name}
+  const [selectedIds, setSelectedIds] = useState(new Map());
+  // Batch operation modal: { type: 'status'|'transfer'|'dispose'|null }
+  const [batchModal, setBatchModal] = useState({ type: null });
+  const [batchProcessing, setBatchProcessing] = useState(false);
+
+  // Disposal details modal state
+  const [disposalModal, setDisposalModal] = useState({ open: false, data: null, loading: false, asset: null });
 
   // Transfer modal state
   const [showTransferModal, setShowTransferModal] = useState(false);
@@ -70,6 +82,12 @@ export default function Assets() {
     }
     return null;
   }, [transferAsset, selectedEntityCode]);
+
+  // ESC to close modals
+  useEscClose(showAllocateModal, () => setShowAllocateModal(false));
+  useEscClose(showTransferModal, () => setShowTransferModal(false));
+  useEscClose(showTransferHistory, () => setShowTransferHistory(false));
+  useEscClose(disposalModal.open, () => setDisposalModal((p) => ({ ...p, open: false })));
 
   useEffect(() => {
     loadEntities();
@@ -295,6 +313,21 @@ export default function Assets() {
     }
   };
 
+  // ── Disposal details modal ──
+  const openDisposalModal = async (asset) => {
+    setDisposalModal({ open: true, data: null, loading: true, asset });
+    try {
+      const entityCode = (selectedEntityCode && selectedEntityCode !== "ALL")
+        ? selectedEntityCode
+        : (asset.entity || null);
+      const result = await api.getAssetHistory(asset.id, entityCode);
+      setDisposalModal({ open: true, data: result.disposal || null, loading: false, asset });
+    } catch (err) {
+      toast.error(err.message || "Failed to load disposal details.");
+      setDisposalModal({ open: false, data: null, loading: false, asset: null });
+    }
+  };
+
   const openTransferModal = (asset) => {
     setTransferAsset(asset);
     setTransferForm({
@@ -508,6 +541,20 @@ export default function Assets() {
     return list;
   }, [normalizedAssets, sortKey, sortDir]);
 
+  // Visible assets after search + status filter (for select-all checkbox)
+  const visibleAssets = useMemo(() => {
+    return sortedAssets.filter(a => {
+      if (search) {
+        const q = search.toLowerCase();
+        const match = [a.name, a.assetId, a.id, a.category, a.entity, a.employeeId, a.employeeEmail, a.department, a.location, a.status]
+          .filter(Boolean).some(v => String(v).toLowerCase().includes(q));
+        if (!match) return false;
+      }
+      if (!matchesStatusFilter(a)) return false;
+      return true;
+    });
+  }, [sortedAssets, search, statusFilter]);
+
   const SortIndicator = ({ column }) => {
     if (sortKey !== column) return <span className="sort-indicator">↕</span>;
     return <span className="sort-indicator active">{sortDir === "asc" ? "↑" : "↓"}</span>;
@@ -519,6 +566,75 @@ export default function Assets() {
       setSearchParams({ status });
     } else {
       setSearchParams({});
+    }
+  };
+
+  // ── Batch selection helpers ──────────────────────────────────────
+  const handleSelect = (asset, checked) => {
+    setSelectedIds(prev => {
+      const next = new Map(prev);
+      if (checked) next.set(asset.id, { id: asset.id, entity: asset.entity, assetId: asset.assetId, name: asset.name });
+      else next.delete(asset.id);
+      return next;
+    });
+  };
+
+  const handleSelectAll = (checked, visibleAssets) => {
+    setSelectedIds(prev => {
+      const next = new Map(prev);
+      visibleAssets.forEach(a => {
+        if (checked) next.set(a.id, { id: a.id, entity: a.entity, assetId: a.assetId, name: a.name });
+        else next.delete(a.id);
+      });
+      return next;
+    });
+  };
+
+  const clearSelection = () => setSelectedIds(new Map());
+  const selectedAssets = Array.from(selectedIds.values());
+
+  const handleBatchStatusChange = async (status) => {
+    setBatchProcessing(true);
+    try {
+      const result = await api.batchStatusChange(selectedAssets, status);
+      toast.success(`Status changed to "${status}" for ${result.success} asset(s).${result.skipped?.length ? ` Skipped ${result.skipped.length}.` : ""}`);
+      clearSelection();
+      setBatchModal({ type: null });
+      loadData();
+    } catch (err) {
+      toast.error(err.message || "Batch status change failed.");
+    } finally {
+      setBatchProcessing(false);
+    }
+  };
+
+  const handleBatchTransfer = async (transferData) => {
+    setBatchProcessing(true);
+    try {
+      const result = await api.batchTransfer(selectedAssets, transferData);
+      toast.success(`Transfer queued for ${result.success} asset(s).${result.skipped?.length ? ` Skipped ${result.skipped.length}.` : ""}`);
+      clearSelection();
+      setBatchModal({ type: null });
+      loadData();
+    } catch (err) {
+      toast.error(err.message || "Batch transfer failed.");
+    } finally {
+      setBatchProcessing(false);
+    }
+  };
+
+  const handleBatchDispose = async (disposalData) => {
+    setBatchProcessing(true);
+    try {
+      const result = await api.batchDispose(selectedAssets, disposalData);
+      toast.success(`Disposal requested for ${result.success} asset(s).${result.skipped?.length ? ` Skipped ${result.skipped.length}.` : ""}`);
+      clearSelection();
+      setBatchModal({ type: null });
+      loadData();
+    } catch (err) {
+      toast.error(err.message || "Batch disposal failed.");
+    } finally {
+      setBatchProcessing(false);
     }
   };
 
@@ -625,6 +741,15 @@ export default function Assets() {
         <table className="assets-table">
           <thead>
             <tr>
+              <th className="batch-checkbox-th">
+                <input
+                  type="checkbox"
+                  className="batch-row-checkbox"
+                  checked={visibleAssets.length > 0 && visibleAssets.every(a => selectedIds.has(a.id))}
+                  onChange={e => handleSelectAll(e.target.checked, visibleAssets)}
+                  title="Select all visible"
+                />
+              </th>
               <th className="sortable" onClick={() => toggleSort("assetId")}>
                 Asset ID <SortIndicator column="assetId" />
               </th>
@@ -682,7 +807,15 @@ export default function Assets() {
                 const rowId = asset.assetId || asset.id || "";
                 const rowKey = `${rowEntity}::${String(rowId).trim().toUpperCase()}`;
                 return (
-                <tr key={rowKey}>
+                <tr key={rowKey} className={selectedIds.has(asset.id) ? "batch-row-selected" : ""}>
+                  <td className="batch-checkbox-th" onClick={e => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      className="batch-row-checkbox"
+                      checked={selectedIds.has(asset.id)}
+                      onChange={e => handleSelect(asset, e.target.checked)}
+                    />
+                  </td>
                   <td>{asset.assetId || asset.id}</td>
                   <td>{asset.name}</td>
                   <td>{asset.category}</td>
@@ -731,6 +864,13 @@ export default function Assets() {
                         onClick={() => navigate(`/assets/edit/${asset.id}?entity=${encodeURIComponent(asset.entity || "")}`)}
                       >
                         <FaPencilAlt />
+                      </button>
+                      <button
+                        className="asset-icon-btn qr"
+                        title="Generate QR Code"
+                        onClick={() => setQrAsset(asset)}
+                      >
+                        <FaQrcode />
                       </button>
                       {isAvailableStatus(asset.status) && (
                         <button
@@ -784,13 +924,22 @@ export default function Assets() {
                       >
                         <MdTimeline />
                       </button>
+                      {asset.status === "Retired" && (
+                        <button
+                          className="asset-icon-btn disposal"
+                          title="View Disposal Details"
+                          onClick={() => openDisposalModal(asset)}
+                        >
+                          <FaRecycle />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
               )})}
             {normalizedAssets.length === 0 && (
               <tr>
-                <td colSpan="11" style={{ textAlign: "center", padding: "20px" }}>No assets found</td>
+                <td colSpan="12" style={{ textAlign: "center", padding: "20px" }}>No assets found</td>
               </tr>
             )}
           </tbody>
@@ -882,6 +1031,11 @@ export default function Assets() {
           loading={lifecycleDrawer.loading}
           onClose={() => setLifecycleDrawer({ open: false, data: null, loading: false })}
         />
+      )}
+
+      {/* ================= QR CODE MODAL ================= */}
+      {qrAsset && (
+        <AssetQRModal asset={qrAsset} onClose={() => setQrAsset(null)} />
       )}
 
       {/* ================= TRANSFER MODAL ================= */}
@@ -1093,6 +1247,337 @@ export default function Assets() {
         </div>
       )}
 
+      {/* ================= DISPOSAL DETAILS MODAL ================= */}
+      {disposalModal.open && (
+        <div className="page-modal-overlay">
+          <div className="page-modal page-modal-md">
+            <div className="page-modal-header">
+              <div>
+                <h2><FaRecycle style={{ marginRight: 8 }} />Disposal Details</h2>
+                <p style={{ margin: 0, opacity: 0.8, fontSize: 13 }}>
+                  {disposalModal.asset?.name || disposalModal.asset?.assetId}
+                </p>
+              </div>
+              <button
+                className="page-modal-close"
+                onClick={() => setDisposalModal({ open: false, data: null, loading: false, asset: null })}
+              >✕</button>
+            </div>
+
+            <div className="page-modal-body">
+              {disposalModal.loading ? (
+                <div style={{ textAlign: "center", padding: "32px 0" }}>
+                  <Spinner size="md" />
+                </div>
+              ) : disposalModal.data ? (
+                <>
+                  {/* Asset summary strip */}
+                  <div className="disposal-summary-strip">
+                    <span className="disposal-summary-id">{disposalModal.data.assetId}</span>
+                    {disposalModal.data.category && (
+                      <span className="disposal-summary-tag">{disposalModal.data.category}</span>
+                    )}
+                    {disposalModal.data.serialNumber && (
+                      <span className="disposal-summary-serial">S/N: {disposalModal.data.serialNumber}</span>
+                    )}
+                  </div>
+
+                  {/* Detail rows */}
+                  <div className="disposal-detail-grid">
+                    {[
+                      ["Disposal Reason", disposalModal.data.disposalReason],
+                      ["Disposal Method", disposalModal.data.disposalMethod],
+                      ["Disposal Date",   disposalModal.data.disposalDate
+                        ? new Date(disposalModal.data.disposalDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
+                        : "—"],
+                      ["Authorized By",   disposalModal.data.authorizedBy || "—"],
+                      ["Performed By",    disposalModal.data.performedBy  || "—"],
+                      ["Sale / Recovery", disposalModal.data.saleValue
+                        ? `₹${parseFloat(disposalModal.data.saleValue).toLocaleString("en-IN")}`
+                        : "—"],
+                      ["Purchase Price",  disposalModal.data.purchasePrice
+                        ? `₹${parseFloat(disposalModal.data.purchasePrice).toLocaleString("en-IN")}`
+                        : "—"],
+                    ].map(([label, value]) => (
+                      <div key={label} className="disposal-detail-row">
+                        <span className="disposal-detail-label">{label}</span>
+                        <span className="disposal-detail-value">{value}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {disposalModal.data.notes && (
+                    <div className="disposal-notes-box">
+                      <p className="disposal-notes-label">Notes</p>
+                      <p className="disposal-notes-text">{disposalModal.data.notes}</p>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p style={{ color: "var(--text-secondary)", textAlign: "center", padding: "24px 0" }}>
+                  No disposal record found for this asset.
+                </p>
+              )}
+            </div>
+
+            <div className="page-modal-footer">
+              <Button
+                variant="secondary"
+                onClick={() => setDisposalModal({ open: false, data: null, loading: false, asset: null })}
+              >Close</Button>
+              <Button
+                variant="primary"
+                onClick={() => {
+                  setDisposalModal({ open: false, data: null, loading: false, asset: null });
+                  navigate("/assets/disposals");
+                }}
+              >View All Disposals →</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= BATCH ACTION BAR ================= */}
+      {selectedIds.size > 0 && (
+        <div className="batch-action-bar">
+          <span className="batch-count">{selectedIds.size} asset{selectedIds.size > 1 ? "s" : ""} selected</span>
+          <button className="batch-bar-clear" onClick={clearSelection}>✕ Clear</button>
+          <div className="batch-bar-divider" />
+          <button className="batch-bar-btn batch-bar-status" onClick={() => setBatchModal({ type: "status" })}>
+            Change Status
+          </button>
+          <button className="batch-bar-btn batch-bar-transfer" onClick={() => setBatchModal({ type: "transfer" })}>
+            Transfer
+          </button>
+          <button className="batch-bar-btn batch-bar-dispose" onClick={() => setBatchModal({ type: "dispose" })}>
+            Dispose
+          </button>
+        </div>
+      )}
+
+      {/* ================= BATCH: STATUS MODAL ================= */}
+      {batchModal.type === "status" && (
+        <BatchStatusModal
+          count={selectedIds.size}
+          processing={batchProcessing}
+          onConfirm={handleBatchStatusChange}
+          onClose={() => setBatchModal({ type: null })}
+        />
+      )}
+
+      {/* ================= BATCH: TRANSFER MODAL ================= */}
+      {batchModal.type === "transfer" && (
+        <BatchTransferModal
+          count={selectedIds.size}
+          entityList={entityList}
+          processing={batchProcessing}
+          onConfirm={handleBatchTransfer}
+          onClose={() => setBatchModal({ type: null })}
+        />
+      )}
+
+      {/* ================= BATCH: DISPOSE MODAL ================= */}
+      {batchModal.type === "dispose" && (
+        <BatchDisposeModal
+          count={selectedIds.size}
+          processing={batchProcessing}
+          onConfirm={handleBatchDispose}
+          onClose={() => setBatchModal({ type: null })}
+        />
+      )}
+
+    </div>
+  );
+}
+
+// ─── Batch Status Modal ──────────────────────────────────────────────────────
+function BatchStatusModal({ count, processing, onConfirm, onClose }) {
+  const [status, setStatus] = useState("Available");
+  return (
+    <div className="page-modal-overlay">
+      <div className="page-modal page-modal-sm">
+        <div className="page-modal-header">
+          <h2>Change Status — {count} Asset{count > 1 ? "s" : ""}</h2>
+          <button className="page-modal-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="page-modal-body">
+          <p style={{ color: "var(--text-secondary)", marginBottom: 16 }}>
+            Select the new status to apply to all <strong>{count}</strong> selected asset{count > 1 ? "s" : ""}.
+            Assets already Retired, Theft/Missing, or Pending Approval will be skipped.
+          </p>
+          <div className="page-modal-field">
+            <label className="page-modal-label">New Status</label>
+            <select className="page-modal-input" value={status} onChange={e => setStatus(e.target.value)}>
+              <option value="Available">Available</option>
+              <option value="Under Repair">Under Repair</option>
+              <option value="Not Submitted">Not Submitted</option>
+            </select>
+          </div>
+        </div>
+        <div className="page-modal-footer">
+          <Button variant="secondary" onClick={onClose} disabled={processing}>Cancel</Button>
+          <Button variant="primary" onClick={() => onConfirm(status)} disabled={processing}>
+            {processing ? "Applying…" : `Change Status`}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Batch Transfer Modal ────────────────────────────────────────────────────
+function BatchTransferModal({ count, entityList, processing, onConfirm, onClose }) {
+  const [form, setForm] = useState({
+    toEntity: "", reason: "", notes: "", authorizedBy: "",
+    transferDate: new Date().toISOString().split("T")[0]
+  });
+  const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
+  const handleSubmit = () => {
+    if (!form.toEntity) { alert("Please select a target entity."); return; }
+    if (!form.reason)   { alert("Please select a transfer reason."); return; }
+    onConfirm(form);
+  };
+  return (
+    <div className="page-modal-overlay">
+      <div className="page-modal page-modal-lg">
+        <div className="page-modal-header">
+          <div>
+            <h2><FaExchangeAlt style={{ marginRight: 8 }} />Batch Transfer — {count} Asset{count > 1 ? "s" : ""}</h2>
+            <p style={{ fontSize: 13, opacity: 0.8, marginTop: 4 }}>
+              All selected assets will be queued for manager approval before transfer.
+            </p>
+          </div>
+          <button className="page-modal-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="page-modal-body">
+          <div className="transfer-form-grid">
+            <div className="page-modal-field">
+              <label className="page-modal-label">To Entity <span className="transfer-required">*</span></label>
+              <select className="page-modal-input" value={form.toEntity} onChange={e => set("toEntity", e.target.value)}>
+                <option value="">— Select Target Entity —</option>
+                {entityList.map(e => (
+                  <option key={e.code} value={e.code}>{e.code} — {e.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="page-modal-field">
+              <label className="page-modal-label">Transfer Date</label>
+              <input type="date" className="page-modal-input" value={form.transferDate} onChange={e => set("transferDate", e.target.value)} />
+            </div>
+          </div>
+          <div className="transfer-form-grid">
+            <div className="page-modal-field">
+              <label className="page-modal-label">Transfer Reason <span className="transfer-required">*</span></label>
+              <select className="page-modal-input" value={form.reason} onChange={e => set("reason", e.target.value)}>
+                <option value="">— Select Reason —</option>
+                <option value="Redeployment">Redeployment</option>
+                <option value="Cost Optimization">Cost Optimization</option>
+                <option value="Project Requirement">Project Requirement</option>
+                <option value="Employee Transfer">Employee Transfer</option>
+                <option value="Capacity Balancing">Capacity Balancing</option>
+                <option value="Maintenance Relocation">Maintenance Relocation</option>
+                <option value="Send for Repair">Send for Repair</option>
+                <option value="Entity Merger">Entity Merger</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div className="page-modal-field">
+              <label className="page-modal-label">Authorized By</label>
+              <input className="page-modal-input" placeholder="Manager / Approver name" value={form.authorizedBy} onChange={e => set("authorizedBy", e.target.value)} />
+            </div>
+          </div>
+          <div className="page-modal-field">
+            <label className="page-modal-label">Notes</label>
+            <textarea className="page-modal-input transfer-notes" rows={3} placeholder="Additional context…" value={form.notes} onChange={e => set("notes", e.target.value)} />
+          </div>
+          <div className="transfer-disclaimer">
+            <strong>Note:</strong> Each asset will be locked to "Pending Approval" and an approval request will be created for each one. Assets already Retired, Theft/Missing, or Pending Approval will be skipped.
+          </div>
+        </div>
+        <div className="page-modal-footer">
+          <Button variant="ghost" onClick={onClose} disabled={processing}>Cancel</Button>
+          <Button variant="primary" onClick={handleSubmit} disabled={processing}>
+            {processing ? "Queuing…" : <><FaExchangeAlt style={{ marginRight: 6 }} />Queue Transfer</>}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Batch Dispose Modal ─────────────────────────────────────────────────────
+function BatchDisposeModal({ count, processing, onConfirm, onClose }) {
+  const [form, setForm] = useState({
+    disposalReason: "End of Life",
+    disposalMethod: "Scrap",
+    disposalDate: new Date().toISOString().split("T")[0],
+    saleValue: "",
+    authorizedBy: "",
+    notes: ""
+  });
+  const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
+  return (
+    <div className="page-modal-overlay">
+      <div className="page-modal page-modal-lg">
+        <div className="page-modal-header">
+          <div>
+            <h2><FaTrashAlt style={{ marginRight: 8, color: "var(--danger)" }} />Batch Dispose — {count} Asset{count > 1 ? "s" : ""}</h2>
+            <p style={{ fontSize: 13, opacity: 0.8, marginTop: 4 }}>
+              All selected assets will be submitted for disposal approval.
+            </p>
+          </div>
+          <button className="page-modal-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="page-modal-body">
+          <div className="transfer-form-grid">
+            <div className="page-modal-field">
+              <label className="page-modal-label">Disposal Reason</label>
+              <select className="page-modal-input" value={form.disposalReason} onChange={e => set("disposalReason", e.target.value)}>
+                <option>End of Life</option>
+                <option>Surplus</option>
+                <option>Damaged Beyond Repair</option>
+                <option>Obsolete</option>
+                <option>Lost / Stolen</option>
+                <option>Policy Compliance</option>
+              </select>
+            </div>
+            <div className="page-modal-field">
+              <label className="page-modal-label">Disposal Method</label>
+              <select className="page-modal-input" value={form.disposalMethod} onChange={e => set("disposalMethod", e.target.value)}>
+                <option>Scrap</option>
+                <option>Sell</option>
+                <option>Donate</option>
+                <option>Recycle</option>
+                <option>Return to Vendor</option>
+                <option>Destroy</option>
+              </select>
+            </div>
+          </div>
+          <div className="transfer-form-grid">
+            <div className="page-modal-field">
+              <label className="page-modal-label">Disposal Date</label>
+              <input type="date" className="page-modal-input" value={form.disposalDate} onChange={e => set("disposalDate", e.target.value)} />
+            </div>
+            <div className="page-modal-field">
+              <label className="page-modal-label">Authorized By</label>
+              <input className="page-modal-input" placeholder="Manager / Approver name" value={form.authorizedBy} onChange={e => set("authorizedBy", e.target.value)} />
+            </div>
+          </div>
+          <div className="page-modal-field">
+            <label className="page-modal-label">Notes</label>
+            <textarea className="page-modal-input transfer-notes" rows={3} placeholder="Additional details…" value={form.notes} onChange={e => set("notes", e.target.value)} />
+          </div>
+          <div className="transfer-disclaimer" style={{ borderColor: "rgba(220,38,38,0.3)", background: "rgba(220,38,38,0.05)", color: "var(--danger)" }}>
+            <strong>Warning:</strong> Each asset will be locked to "Pending Approval". Only a manager can approve or reject. Assets already Retired or Pending Approval will be skipped.
+          </div>
+        </div>
+        <div className="page-modal-footer">
+          <Button variant="ghost" onClick={onClose} disabled={processing}>Cancel</Button>
+          <Button variant="danger" onClick={() => onConfirm(form)} disabled={processing}>
+            {processing ? "Requesting…" : <><FaTrashAlt style={{ marginRight: 6 }} />Request Disposal</>}
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

@@ -5,7 +5,8 @@ import {
   Legend
 } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
+import "./GenericDoughnutPie.css";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -32,10 +33,20 @@ export default function GenericDoughnutPie({ data, colors = {}, centerLabel = "T
 
   const getColor = (label, index) => colors[label] || PALETTE[index % PALETTE.length];
 
+  const [isDark, setIsDark] = useState(
+    document.documentElement.getAttribute("data-theme") === "dark"
+  );
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.getAttribute("data-theme") === "dark");
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => observer.disconnect();
+  }, []);
+
   const chartData = useMemo(() => {
-    const cardBg = document.documentElement.getAttribute("data-theme") === "dark"
-      ? "#0f2034"
-      : "#ffffff";
+    const cardBg = isDark ? "#0f2034" : "#ffffff";
     return {
       labels: items.map(d => d.label),
       datasets: [{
@@ -48,7 +59,7 @@ export default function GenericDoughnutPie({ data, colors = {}, centerLabel = "T
       }]
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, colors]);
+  }, [data, colors, isDark]);
 
   const options = {
     responsive: true,
@@ -84,7 +95,7 @@ export default function GenericDoughnutPie({ data, colors = {}, centerLabel = "T
   return (
     <div className="digital-pie-wrap">
       <div className="digital-pie-canvas">
-        <Doughnut data={chartData} options={options} plugins={[]} />
+        <Doughnut key={String(isDark)} data={chartData} options={options} plugins={[]} />
         {total > 0 && (
           <div className="dpc-center">
             <span className="dpc-num">{total}</span>

@@ -3,6 +3,7 @@ import "../Assets.css";
 import api from "../../services/api";
 import { Button, LoadingOverlay, ConfirmDialog } from "../../components/ui";
 import { useToast } from "../../context/ToastContext";
+import { useEscClose } from "../../hooks/useEscClose";
 
 export default function AssetConfiguration() {
     const toast = useToast();
@@ -15,6 +16,8 @@ export default function AssetConfiguration() {
     const [editingId, setEditingId] = useState(null);
     const [form, setForm] = useState({ entityCode: "", categoryName: "", shortCode: "" });
     const [deleteConfirm, setDeleteConfirm] = useState({ open: false, id: null });
+
+    useEscClose(showModal, () => setShowModal(false));
 
     useEffect(() => {
         loadData();

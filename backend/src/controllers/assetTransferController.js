@@ -1,5 +1,6 @@
 const TenantManager = require("../utils/TenantManager");
 const AssetTransfer = require("../models/AssetTransfer");
+const ApprovalRequest = require("../models/ApprovalRequest");
 const AuditLog = require("../models/AuditLog");
 const { Op } = require("sequelize");
 const { generateAssetId } = require("../utils/assetIdGenerator");
@@ -25,11 +26,77 @@ const getAssetModel = async (entityCode) => {
 };
 
 /**
+ * Executes the actual cross-entity transfer once approved.
+ * Called by the approval controller when a transfer request is approved.
+ *
+ * @param {object} payload  - stored ApprovalRequest.payload
+ * @param {object} fakeReq  - minimal req-like object with user info for audit log
+ */
+const executeTransfer = async (payload, fakeReq) => {
+    const {
+        fromEntity, toEntity, assetData, targetAssetId,
+        reason, notes, authorizedBy, transferDate, transferLogId
+    } = payload;
+
+    const TargetAsset = await getAssetModel(toEntity);
+    const SourceAsset = await getAssetModel(fromEntity);
+    const dateStr = transferDate || new Date().toISOString().split("T")[0];
+    const targetStatus = reason === "Send for Repair" ? "Under Repair" : "Available";
+
+    // Create asset in target entity
+    const newAsset = await TargetAsset.create({
+        ...assetData,
+        id: undefined,
+        assetId: targetAssetId,
+        entity: toEntity,
+        status: targetStatus,
+        employeeId: null,
+        department: null,
+        location: null,
+        comments: [
+            `Transferred from ${fromEntity} on ${dateStr}. Original ID: ${assetData.assetId}.`,
+            reason ? `Reason: ${reason}.` : "",
+            assetData.comments || ""
+        ].filter(Boolean).join(" ").trim()
+    });
+
+    // Retire source asset
+    await SourceAsset.update(
+        {
+            status: "Retired",
+            comments: [
+                `Transferred to ${toEntity} on ${dateStr}.`,
+                authorizedBy ? `Authorized by: ${authorizedBy}.` : "",
+                assetData.comments || ""
+            ].filter(Boolean).join(" ").trim()
+        },
+        { where: { assetId: assetData.assetId } }
+    );
+
+    // Update the pending transfer log to Completed
+    if (transferLogId) {
+        await AssetTransfer.update(
+            { status: "Completed", targetAssetId: newAsset.assetId },
+            { where: { id: transferLogId } }
+        );
+    }
+
+    await logAudit(
+        fakeReq,
+        "ASSET_TRANSFER",
+        `Asset ${assetData.assetId} (${assetData.name}) transferred from ${fromEntity} to ${toEntity}. Reason: ${reason || "N/A"}`
+    );
+
+    return newAsset;
+};
+
+// Export for use in approvalController
+exports.executeTransfer = executeTransfer;
+
+/**
  * POST /api/assets/transfer
- * Initiates an asset transfer from one entity to another.
- * - Creates asset record in target entity DB
- * - Sets source asset status to "Retired" (with transfer note)
- * - Creates a transfer log in the main DB
+ * Submits a transfer request for manager approval.
+ * Sets source asset to "Pending Approval" and creates an ApprovalRequest.
  */
 exports.initiateTransfer = async (req, res) => {
     try {
@@ -41,7 +108,6 @@ exports.initiateTransfer = async (req, res) => {
             return res.status(400).json({ error: "assetId, fromEntity, and toEntity are required." });
         }
 
-        // Reject if fromEntity is not a real entity (e.g. "ALL")
         const normalizedFrom = String(fromEntity).trim().toUpperCase();
         if (normalizedFrom === "ALL" || normalizedFrom === "ALL ENTITIES") {
             return res.status(400).json({ error: "Cannot transfer from 'All Entities' view. Please switch to a specific entity first." });
@@ -51,128 +117,106 @@ exports.initiateTransfer = async (req, res) => {
             return res.status(400).json({ error: "Source and target entities must be different." });
         }
 
-        // ── Get source asset ─────────────────────────
-        // Look up by the human-readable assetId string (e.g. "AST-2944"),
-        // using a case-insensitive match to handle any stored casing differences.
+        // ── Get source asset ──────────────────────────────────────────────────
         const SourceAsset = await getAssetModel(fromEntity);
         const seq = SourceAsset.sequelize;
         const assetIdStr = String(assetId).trim();
 
-        console.log(`[Transfer] Searching for assetId="${assetIdStr}" in DB for entity="${fromEntity}"`);
-
-        // Case-insensitive lookup — try exact match first, then LOWER() fallback
         let sourceAsset = await SourceAsset.findOne({ where: { assetId: assetIdStr } });
         if (!sourceAsset) {
-            // Try case-insensitive (same pattern as assetController.createAsset)
             sourceAsset = await SourceAsset.findOne({
                 where: {
                     [Op.and]: [
                         { assetId: { [Op.not]: null } },
-                        seq.where(
-                            seq.fn("LOWER", seq.col("assetId")),
-                            assetIdStr.toLowerCase()
-                        )
+                        seq.where(seq.fn("LOWER", seq.col("assetId")), assetIdStr.toLowerCase())
                     ]
                 }
             });
         }
 
         if (!sourceAsset) {
-            // Count total rows to help diagnose empty-DB issues
             const total = await SourceAsset.count();
-            console.warn(`[Transfer] Asset "${assetIdStr}" NOT found in entity "${fromEntity}" (DB has ${total} assets total)`);
             return res.status(404).json({
-                error: `Asset "${assetIdStr}" not found in entity "${fromEntity}". The entity DB has ${total} assets. Make sure you are transferring from the correct entity.`
+                error: `Asset "${assetIdStr}" not found in entity "${fromEntity}". The entity DB has ${total} assets.`
             });
         }
 
-        console.log(`[Transfer] Found asset: id=${sourceAsset.id}, assetId=${sourceAsset.assetId}, entity=${sourceAsset.entity}`);
-
         const assetData = sourceAsset.toJSON();
 
-        // Block transfers for Retired or Theft/Missing assets
-        if (["Retired", "Theft/Missing"].includes(assetData.status)) {
+        if (["Retired", "Theft/Missing", "Pending Approval"].includes(assetData.status)) {
             return res.status(400).json({
                 error: `Cannot transfer an asset with status "${assetData.status}".`
             });
         }
 
-        // ── Get target entity model and generate new asset ID ───
-        const TargetAsset = await getAssetModel(toEntity);
-        const targetSeq = TargetAsset.sequelize;
+        const previousAssetStatus = assetData.status;
 
-        // Try to generate a new ID using the target entity's prefix config for this category.
-        // Falls back to the original assetId if no prefix is configured.
-        const generatedId = await generateAssetId(toEntity, assetData.category, targetSeq);
+        // ── Pre-generate target asset ID (stored in payload for use on approval) ──
+        const TargetAsset = await getAssetModel(toEntity);
+        const generatedId = await generateAssetId(toEntity, assetData.category, TargetAsset.sequelize);
         const targetAssetId = generatedId || assetData.assetId;
 
-        // Check for duplicate in target entity using the resolved target ID
-        const existingInTarget = await TargetAsset.findOne({
-            where: { assetId: targetAssetId }
-        });
+        // Check for duplicate in target entity
+        const existingInTarget = await TargetAsset.findOne({ where: { assetId: targetAssetId } });
         if (existingInTarget) {
-            return res.status(409).json({
-                error: `Asset ID "${targetAssetId}" already exists in ${toEntity}.`
-            });
+            return res.status(409).json({ error: `Asset ID "${targetAssetId}" already exists in ${toEntity}.` });
         }
 
         const dateStr = transferDate || new Date().toISOString().split("T")[0];
 
-        // If transferred specifically for repair, mark it Under Repair in the target entity
-        const targetStatus = reason === "Send for Repair" ? "Under Repair" : "Available";
+        // ── Lock source asset ─────────────────────────────────────────────────
+        await sourceAsset.update({ status: "Pending Approval" });
 
-        // ── Create asset in target entity ────────────
-        const newAsset = await TargetAsset.create({
-            ...assetData,
-            id: undefined,
-            assetId: targetAssetId,
-            entity: toEntity,
-            status: targetStatus,
-            employeeId: null,
-            department: null,
-            comments: [
-                `Transferred from ${fromEntity} on ${dateStr}. Original ID: ${assetData.assetId}.`,
-                reason ? `Reason: ${reason}.` : "",
-                assetData.comments || ""
-            ].filter(Boolean).join(" ").trim()
-        });
-
-        // ── Retire source asset with transfer note ───
-        await sourceAsset.update({
-            status: "Retired",
-            comments: [
-                `Transferred to ${toEntity} on ${dateStr}.`,
-                authorizedBy ? `Authorized by: ${authorizedBy}.` : "",
-                assetData.comments || ""
-            ].filter(Boolean).join(" ").trim()
-        });
-
-        // ── Create transfer log in main DB ───────────
+        // ── Create pending transfer log ───────────────────────────────────────
         const transferLog = await AssetTransfer.create({
             sourceAssetId: assetData.assetId,
-            assetName: assetData.name,
-            category: assetData.category,
-            serialNumber: assetData.serialNumber,
-            makeModel: assetData.makeModel,
-            fromEntity: String(fromEntity).trim().toUpperCase(),
-            toEntity: String(toEntity).trim().toUpperCase(),
-            reason: reason || "",
-            notes: notes || "",
-            authorizedBy: authorizedBy || req.user?.name || req.user?.email || "System",
-            transferDate: dateStr,
-            targetAssetId: newAsset.assetId,
-            status: "Completed"
+            assetName:     assetData.name,
+            category:      assetData.category,
+            serialNumber:  assetData.serialNumber,
+            makeModel:     assetData.makeModel,
+            fromEntity:    String(fromEntity).trim().toUpperCase(),
+            toEntity:      String(toEntity).trim().toUpperCase(),
+            reason:        reason || "",
+            notes:         notes || "",
+            authorizedBy:  authorizedBy || req.user?.name || req.user?.email || "System",
+            transferDate:  dateStr,
+            targetAssetId: targetAssetId,
+            status:        "Pending"
+        });
+
+        // ── Create approval request ───────────────────────────────────────────
+        const approval = await ApprovalRequest.create({
+            requestType:         "transfer",
+            entityCode:          String(fromEntity).trim().toUpperCase(),
+            assetId:             assetData.assetId,
+            assetName:           assetData.name,
+            requestedBy:         req.user?.name || req.user?.email || "System",
+            requestedByEmail:    req.user?.email || "",
+            previousAssetStatus,
+            transferId:          transferLog.id,
+            payload: {
+                fromEntity:    String(fromEntity).trim().toUpperCase(),
+                toEntity:      String(toEntity).trim().toUpperCase(),
+                assetData,
+                targetAssetId,
+                reason:        reason || "",
+                notes:         notes || "",
+                authorizedBy:  authorizedBy || req.user?.name || req.user?.email || "System",
+                transferDate:  dateStr,
+                transferLogId: transferLog.id
+            }
         });
 
         await logAudit(
             req,
-            "ASSET_TRANSFER",
-            `Asset ${assetData.assetId} (${assetData.name}) transferred from ${fromEntity} to ${toEntity}. Reason: ${reason || "N/A"}`
+            "TRANSFER_REQUESTED",
+            `Asset ${assetData.assetId} (${assetData.name}) transfer from ${fromEntity} to ${toEntity} submitted for approval.`
         );
 
         res.json({
-            message: `Asset "${assetData.name}" successfully transferred to ${toEntity}.`,
-            transfer: transferLog
+            message: `Transfer request for "${assetData.name}" submitted for manager approval.`,
+            requestId: approval.id,
+            transferId: transferLog.id
         });
     } catch (err) {
         console.error("Asset transfer error:", err);

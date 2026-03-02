@@ -1,0 +1,185 @@
+/* ============================
+   ASSET QR MODAL — Compact Label Style
+   ============================ */
+
+.qr-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 20, 40, 0.5);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal);
+  animation: qrOverlayIn 160ms ease;
+}
+
+@keyframes qrOverlayIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.qr-modal {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-xl);
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: qrModalIn 200ms cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+@keyframes qrModalIn {
+  from { opacity: 0; transform: scale(0.92) translateY(12px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* ── Header ── */
+.qr-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.qr-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.qr-modal-title svg {
+  font-size: 15px;
+  color: var(--primary);
+}
+
+.qr-modal-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.qr-modal-close:hover {
+  background: var(--bg-muted);
+  color: var(--text-primary);
+}
+
+/* ── Body ── */
+.qr-modal-body {
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+/* ── Label preview (mirrors the print output) ── */
+.qr-label-wrap .label-wrap {
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 240px;
+  background: var(--bg-elevated);
+}
+
+.qr-label-wrap .label-qr svg {
+  display: block;
+  border-radius: 4px;
+}
+
+.qr-label-wrap .label-divider {
+  width: 100%;
+  height: 1px;
+  background: var(--border);
+}
+
+.qr-label-wrap .label-tag {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+.qr-label-wrap .label-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-align: center;
+  line-height: 1.4;
+}
+
+.qr-label-wrap .label-meta {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.4;
+}
+
+/* ── Footer ── */
+.qr-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+}
+
+.qr-btn-secondary {
+  padding: 7px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-muted);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: background var(--transition-fast);
+}
+
+.qr-btn-secondary:hover { background: var(--border); }
+
+.qr-btn-primary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: var(--brand-gradient-diagonal);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.22);
+  transition: box-shadow var(--transition-fast), transform var(--transition-fast);
+}
+
+.qr-btn-primary:hover {
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+  transform: translateY(-1px);
+}
+
+/* ── Dark mode ── */
+[data-theme="dark"] .qr-label-wrap .label-wrap {
+  background: var(--bg-muted);
+}

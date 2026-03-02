@@ -16,7 +16,8 @@ const ensureAssetStatusEnum = async (sequelize) => {
       "Under Repair",
       "Retired",
       "Theft/Missing",
-      "Not Submitted"
+      "Not Submitted",
+      "Pending Approval"
     ) NOT NULL DEFAULT "Available"
   `);
 };

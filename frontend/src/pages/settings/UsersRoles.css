@@ -532,6 +532,65 @@
   font-style: italic;
 }
 
+/* ── 2FA badges (table + drawer) ─────────────────────────── */
+.ur-2fa-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.ur-2fa-on  { background: rgba(22,163,74,0.1);  color: #16a34a; }
+.ur-2fa-off { background: rgba(148,163,184,0.15); color: var(--text-muted); }
+
+/* ── 2FA section in drawer ───────────────────────────────── */
+.ur-2fa-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: var(--bg-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.ur-2fa-status-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ur-2fa-reset-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border: 1px solid rgba(239,68,68,0.35);
+  background: rgba(239,68,68,0.08);
+  color: var(--danger);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  width: fit-content;
+}
+
+.ur-2fa-reset-btn:hover:not(:disabled) {
+  background: var(--danger);
+  color: #fff;
+}
+
+.ur-2fa-reset-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .required-star {
   color: var(--danger, #ef4444);
   margin-left: 2px;

@@ -6,6 +6,7 @@ import { Button, ConfirmDialog } from "../components/ui";
 import { FaPen, FaTrash } from "react-icons/fa";
 import { useToast } from "../context/ToastContext";
 import INDIAN_CITIES from "../data/indianCities";
+import { useEscClose } from "../hooks/useEscClose";
 
 function CityDropdown({ value, onChange, placeholder = "Search & select city..." }) {
     const [search, setSearch] = useState(value || "");
@@ -81,6 +82,8 @@ export default function Departments() {
 
     const [employees, setEmployees] = useState([]);
     const [deleteConfirm, setDeleteConfirm] = useState({ open: false, item: null });
+
+    useEscClose(showModal, () => setShowModal(false));
 
     useEffect(() => {
         loadData();

@@ -5,7 +5,8 @@ import { useToast } from "../../context/ToastContext";
 import {
     FaUserShield, FaUserTie, FaUserCheck, FaUser,
     FaPlus, FaEdit, FaTrash, FaTimes, FaShieldAlt,
-    FaBoxOpen, FaUsers, FaChartBar, FaCog, FaBell, FaStar
+    FaBoxOpen, FaUsers, FaChartBar, FaCog, FaBell, FaStar,
+    FaMobileAlt, FaEnvelope
 } from "react-icons/fa";
 import "./UsersRoles.css";
 
@@ -279,6 +280,22 @@ export default function UsersRoles() {
         }
     };
 
+    const [twoFAResetting, setTwoFAResetting] = useState(null); // userId currently being reset
+
+    const handleReset2FA = async (user) => {
+        if (!window.confirm(`Reset 2FA for ${user.name}? They will be prompted to set it up again on next login.`)) return;
+        setTwoFAResetting(user.id);
+        try {
+            await api.disable2FA(user.id);
+            toast.success(`2FA reset for ${user.name}.`);
+            loadUsers();
+        } catch (err) {
+            toast.error(err?.message || "Failed to reset 2FA.");
+        } finally {
+            setTwoFAResetting(null);
+        }
+    };
+
     const filteredUsers = users.filter((u) => {
         if (!search) return true;
         const q = search.toLowerCase();
@@ -319,6 +336,7 @@ export default function UsersRoles() {
                                 <th>Email</th>
                                 <th>Role</th>
                                 <th>Status</th>
+                                <th>2FA</th>
                                 <th>Entities</th>
                                 <th>Action</th>
                             </tr>
@@ -347,6 +365,17 @@ export default function UsersRoles() {
                                         </span>
                                     </td>
                                     <td>
+                                        {user.twoFactorEnabled ? (
+                                            <span className="ur-2fa-badge ur-2fa-on">
+                                                {user.twoFactorMethod === "totp"
+                                                    ? <><FaMobileAlt /> TOTP</>
+                                                    : <><FaEnvelope /> Email</>}
+                                            </span>
+                                        ) : (
+                                            <span className="ur-2fa-badge ur-2fa-off">Not set</span>
+                                        )}
+                                    </td>
+                                    <td>
                                         {user.allowedEntities?.length ? (
                                             <div className="entity-chips">
                                                 {user.allowedEntities.map((code) => (
@@ -366,7 +395,7 @@ export default function UsersRoles() {
                             ))}
                             {filteredUsers.length === 0 && (
                                 <tr>
-                                    <td colSpan={6} className="empty-row">No users found.</td>
+                                    <td colSpan={7} className="empty-row">No users found.</td>
                                 </tr>
                             )}
                         </tbody>
@@ -574,6 +603,49 @@ export default function UsersRoles() {
                                     placeholder={editingUser ? "Leave blank to keep current" : "Set a temporary password"}
                                 />
                             </div>
+
+                            {/* 2FA Management — only when editing an existing user */}
+                            {editingUser && (
+                                <>
+                                    <div className="ur-divider" />
+                                    <div className="ur-section-title">
+                                        <FaShieldAlt style={{ marginRight: 6, color: "var(--primary)" }} />
+                                        Two-Factor Authentication
+                                    </div>
+                                    <div className="ur-2fa-block">
+                                        <div className="ur-2fa-status-row">
+                                            <span className="ur-hint">Current status:</span>
+                                            {editingUser.twoFactorEnabled ? (
+                                                <span className="ur-2fa-badge ur-2fa-on">
+                                                    {editingUser.twoFactorMethod === "totp"
+                                                        ? <><FaMobileAlt /> Authenticator App (TOTP)</>
+                                                        : <><FaEnvelope /> Email OTP</>}
+                                                </span>
+                                            ) : (
+                                                <span className="ur-2fa-badge ur-2fa-off">Not configured</span>
+                                            )}
+                                        </div>
+                                        {editingUser.twoFactorEnabled ? (
+                                            <button
+                                                type="button"
+                                                className="ur-2fa-reset-btn"
+                                                onClick={() => handleReset2FA(editingUser)}
+                                                disabled={twoFAResetting === editingUser.id}
+                                            >
+                                                <FaShieldAlt />
+                                                {twoFAResetting === editingUser.id ? "Resetting…" : "Reset 2FA"}
+                                            </button>
+                                        ) : (
+                                            <p className="ur-hint" style={{ marginTop: 6 }}>
+                                                This user has not yet configured 2FA. They will be prompted to set it up on next login.
+                                            </p>
+                                        )}
+                                        <p className="ur-hint" style={{ marginTop: 4 }}>
+                                            Resetting 2FA forces the user to reconfigure their verification method on next login.
+                                        </p>
+                                    </div>
+                                </>
+                            )}
                         </div>
                         <div className="drawer-footer">
                             <Button variant="ghost" onClick={() => setUserDrawerOpen(false)}>Cancel</Button>

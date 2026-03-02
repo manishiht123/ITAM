@@ -71,6 +71,19 @@
   justify-content: space-between;
   padding: var(--space-lg) var(--space-xl);
   border-bottom: 1px solid var(--border);
+  background: linear-gradient(135deg, var(--bg-elevated) 60%, var(--primary-soft));
+  position: relative;
+}
+
+.drawer-header::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--primary);
+  border-radius: 0 2px 2px 0;
 }
 
 .drawer-title {
@@ -78,22 +91,29 @@
   font-weight: var(--font-weight-semibold);
   color: var(--text-primary);
   margin: 0;
+  padding-left: 4px;
 }
 
 .drawer-close {
-  background: none;
-  border: none;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
   color: var(--text-secondary);
   cursor: pointer;
-  padding: var(--space-sm);
+  padding: 6px;
   display: flex;
   align-items: center;
-  font-size: 20px;
-  transition: color var(--transition-fast);
+  justify-content: center;
+  font-size: 14px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  transition: background var(--transition-fast), color var(--transition-fast);
 }
 
 .drawer-close:hover {
-  color: var(--text-primary);
+  background: var(--danger-soft, #fee2e2);
+  color: #dc2626;
+  border-color: #fca5a5;
 }
 
 /* ============== BODY ============== */
@@ -109,9 +129,10 @@
   align-items: center;
   justify-content: flex-end;
   gap: var(--space-md);
-  padding: var(--space-lg) var(--space-xl);
+  padding: var(--space-md) var(--space-xl);
   border-top: 1px solid var(--border);
-  background: var(--bg-muted);
+  background: var(--bg-surface);
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.04);
 }
 
 /* ============== MOBILE RESPONSIVE ============== */

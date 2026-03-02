@@ -3,6 +3,7 @@ import "../Assets.css";
 import api from "../../services/api";
 import { Button, LoadingOverlay, ConfirmDialog } from "../../components/ui";
 import { useToast } from "../../context/ToastContext";
+import { useEscClose } from "../../hooks/useEscClose";
 
 export default function OrganizationEntities() {
     const toast = useToast();
@@ -20,6 +21,8 @@ export default function OrganizationEntities() {
         address: "",
         logo: ""
     });
+
+    useEscClose(showEntityModal, () => setShowEntityModal(false));
 
     useEffect(() => {
         loadData();

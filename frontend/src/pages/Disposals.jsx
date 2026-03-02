@@ -3,12 +3,14 @@ import { useEntity } from "../context/EntityContext";
 import { PageLayout, Card, Spinner } from "../components/ui";
 import {
   FaRecycle, FaSearch, FaDownload, FaBoxOpen,
-  FaRupeeSign, FaWrench, FaExclamationTriangle, FaFilter
+  FaRupeeSign, FaWrench, FaExclamationTriangle, FaFilter, FaPlus
 } from "react-icons/fa";
 import api from "../services/api";
 import { useToast } from "../context/ToastContext";
 import GenericDoughnutPie from "../components/charts/GenericDoughnutPie";
+import AssetRetireModal from "../components/AssetRetireModal";
 import "./Disposals.css";
+import { useEscClose } from "../hooks/useEscClose";
 
 // ── helpers ─────────────────────────────────────────────────────────────────
 
@@ -46,6 +48,16 @@ const METHOD_COLORS = {
 const DISPOSAL_REASONS = ["End of Life", "Physical Damage / Beyond Repair", "Technology Upgrade", "Theft / Loss", "Surplus / No Longer Needed", "Warranty Expired", "Other"];
 const DISPOSAL_METHODS  = ["Scrap", "Sell", "Donate", "Recycle", "Return to Vendor", "Destroy", "Other"];
 
+const STATUS_COLORS = {
+  "In Use":        { bg: "rgba(25,205,165,0.1)",  color: "#19cda5" },
+  "Allocated":     { bg: "rgba(25,205,165,0.1)",  color: "#19cda5" },
+  "Available":     { bg: "rgba(34,197,94,0.1)",   color: "#16a34a" },
+  "In Stock":      { bg: "rgba(34,197,94,0.1)",   color: "#16a34a" },
+  "Under Repair":  { bg: "rgba(249,115,22,0.1)",  color: "#f97316" },
+  "Theft/Missing": { bg: "rgba(219,39,119,0.1)",  color: "#db2777" },
+  "Not Submitted": { bg: "rgba(245,158,11,0.1)",  color: "#d97706" },
+};
+
 // ── component ────────────────────────────────────────────────────────────────
 
 export default function Disposals() {
@@ -60,7 +72,21 @@ export default function Disposals() {
   const [sortKey, setSortKey]           = useState("disposalDate");
   const [sortDir, setSortDir]           = useState("desc");
 
+  // ── Retire from this page ──────────────────────────────────────
+  const [entityList, setEntityList]       = useState([]);
+  const [pickerOpen, setPickerOpen]       = useState(false);
+  const [pickerEntity, setPickerEntity]   = useState("");
+  const [pickerAssets, setPickerAssets]   = useState([]);
+  const [pickerLoading, setPickerLoading] = useState(false);
+  const [pickerSearch, setPickerSearch]   = useState("");
+  const [retireTarget, setRetireTarget]   = useState(null);
+  const [retiring, setRetiring]           = useState(false);
+
+  useEscClose(pickerOpen, () => setPickerOpen(false));
+  useEscClose(!!retireTarget, () => setRetireTarget(null));
+
   useEffect(() => { loadDisposals(); }, [entity]);
+  useEffect(() => { loadEntities(); }, []);
 
   const loadDisposals = async () => {
     setLoading(true);
@@ -74,6 +100,76 @@ export default function Disposals() {
       setLoading(false);
     }
   };
+
+  const loadEntities = async () => {
+    try {
+      const data = await api.getEntities();
+      setEntityList(data || []);
+    } catch {}
+  };
+
+  const loadPickerAssets = async (code) => {
+    if (!code) { setPickerAssets([]); return; }
+    setPickerLoading(true);
+    try {
+      const data = await api.getAssets(code);
+      // Only show non-retired assets
+      setPickerAssets((data || []).filter(a => a.status !== "Retired"));
+    } catch (err) {
+      toast.error("Failed to load assets for this entity");
+    } finally {
+      setPickerLoading(false);
+    }
+  };
+
+  const handlePickerEntityChange = (code) => {
+    setPickerEntity(code);
+    setPickerSearch("");
+    loadPickerAssets(code);
+  };
+
+  const openPicker = () => {
+    // Pre-select the current entity context if it's not ALL
+    const preEntity = (!entity || entity === "ALL") ? "" : entity;
+    setPickerEntity(preEntity);
+    setPickerSearch("");
+    setPickerAssets([]);
+    setPickerOpen(true);
+    if (preEntity) loadPickerAssets(preEntity);
+  };
+
+  const handleAssetSelect = (asset) => {
+    setPickerOpen(false);
+    setRetireTarget(asset);
+  };
+
+  const handleRetireConfirm = async (disposalData) => {
+    setRetiring(true);
+    try {
+      const entityCode = (retireTarget.entity || pickerEntity || null);
+      await api.retireAsset(retireTarget.id, disposalData, entityCode);
+      toast.success(`Asset "${retireTarget.name}" has been retired.`);
+      setRetireTarget(null);
+      loadDisposals();
+    } catch (err) {
+      toast.error(err.message || "Failed to retire asset.");
+    } finally {
+      setRetiring(false);
+    }
+  };
+
+  const filteredPickerAssets = useMemo(() => {
+    if (!pickerSearch.trim()) return pickerAssets;
+    const q = pickerSearch.toLowerCase();
+    return pickerAssets.filter(a =>
+      (a.assetId   || "").toLowerCase().includes(q) ||
+      (a.name      || "").toLowerCase().includes(q) ||
+      (a.category  || "").toLowerCase().includes(q) ||
+      (a.employeeId|| "").toLowerCase().includes(q)
+    );
+  }, [pickerAssets, pickerSearch]);
+
+  // ── sorting + filtering ───────────────────────────────────────────────────
 
   const toggleSort = (key) => {
     if (sortKey === key) setSortDir(d => d === "asc" ? "desc" : "asc");
@@ -195,9 +291,14 @@ export default function Disposals() {
         title="Asset Disposals"
         subtitle="Complete audit trail of all disposed and retired assets"
         actions={
-          <button className="disp-export-btn" onClick={exportCSV}>
-            <FaDownload /> Export CSV
-          </button>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button className="disp-retire-btn" onClick={openPicker}>
+              <FaPlus /> Retire Asset
+            </button>
+            <button className="disp-export-btn" onClick={exportCSV}>
+              <FaDownload /> Export CSV
+            </button>
+          </div>
         }
       />
 
@@ -401,6 +502,108 @@ export default function Disposals() {
         )}
 
       </PageLayout.Content>
+
+      {/* ── ASSET PICKER MODAL ──────────────────────────────────── */}
+      {pickerOpen && (
+        <div className="page-modal-overlay">
+          <div className="page-modal disp-picker-modal">
+            <div className="page-modal-header">
+              <div>
+                <h2><FaRecycle style={{ marginRight: 8 }} />Select Asset to Retire</h2>
+                <p style={{ margin: 0, opacity: 0.8, fontSize: 13 }}>
+                  Choose an entity, then select the asset to dispose.
+                </p>
+              </div>
+              <button className="page-modal-close" onClick={() => setPickerOpen(false)}>✕</button>
+            </div>
+
+            <div className="page-modal-body">
+              {/* Entity selector */}
+              <div className="disp-picker-entity-row">
+                <label className="page-modal-label">Entity <span style={{ color: "#ef4444" }}>*</span></label>
+                <select
+                  className="page-modal-input"
+                  value={pickerEntity}
+                  onChange={e => handlePickerEntityChange(e.target.value)}
+                >
+                  <option value="">— Select Entity —</option>
+                  {entityList.map(e => (
+                    <option key={e.code} value={e.code}>{e.name || e.code} ({e.code})</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Asset search */}
+              {pickerEntity && (
+                <div className="disp-picker-search-wrap">
+                  <FaSearch className="disp-picker-search-icon" />
+                  <input
+                    className="disp-picker-search"
+                    placeholder="Search by Asset ID, Name, Category…"
+                    value={pickerSearch}
+                    onChange={e => setPickerSearch(e.target.value)}
+                  />
+                </div>
+              )}
+
+              {/* Asset list */}
+              <div className="disp-picker-list">
+                {!pickerEntity ? (
+                  <div className="disp-picker-hint">Select an entity above to view its assets.</div>
+                ) : pickerLoading ? (
+                  <div className="disp-picker-hint"><Spinner size="sm" /></div>
+                ) : filteredPickerAssets.length === 0 ? (
+                  <div className="disp-picker-hint">
+                    {pickerSearch ? "No assets match your search." : "No active assets found for this entity."}
+                  </div>
+                ) : (
+                  filteredPickerAssets.map(asset => {
+                    const sc = STATUS_COLORS[asset.status] || { bg: "rgba(107,114,128,0.1)", color: "#6b7280" };
+                    return (
+                      <div
+                        key={asset.id}
+                        className="disp-picker-row"
+                        onClick={() => handleAssetSelect(asset)}
+                      >
+                        <div className="disp-picker-row-main">
+                          <span className="disp-picker-asset-id">{asset.assetId || asset.id}</span>
+                          <span className="disp-picker-name">{asset.name}</span>
+                        </div>
+                        <div className="disp-picker-row-meta">
+                          {asset.category && <span className="disp-picker-tag">{asset.category}</span>}
+                          <span className="disp-picker-status" style={{ background: sc.bg, color: sc.color }}>
+                            {asset.status}
+                          </span>
+                          {asset.employeeId && (
+                            <span className="disp-picker-emp">👤 {asset.employeeId}</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
+            <div className="page-modal-footer">
+              <button className="disp-export-btn" style={{ background: "var(--bg-muted)", color: "var(--text-primary)", boxShadow: "none" }} onClick={() => setPickerOpen(false)}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── RETIRE MODAL (shown after asset is picked) ─────────── */}
+      {retireTarget && (
+        <AssetRetireModal
+          asset={retireTarget}
+          loading={retiring}
+          onConfirm={handleRetireConfirm}
+          onCancel={() => setRetireTarget(null)}
+        />
+      )}
+
     </PageLayout>
   );
 }

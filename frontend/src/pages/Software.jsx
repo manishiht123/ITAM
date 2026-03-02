@@ -252,132 +252,161 @@ export default function Software() {
     }
   };
 
-  // Table columns for licenses
+  // ── shared action cell renderer ──────────────────────────────────────────
+  const makeActions = (onEdit, onDelete) => (
+    <div style={{ display: "flex", gap: "var(--space-sm)" }}>
+      <Button variant="ghost"        size="sm" iconOnly icon={<FaPen />}   title="Edit"   onClick={onEdit}   />
+      <Button variant="danger-ghost" size="sm" iconOnly icon={<FaTrash />} title="Delete" onClick={onDelete} />
+    </div>
+  );
+
+  // ── shared cell renderers ─────────────────────────────────────────────────
+  const renderProductCell = (name, vendor) => (
+    <div className="sw-cell-product">
+      <span className="sw-cell-name">{name || "—"}</span>
+      {vendor && <span className="sw-cell-sub">{vendor}</span>}
+    </div>
+  );
+
+  const renderPersonCell = (name, id, email) => (
+    <div className="sw-cell-product">
+      <span className="sw-cell-name">{name || id || "—"}</span>
+      {email && <span className="sw-cell-sub">{email}</span>}
+    </div>
+  );
+
+  const renderSeats = (used, owned) => {
+    const pct = owned > 0 ? Math.round((used / owned) * 100) : 0;
+    const color = pct >= 100 ? "#ef4444" : pct >= 80 ? "#f59e0b" : "#22c55e";
+    return (
+      <div className="sw-cell-seats">
+        <span className="sw-cell-seats-num" style={{ color }}>
+          {used}<span style={{ opacity: 0.45, fontWeight: 400 }}>/{owned}</span>
+        </span>
+        <div className="sw-cell-seats-bar">
+          <div className="sw-cell-seats-fill" style={{ width: `${Math.min(100, pct)}%`, background: color }} />
+        </div>
+      </div>
+    );
+  };
+
+  const renderStatusBadge = (status) => {
+    const map = {
+      Active:    { bg: "#dcfce7", color: "#15803d" },
+      Expired:   { bg: "#fee2e2", color: "#dc2626" },
+      Suspended: { bg: "#fef9c3", color: "#92400e" },
+    };
+    const s = map[status] || { bg: "#f1f5f9", color: "#64748b" };
+    return (
+      <span className="sw-status-badge" style={{ background: s.bg, color: s.color }}>
+        {status || "—"}
+      </span>
+    );
+  };
+
+  const renderDate = (value) => {
+    if (!value) return <span style={{ color: "var(--text-secondary)" }}>—</span>;
+    return (
+      <span className="sw-cell-date">
+        {new Date(value).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+      </span>
+    );
+  };
+
+  // ── License Catalog columns ───────────────────────────────────────────────
   const licenseColumns = [
-    { key: 'product', label: 'Product' },
-    { key: 'vendor', label: 'Vendor' },
+    {
+      key: 'product',
+      label: 'Product',
+      render: (_, row) => renderProductCell(row.product, row.vendor)
+    },
     {
       key: 'entity',
       label: 'Entity',
-      render: (_, row) => (row.entity || row._entityCode || entity) || "—"
+      render: (_, row) => {
+        const e = row.entity || row._entityCode || entity || "—";
+        return <span className="sw-cell-entity">{e}</span>;
+      }
     },
-    { key: 'seatsOwned', label: 'Seats' },
-    { key: 'seatsUsed', label: 'Used' },
+    {
+      key: 'seats',
+      label: 'Seats',
+      render: (_, row) => renderSeats(Number(row.seatsUsed || 0), Number(row.seatsOwned || 0))
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (_, row) => renderStatusBadge(row.status)
+    },
     {
       key: 'renewalDate',
       label: 'Renewal',
-      render: (value) => value || "—"
+      render: (value) => renderDate(value)
     },
     {
       key: 'action',
       label: 'Action',
-      render: (_, row) => (
-        <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
-          <Button
-            variant="ghost"
-            size="sm"
-            iconOnly
-            icon={<FaPen />}
-            title="Edit"
-            onClick={() => {
-              const resolvedEntity = entity === "ALL" ? row._entityCode : entity;
-              if (entity === "ALL" && !resolvedEntity) {
-                toast.error("Entity not available for this license.");
-                return;
-              }
-              setEditingLicense(row);
-              setTargetEntity(resolvedEntity || "");
-              setLicenseForm({
-                product: row.product || "",
-                vendor: row.vendor || "",
-                version: row.version || "",
-                licenseKey: row.licenseKey || "",
-                seatsOwned: Number(row.seatsOwned || 0),
-                seatsUsed: Number(row.seatsUsed || 0),
-                renewalDate: row.renewalDate || "",
-                status: row.status || "Active"
-              });
-              setOpenLicense(true);
-            }}
-          />
-          <Button
-            variant="danger"
-            size="sm"
-            iconOnly
-            icon={<FaTrash />}
-            title="Delete"
-            onClick={() => setDeleteConfirm({ open: true, type: "license", item: row })}
-          />
-        </div>
+      render: (_, row) => makeActions(
+        () => {
+          const resolvedEntity = entity === "ALL" ? row._entityCode : entity;
+          if (entity === "ALL" && !resolvedEntity) { toast.error("Entity not available for this license."); return; }
+          setEditingLicense(row);
+          setTargetEntity(resolvedEntity || "");
+          setLicenseForm({
+            product: row.product || "", vendor: row.vendor || "",
+            version: row.version || "", licenseKey: row.licenseKey || "",
+            seatsOwned: Number(row.seatsOwned || 0), seatsUsed: Number(row.seatsUsed || 0),
+            renewalDate: row.renewalDate || "", status: row.status || "Active"
+          });
+          setOpenLicense(true);
+        },
+        () => setDeleteConfirm({ open: true, type: "license", item: row })
       )
     }
   ];
 
-  // Table columns for assignments
+  // ── User-wise Assignment columns ──────────────────────────────────────────
   const assignmentColumns = [
     {
       key: 'employeeName',
       label: 'Employee',
-      render: (_, row) => row.employeeName || row.employeeId
-    },
-    {
-      key: 'employeeEmail',
-      label: 'Email',
-      render: (value) => value || "—"
+      render: (_, row) => renderPersonCell(row.employeeName, row.employeeId, row.employeeEmail)
     },
     {
       key: 'license',
       label: 'License',
-      render: (_, row) => row.license?.product || "—"
+      render: (_, row) => renderProductCell(row.license?.product, row.license?.vendor)
     },
     {
-      key: 'vendor',
-      label: 'Vendor',
-      render: (_, row) => row.license?.vendor || "—"
+      key: 'entity',
+      label: 'Entity',
+      render: (_, row) => {
+        const e = row._entityCode || entity || "—";
+        return <span className="sw-cell-entity">{e}</span>;
+      }
     },
     {
       key: 'assignedAt',
-      label: 'Assigned',
-      render: (value) => value ? new Date(value).toLocaleDateString() : "—"
+      label: 'Assigned On',
+      render: (value) => renderDate(value)
     },
     {
       key: 'action',
       label: 'Action',
-      render: (_, row) => (
-        <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
-          <Button
-            variant="ghost"
-            size="sm"
-            iconOnly
-            icon={<FaPen />}
-            title="Edit"
-            onClick={() => {
-              const resolvedEntity = entity === "ALL" ? row._entityCode : entity;
-              if (entity === "ALL" && !resolvedEntity) {
-                toast.error("Entity not available for this assignment.");
-                return;
-              }
-              setEditingAssignment(row);
-              setTargetEntity(resolvedEntity || "");
-              setAssignForm({
-                softwareLicenseId: row.softwareLicenseId || row.license?.id || "",
-                employeeId: row.employeeId || "",
-                employeeName: row.employeeName || "",
-                employeeEmail: row.employeeEmail || "",
-                notes: row.notes || ""
-              });
-              setOpenAssign(true);
-            }}
-          />
-          <Button
-            variant="danger"
-            size="sm"
-            iconOnly
-            icon={<FaTrash />}
-            title="Delete"
-            onClick={() => setDeleteConfirm({ open: true, type: "assignment", item: row })}
-          />
-        </div>
+      render: (_, row) => makeActions(
+        () => {
+          const resolvedEntity = entity === "ALL" ? row._entityCode : entity;
+          if (entity === "ALL" && !resolvedEntity) { toast.error("Entity not available for this assignment."); return; }
+          setEditingAssignment(row);
+          setTargetEntity(resolvedEntity || "");
+          setAssignForm({
+            softwareLicenseId: row.softwareLicenseId || row.license?.id || "",
+            employeeId: row.employeeId || "", employeeName: row.employeeName || "",
+            employeeEmail: row.employeeEmail || "", notes: row.notes || ""
+          });
+          setOpenAssign(true);
+        },
+        () => setDeleteConfirm({ open: true, type: "assignment", item: row })
       )
     }
   ];
@@ -493,7 +522,7 @@ export default function Software() {
       >
         <Drawer.Body>
           {entity === "ALL" && (
-            <>
+            <div className="sw-section">
               <div className="sw-form-section-title">
                 <FaBuilding className="sw-form-section-icon" />
                 Entity
@@ -511,102 +540,143 @@ export default function Software() {
                 />
               </FormField>
               <div className="sw-form-divider" />
-            </>
+            </div>
           )}
 
-          <div className="sw-form-section-title">
-            <FaBox className="sw-form-section-icon" />
-            License Details
-          </div>
-          <div className="sw-form-row">
-            <FormField label="Product Name" required>
-              <Input
-                value={licenseForm.product}
-                onChange={(e) => setLicenseForm((prev) => ({ ...prev, product: e.target.value }))}
-                placeholder="e.g. Microsoft Office 365"
-                fullWidth
-              />
-            </FormField>
-            <FormField label="Vendor" required>
-              <Input
-                value={licenseForm.vendor}
-                onChange={(e) => setLicenseForm((prev) => ({ ...prev, vendor: e.target.value }))}
-                placeholder="e.g. Microsoft"
-                fullWidth
-              />
-            </FormField>
-          </div>
-          <div className="sw-form-row">
-            <FormField label="Version">
-              <Input
-                value={licenseForm.version}
-                onChange={(e) => setLicenseForm((prev) => ({ ...prev, version: e.target.value }))}
-                placeholder="e.g. 2021"
-                fullWidth
-              />
-            </FormField>
-            <FormField label="License Key">
-              <Input
-                value={licenseForm.licenseKey}
-                onChange={(e) => setLicenseForm((prev) => ({ ...prev, licenseKey: e.target.value }))}
-                placeholder="XXXXX-XXXXX-XXXXX"
-                fullWidth
-              />
-            </FormField>
-          </div>
-
-          <div className="sw-form-divider" />
-          <div className="sw-form-section-title">
-            <FaUsers className="sw-form-section-icon" />
-            Seat Management
-          </div>
-          <div className="sw-form-row">
-            <FormField label="Seats Owned" hint="Total licenses purchased">
-              <Input
-                type="number"
-                min="0"
-                value={licenseForm.seatsOwned}
-                onChange={(e) => setLicenseForm((prev) => ({ ...prev, seatsOwned: Number(e.target.value) }))}
-                fullWidth
-              />
-            </FormField>
-            <FormField label="Seats Used" hint="Currently assigned seats">
-              <Input
-                type="number"
-                min="0"
-                value={licenseForm.seatsUsed}
-                onChange={(e) => setLicenseForm((prev) => ({ ...prev, seatsUsed: Number(e.target.value) }))}
-                fullWidth
-              />
-            </FormField>
+          {/* ── License Details ── */}
+          <div className="sw-section">
+            <div className="sw-form-section-title">
+              <FaBox className="sw-form-section-icon" />
+              License Details
+            </div>
+            <div className="sw-form-row">
+              <FormField label="Product Name" required>
+                <Input
+                  value={licenseForm.product}
+                  onChange={(e) => setLicenseForm((prev) => ({ ...prev, product: e.target.value }))}
+                  placeholder="e.g. Microsoft Office 365"
+                  fullWidth
+                />
+              </FormField>
+              <FormField label="Vendor" required>
+                <Input
+                  value={licenseForm.vendor}
+                  onChange={(e) => setLicenseForm((prev) => ({ ...prev, vendor: e.target.value }))}
+                  placeholder="e.g. Microsoft"
+                  fullWidth
+                />
+              </FormField>
+            </div>
+            <div className="sw-form-row">
+              <FormField label="Version">
+                <Input
+                  value={licenseForm.version}
+                  onChange={(e) => setLicenseForm((prev) => ({ ...prev, version: e.target.value }))}
+                  placeholder="e.g. 2021"
+                  fullWidth
+                />
+              </FormField>
+              <FormField label="License Key">
+                <Input
+                  className="sw-input-mono"
+                  value={licenseForm.licenseKey}
+                  onChange={(e) => setLicenseForm((prev) => ({ ...prev, licenseKey: e.target.value }))}
+                  placeholder="XXXXX-XXXXX-XXXXX"
+                  fullWidth
+                />
+              </FormField>
+            </div>
           </div>
 
           <div className="sw-form-divider" />
-          <div className="sw-form-section-title">
-            <FaCalendarAlt className="sw-form-section-icon" />
-            Validity
+
+          {/* ── Seat Management ── */}
+          <div className="sw-section">
+            <div className="sw-form-section-title">
+              <FaUsers className="sw-form-section-icon" />
+              Seat Management
+            </div>
+            <div className="sw-form-row">
+              <FormField label="Seats Owned" hint="Total licenses purchased">
+                <Input
+                  type="number"
+                  min="0"
+                  value={licenseForm.seatsOwned}
+                  onChange={(e) => setLicenseForm((prev) => ({ ...prev, seatsOwned: Number(e.target.value) }))}
+                  fullWidth
+                />
+              </FormField>
+              <FormField label="Seats Used" hint="Currently assigned seats">
+                <Input
+                  type="number"
+                  min="0"
+                  value={licenseForm.seatsUsed}
+                  onChange={(e) => setLicenseForm((prev) => ({ ...prev, seatsUsed: Number(e.target.value) }))}
+                  fullWidth
+                />
+              </FormField>
+            </div>
+            {/* Usage bar */}
+            {licenseForm.seatsOwned > 0 && (
+              <div className="sw-seat-bar-wrap">
+                <div className="sw-seat-bar-track">
+                  <div
+                    className={`sw-seat-bar-fill${
+                      licenseForm.seatsUsed >= licenseForm.seatsOwned ? " over"
+                      : licenseForm.seatsUsed / licenseForm.seatsOwned >= 0.8 ? " warn"
+                      : ""
+                    }`}
+                    style={{ width: `${Math.min(100, (licenseForm.seatsUsed / licenseForm.seatsOwned) * 100)}%` }}
+                  />
+                </div>
+                <div className="sw-seat-bar-label">
+                  <span>{licenseForm.seatsUsed} used</span>
+                  <span>{licenseForm.seatsOwned - licenseForm.seatsUsed >= 0
+                    ? `${licenseForm.seatsOwned - licenseForm.seatsUsed} available`
+                    : "Over limit"}</span>
+                </div>
+              </div>
+            )}
           </div>
-          <div className="sw-form-row">
-            <FormField label="Renewal Date">
-              <Input
-                type="date"
-                value={licenseForm.renewalDate}
-                onChange={(e) => setLicenseForm((prev) => ({ ...prev, renewalDate: e.target.value }))}
-                fullWidth
-              />
-            </FormField>
-            <FormField label="Status">
-              <Select
-                value={licenseForm.status}
-                onChange={(e) => setLicenseForm((prev) => ({ ...prev, status: e.target.value }))}
-                options={[
-                  { value: "Active", label: "Active" },
-                  { value: "Expired", label: "Expired" },
-                  { value: "Suspended", label: "Suspended" }
-                ]}
-                fullWidth
-              />
-            </FormField>
+
+          <div className="sw-form-divider" />
+
+          {/* ── Validity ── */}
+          <div className="sw-section">
+            <div className="sw-form-section-title">
+              <FaCalendarAlt className="sw-form-section-icon" />
+              Validity
+            </div>
+            <div className="sw-form-row">
+              <FormField label="Renewal Date">
+                <Input
+                  type="date"
+                  value={licenseForm.renewalDate}
+                  onChange={(e) => setLicenseForm((prev) => ({ ...prev, renewalDate: e.target.value }))}
+                  fullWidth
+                />
+              </FormField>
+              <FormField label="Status">
+                <Select
+                  value={licenseForm.status}
+                  onChange={(e) => setLicenseForm((prev) => ({ ...prev, status: e.target.value }))}
+                  options={[
+                    { value: "Active", label: "Active" },
+                    { value: "Expired", label: "Expired" },
+                    { value: "Suspended", label: "Suspended" }
+                  ]}
+                  fullWidth
+                />
+                <div className="sw-status-row">
+                  <span className={`sw-status-dot ${licenseForm.status?.toLowerCase()}`} />
+                  <span style={{ fontSize: "11px", color: "var(--text-secondary)" }}>
+                    {licenseForm.status === "Active" ? "License is currently active"
+                      : licenseForm.status === "Expired" ? "License has expired"
+                      : "License is suspended"}
+                  </span>
+                </div>
+              </FormField>
+            </div>
           </div>
         </Drawer.Body>
 

@@ -28,15 +28,26 @@ import {
   FaClock,
   FaEnvelope,
   FaToggleOn,
-  FaToggleOff
+  FaToggleOff,
+  FaBuilding,
+  FaMapMarkerAlt,
+  FaSearch,
+  FaTools,
+  FaArrowUp,
+  FaArrowDown,
+  FaMinus
 } from "react-icons/fa";
+import GenericDoughnutPie from "../../components/charts/GenericDoughnutPie";
 import "./Reports.css";
+import "../DeptLocationReport.css";
 
 /* ── Schedule helpers ─────────────────────────────────────────────────────── */
 const SCH_REPORT_TYPES = [
-  { value: "assets",      label: "Asset Inventory",    icon: <FaBoxes />,    color: "#3b82f6", bg: "rgba(59,130,246,0.1)" },
-  { value: "licenses",    label: "License Compliance", icon: <FaShieldAlt />, color: "#10b981", bg: "rgba(16,185,129,0.1)" },
-  { value: "assignments", label: "Assignment Report",  icon: <FaUsers />,    color: "#f59e0b", bg: "rgba(245,158,11,0.1)"  }
+  { value: "assets",      label: "Asset Inventory",       icon: <FaBoxes />,       color: "#3b82f6", bg: "rgba(59,130,246,0.1)"  },
+  { value: "licenses",    label: "License Compliance",    icon: <FaShieldAlt />,   color: "#10b981", bg: "rgba(16,185,129,0.1)"  },
+  { value: "assignments", label: "Assignment Report",     icon: <FaUsers />,       color: "#f59e0b", bg: "rgba(245,158,11,0.1)"  },
+  { value: "department",  label: "Department-wise Report",icon: <FaBuilding />,    color: "#6366f1", bg: "rgba(99,102,241,0.1)"  },
+  { value: "location",    label: "Location-wise Report",  icon: <FaMapMarkerAlt />,color: "#0891b2", bg: "rgba(8,145,178,0.1)"   }
 ];
 const SCH_FREQUENCIES = [
   { value: "daily",     label: "Daily",     desc: "Every day at the specified time" },
@@ -73,6 +84,18 @@ const formatNextRun = (dateStr) => {
   return `${date} ${time} (${rel})`;
 };
 
+/* ── Dept/Location report helpers ─────────────────────────────────────────── */
+const DL_PALETTE = [
+  "#3b82f6","#22c55e","#f59e0b","#a78bfa","#f43f5e",
+  "#14b8a6","#f97316","#6366f1","#84cc16","#ec4899",
+  "#0891b2","#d97706"
+];
+const DL_STATUS_COLORS = {
+  inUse: "#3b82f6", available: "#22c55e",
+  underRepair: "#f97316", retired: "#ef4444", other: "#94a3b8",
+};
+const dlPct = (num, total) => total > 0 ? Math.round((num / total) * 100) : 0;
+
 export default function Reports() {
   const { entity } = useEntity();
   const toast = useToast();
@@ -104,6 +127,15 @@ export default function Reports() {
   const [schDeleteConfirm, setSchDeleteConfirm] = useState({ open: false, id: null, name: "" });
   const [schFormError, setSchFormError] = useState("");
 
+  /* ── Dept / Location report state ────────────────────────── */
+  const [dlTab,       setDlTab]       = useState("department");
+  const [dlDeptData,  setDlDeptData]  = useState([]);
+  const [dlLocData,   setDlLocData]   = useState([]);
+  const [dlLoading,   setDlLoading]   = useState(true);
+  const [dlSearch,    setDlSearch]    = useState("");
+  const [dlSortKey,   setDlSortKey]   = useState("total");
+  const [dlSortDir,   setDlSortDir]   = useState("desc");
+
   useEffect(() => {
     const loadEntities = async () => {
       try {
@@ -133,6 +165,25 @@ export default function Reports() {
   useEffect(() => {
     loadSchedules();
   }, [loadSchedules]);
+
+  /* ── Dept/Location data loader ───────────────────────────── */
+  const loadDlData = useCallback(async () => {
+    setDlLoading(true);
+    try {
+      const [dept, loc] = await Promise.all([
+        api.getReportByDepartment(entity === "ALL" ? null : entity),
+        api.getReportByLocation(entity === "ALL" ? null : entity),
+      ]);
+      setDlDeptData(Array.isArray(dept) ? dept : []);
+      setDlLocData(Array.isArray(loc)  ? loc  : []);
+    } catch (err) {
+      toast.error(err.message || "Failed to load dept/location report");
+    } finally {
+      setDlLoading(false);
+    }
+  }, [entity, toast]);
+
+  useEffect(() => { loadDlData(); }, [loadDlData]);
 
   const openSchCreate = () => {
     setEditingSchId(null);
@@ -615,6 +666,83 @@ ${dataRows}
     failed:  schedules.filter(s => s.lastStatus === "failed").length
   }), [schedules]);
 
+  /* ── Dept / Location derived data ────────────────────────── */
+  const dlRawRows = dlTab === "department" ? dlDeptData : dlLocData;
+
+  const dlRows = useMemo(() => {
+    let list = dlRawRows;
+    if (dlSearch.trim()) {
+      const q = dlSearch.toLowerCase();
+      list = list.filter((r) => r.name.toLowerCase().includes(q));
+    }
+    return [...list].sort((a, b) => {
+      const av = a[dlSortKey] ?? 0;
+      const bv = b[dlSortKey] ?? 0;
+      if (typeof av === "string") return dlSortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
+      return dlSortDir === "asc" ? av - bv : bv - av;
+    });
+  }, [dlRawRows, dlSearch, dlSortKey, dlSortDir]);
+
+  const dlKpis = useMemo(() => {
+    const totalGroups = dlRawRows.length;
+    const totalAssets = dlRawRows.reduce((s, r) => s + r.total, 0);
+    const totalInUse  = dlRawRows.reduce((s, r) => s + r.inUse, 0);
+    const avgUtil     = totalAssets > 0 ? Math.round((totalInUse / totalAssets) * 100) : 0;
+    const topGroup    = dlRawRows[0]?.name || "—";
+    return { totalGroups, totalAssets, avgUtil, topGroup };
+  }, [dlRawRows]);
+
+  const dlPieData = useMemo(() =>
+    dlRows.slice(0, 10).map((r) => ({ label: r.name, value: r.total })),
+    [dlRows]
+  );
+  const dlPieColors = useMemo(() => {
+    const c = {};
+    dlRows.slice(0, 10).forEach((r, i) => { c[r.name] = DL_PALETTE[i % DL_PALETTE.length]; });
+    return c;
+  }, [dlRows]);
+
+  const dlToggleSort = (key) => {
+    if (dlSortKey === key) setDlSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setDlSortKey(key); setDlSortDir("desc"); }
+  };
+
+  const DlSortIcon = ({ col }) => {
+    if (dlSortKey !== col) return <FaMinus className="dlr-sort-icon muted" />;
+    return dlSortDir === "asc"
+      ? <FaArrowUp  className="dlr-sort-icon active" />
+      : <FaArrowDown className="dlr-sort-icon active" />;
+  };
+
+  const handleDlExport = () => {
+    const isdept = dlTab === "department";
+    const title = isdept ? "Department-wise Asset Report" : "Location-wise Asset Report";
+    const groupLabel = isdept ? "Department" : "Location";
+    const columns = [
+      { key: "name",        label: groupLabel },
+      { key: "total",       label: "Total Assets" },
+      { key: "inUse",       label: "In Use" },
+      { key: "available",   label: "Available" },
+      { key: "underRepair", label: "Under Repair" },
+      { key: "retired",     label: "Retired" },
+      { key: "other",       label: "Other" },
+      { key: "utilization", label: "Utilization %" },
+      { key: "topCategory", label: "Top Category" },
+    ];
+    const rows = dlRawRows.map(r => ({
+      name:        r.name,
+      total:       r.total,
+      inUse:       r.inUse,
+      available:   r.available,
+      underRepair: r.underRepair,
+      retired:     r.retired,
+      other:       r.other,
+      utilization: `${r.utilization}%`,
+      topCategory: r.topCategory || "—",
+    }));
+    downloadHtmlReport(title, columns, rows);
+  };
+
   return (
     <div className="reports-page">
       {/* ===== HEADER ===== */}
@@ -688,6 +816,232 @@ ${dataRows}
               </div>
             ))}
           </div>
+        </Card.Body>
+      </Card>
+
+      {/* ===== DEPT / LOCATION REPORT ===== */}
+      <Card>
+        <Card.Header>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", width: "100%" }}>
+            {/* Title */}
+            <Card.Title style={{ flex: "none" }}>
+              <FaChartBar style={{ marginRight: 8, opacity: 0.8 }} />
+              Department &amp; Location Reports
+            </Card.Title>
+            {/* Tabs */}
+            <div className="dlr-tabs" style={{ marginBottom: 0 }}>
+              <button
+                className={`dlr-tab${dlTab === "department" ? " active" : ""}`}
+                onClick={() => { setDlTab("department"); setDlSearch(""); setDlSortKey("total"); setDlSortDir("desc"); }}
+              >
+                <FaBuilding /> Department
+              </button>
+              <button
+                className={`dlr-tab${dlTab === "location" ? " active" : ""}`}
+                onClick={() => { setDlTab("location"); setDlSearch(""); setDlSortKey("total"); setDlSortDir("desc"); }}
+              >
+                <FaMapMarkerAlt /> Location
+              </button>
+            </div>
+            {/* Export button pushed to right */}
+            <button
+              className="dlr-export-btn"
+              style={{ marginLeft: "auto" }}
+              onClick={handleDlExport}
+              disabled={dlLoading || dlRawRows.length === 0}
+            >
+              <FaDownload />
+              Export PDF
+            </button>
+          </div>
+        </Card.Header>
+        <Card.Body>
+          {dlLoading ? (
+            <div className="dlr-loading" style={{ padding: "60px 0" }}>
+              <span style={{ color: "var(--text-secondary)", fontSize: 14 }}>Loading report data…</span>
+            </div>
+          ) : (
+            <>
+              {/* KPI mini-cards */}
+              <div className="dlr-kpi-row" style={{ marginBottom: "var(--space-lg)" }}>
+                <div className="dlr-kpi-card dlr-kpi-blue">
+                  <div className="dlr-kpi-icon"><FaBuilding /></div>
+                  <div className="dlr-kpi-body">
+                    <div className="dlr-kpi-label">Total {dlTab === "department" ? "Departments" : "Locations"}</div>
+                    <div className="dlr-kpi-value">{dlKpis.totalGroups}</div>
+                  </div>
+                </div>
+                <div className="dlr-kpi-card dlr-kpi-indigo">
+                  <div className="dlr-kpi-icon"><FaBoxes /></div>
+                  <div className="dlr-kpi-body">
+                    <div className="dlr-kpi-label">Total Assets</div>
+                    <div className="dlr-kpi-value">{dlKpis.totalAssets}</div>
+                  </div>
+                </div>
+                <div className="dlr-kpi-card dlr-kpi-green">
+                  <div className="dlr-kpi-icon"><FaCheckCircle /></div>
+                  <div className="dlr-kpi-body">
+                    <div className="dlr-kpi-label">Avg Utilization</div>
+                    <div className="dlr-kpi-value">{dlKpis.avgUtil}%</div>
+                  </div>
+                </div>
+                <div className="dlr-kpi-card dlr-kpi-amber">
+                  <div className="dlr-kpi-icon"><FaTools /></div>
+                  <div className="dlr-kpi-body">
+                    <div className="dlr-kpi-label">Top Group</div>
+                    <div className="dlr-kpi-value dlr-kpi-value-sm" title={dlKpis.topGroup}>{dlKpis.topGroup}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Charts row */}
+              {dlRawRows.length > 0 && (
+                <div className="dlr-body-grid" style={{ marginBottom: "var(--space-lg)" }}>
+                  {/* Pie */}
+                  <Card>
+                    <Card.Header><Card.Title>Asset Distribution</Card.Title></Card.Header>
+                    <Card.Body>
+                      <GenericDoughnutPie data={dlPieData} colors={dlPieColors} centerLabel="Assets" />
+                    </Card.Body>
+                  </Card>
+                  {/* Status bars */}
+                  <Card>
+                    <Card.Header><Card.Title>Overall Status Breakdown</Card.Title></Card.Header>
+                    <Card.Body>
+                      <div className="dlr-status-bars">
+                        {[
+                          { key: "inUse",       label: "In Use",       color: DL_STATUS_COLORS.inUse },
+                          { key: "available",   label: "Available",    color: DL_STATUS_COLORS.available },
+                          { key: "underRepair", label: "Under Repair", color: DL_STATUS_COLORS.underRepair },
+                          { key: "retired",     label: "Retired",      color: DL_STATUS_COLORS.retired },
+                          { key: "other",       label: "Other",        color: DL_STATUS_COLORS.other },
+                        ].map(({ key, label, color }) => {
+                          const count = dlRawRows.reduce((s, r) => s + (r[key] || 0), 0);
+                          const p = dlPct(count, dlKpis.totalAssets);
+                          return (
+                            <div key={key} className="dlr-status-row">
+                              <div className="dlr-status-meta">
+                                <span className="dlr-status-dot" style={{ background: color }} />
+                                <span className="dlr-status-label">{label}</span>
+                                <span className="dlr-status-count">{count}</span>
+                              </div>
+                              <div className="dlr-bar-wrap">
+                                <div className="dlr-bar-fill" style={{ width: `${p}%`, background: color }} />
+                              </div>
+                              <span className="dlr-status-pct">{p}%</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </Card.Body>
+                  </Card>
+                </div>
+              )}
+
+              {/* Search + table */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, gap: 12 }}>
+                <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)" }}>
+                  {dlTab === "department" ? "Department" : "Location"} Breakdown
+                </span>
+                <div className="dlr-search-wrap">
+                  <FaSearch className="dlr-search-icon" />
+                  <input
+                    className="dlr-search"
+                    placeholder={`Search ${dlTab}…`}
+                    value={dlSearch}
+                    onChange={(e) => setDlSearch(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {dlRows.length === 0 ? (
+                <div className="dlr-empty"><p>No records found.</p></div>
+              ) : (
+                <div className="dlr-table-wrap">
+                  <table className="dlr-table">
+                    <thead>
+                      <tr>
+                        <th className="sortable" onClick={() => dlToggleSort("name")}>
+                          {dlTab === "department" ? "Department" : "Location"} <DlSortIcon col="name" />
+                        </th>
+                        <th className="sortable" onClick={() => dlToggleSort("total")}>Total <DlSortIcon col="total" /></th>
+                        <th className="sortable" onClick={() => dlToggleSort("inUse")}>In Use <DlSortIcon col="inUse" /></th>
+                        <th className="sortable" onClick={() => dlToggleSort("available")}>Available <DlSortIcon col="available" /></th>
+                        <th className="sortable" onClick={() => dlToggleSort("underRepair")}>Under Repair <DlSortIcon col="underRepair" /></th>
+                        <th className="sortable" onClick={() => dlToggleSort("retired")}>Retired <DlSortIcon col="retired" /></th>
+                        <th className="sortable" onClick={() => dlToggleSort("utilization")}>Utilization <DlSortIcon col="utilization" /></th>
+                        <th>Top Category</th>
+                        <th>Status Mix</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {dlRows.map((row, i) => {
+                        const utilColor =
+                          row.utilization >= 80 ? "#22c55e" :
+                          row.utilization >= 50 ? "#f59e0b" : "#ef4444";
+                        return (
+                          <tr key={i}>
+                            <td>
+                              <div className="dlr-group-name">
+                                <span className="dlr-group-icon" style={{ color: DL_PALETTE[i % DL_PALETTE.length] }}>
+                                  {dlTab === "department" ? <FaBuilding /> : <FaMapMarkerAlt />}
+                                </span>
+                                {row.name}
+                              </div>
+                            </td>
+                            <td className="dlr-num-cell dlr-total">{row.total}</td>
+                            <td>
+                              <span className="dlr-status-badge" style={{ background: "rgba(59,130,246,0.1)", color: "#3b82f6" }}>
+                                {row.inUse}
+                              </span>
+                            </td>
+                            <td>
+                              <span className="dlr-status-badge" style={{ background: "rgba(34,197,94,0.1)", color: "#22c55e" }}>
+                                {row.available}
+                              </span>
+                            </td>
+                            <td>
+                              <span className="dlr-status-badge" style={{ background: "rgba(249,115,22,0.1)", color: "#f97316" }}>
+                                {row.underRepair}
+                              </span>
+                            </td>
+                            <td>
+                              <span className="dlr-status-badge" style={{ background: "rgba(239,68,68,0.1)", color: "#ef4444" }}>
+                                {row.retired}
+                              </span>
+                            </td>
+                            <td>
+                              <div className="dlr-util-cell">
+                                <div className="dlr-util-bar-wrap">
+                                  <div className="dlr-util-bar" style={{ width: `${row.utilization}%`, background: utilColor }} />
+                                </div>
+                                <span className="dlr-util-pct" style={{ color: utilColor }}>{row.utilization}%</span>
+                              </div>
+                            </td>
+                            <td><span className="dlr-category-tag">{row.topCategory}</span></td>
+                            <td>
+                              <div className="dlr-mini-stacked">
+                                {row.inUse      > 0 && <div className="dlr-mini-seg" style={{ flex: row.inUse,      background: DL_STATUS_COLORS.inUse      }} title={`In Use: ${row.inUse}`} />}
+                                {row.available  > 0 && <div className="dlr-mini-seg" style={{ flex: row.available,  background: DL_STATUS_COLORS.available  }} title={`Available: ${row.available}`} />}
+                                {row.underRepair > 0 && <div className="dlr-mini-seg" style={{ flex: row.underRepair, background: DL_STATUS_COLORS.underRepair }} title={`Under Repair: ${row.underRepair}`} />}
+                                {row.retired    > 0 && <div className="dlr-mini-seg" style={{ flex: row.retired,    background: DL_STATUS_COLORS.retired    }} title={`Retired: ${row.retired}`} />}
+                                {row.other      > 0 && <div className="dlr-mini-seg" style={{ flex: row.other,      background: DL_STATUS_COLORS.other      }} title={`Other: ${row.other}`} />}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              {dlRows.length > 0 && (
+                <div className="dlr-footer">
+                  Showing <strong>{dlRows.length}</strong> of <strong>{dlRawRows.length}</strong> {dlTab === "department" ? "departments" : "locations"} · <strong>{dlKpis.totalAssets}</strong> total assets
+                </div>
+              )}
+            </>
+          )}
         </Card.Body>
       </Card>
 

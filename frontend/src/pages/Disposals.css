@@ -202,6 +202,30 @@
   border-color: var(--primary);
 }
 
+/* ── Retire Asset button (in header) ─────────────────────────── */
+
+.disp-retire-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 18px;
+  background: #dc2626;
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, box-shadow 0.15s;
+  box-shadow: 0 1px 4px rgba(220,38,38,0.25);
+}
+
+.disp-retire-btn:hover {
+  background: #b91c1c;
+  box-shadow: 0 3px 10px rgba(220,38,38,0.35);
+}
+
 /* ── Export button (in header) ────────────────────────────────── */
 
 .disp-export-btn {
@@ -513,4 +537,134 @@
     min-width: unset;
     flex: 1;
   }
+}
+
+/* ── Asset Picker Modal ───────────────────────────────────────── */
+
+.disp-picker-modal {
+  max-width: 580px;
+  width: 100%;
+}
+
+.disp-picker-entity-row {
+  margin-bottom: var(--space-lg);
+}
+
+.disp-picker-search-wrap {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.disp-picker-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+  font-size: 13px;
+  pointer-events: none;
+}
+
+.disp-picker-search {
+  width: 100%;
+  padding: 9px 12px 9px 36px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-input, var(--bg-elevated));
+  color: var(--text-primary);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+
+.disp-picker-search:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(22, 169, 232, 0.15);
+}
+
+.disp-picker-list {
+  max-height: 340px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.disp-picker-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  gap: 10px;
+}
+
+.disp-picker-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.disp-picker-row:last-child {
+  border-bottom: none;
+}
+
+.disp-picker-row:hover {
+  background: var(--hover-overlay, rgba(22, 169, 232, 0.06));
+}
+
+.disp-picker-row-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.disp-picker-asset-id {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary);
+  font-family: monospace;
+  white-space: nowrap;
+}
+
+.disp-picker-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.disp-picker-row-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.disp-picker-tag {
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--primary-soft);
+  color: var(--primary);
+  padding: 2px 8px;
+  border-radius: 99px;
+}
+
+.disp-picker-status {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 99px;
+}
+
+.disp-picker-emp {
+  font-size: 11px;
+  color: var(--text-secondary);
 }

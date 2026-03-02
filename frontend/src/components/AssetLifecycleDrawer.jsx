@@ -1,4 +1,5 @@
 import "./AssetLifecycleDrawer.css";
+import { useEscClose } from "../hooks/useEscClose";
 
 // ── lifecycle stage config ───────────────────────────────────────────────────
 
@@ -42,6 +43,7 @@ const fmtDateTime = (d) => {
 
 export default function AssetLifecycleDrawer({ data, onClose, loading }) {
   const { asset, events = [], disposal } = data || {};
+  useEscClose(!!data, onClose);
 
   const currentStatus = asset?.status || "Available";
   const activeStage = STAGES.find((s) => s.statuses.includes(currentStatus)) || STAGES[0];

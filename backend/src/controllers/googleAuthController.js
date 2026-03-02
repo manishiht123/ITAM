@@ -3,6 +3,7 @@ const User = require("../models/User");
 const AuditLog = require("../models/AuditLog");
 const SystemPreference = require("../models/SystemPreference");
 const generateToken = require("../utils/generateToken");
+const { generatePreAuthToken } = require("../utils/generateToken");
 const { isDomainAllowed } = require("../utils/domainCheck");
 
 const parseField = (value, fallback) => {
@@ -74,8 +75,6 @@ exports.googleLogin = async (req, res) => {
     // Reset any lockout state on successful Google auth
     await User.update({ failedLoginAttempts: 0, lockedUntil: null }, { where: { id: user.id } });
 
-    const token = generateToken(user.id, user.role);
-
     try {
       await AuditLog.create({
         user: user.email,
@@ -85,19 +84,50 @@ exports.googleLogin = async (req, res) => {
       });
     } catch (_) {}
 
-    return res.json({
-      message: "Login successful",
-      token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        phone: user.phone || "",
-        title: user.title || "",
-        allowedEntities: parseField(user.allowedEntities, []),
-        entityPermissions: parseField(user.entityPermissions, {})
+    // ── 2FA gate ──────────────────────────────────────────────────────────────
+    if (!user.twoFactorEnabled) {
+      const setupToken = generatePreAuthToken(user.id, { setupRequired: true });
+      return res.json({
+        setupRequired: true,
+        setupToken,
+        user: { name: user.name, email: user.email, role: user.role }
+      });
+    }
+
+    if (user.twoFactorMethod === "email") {
+      try {
+        const EmailSettings = require("../models/EmailSettings");
+        const nodemailer    = require("nodemailer");
+        const code   = String(Math.floor(100000 + Math.random() * 900000));
+        const expiry = new Date(Date.now() + 10 * 60 * 1000);
+        await User.update({ emailOtpCode: code, emailOtpExpiry: expiry }, { where: { id: user.id } });
+        const emailSettings = await EmailSettings.findOne();
+        if (emailSettings && emailSettings.enabled) {
+          const transporter = nodemailer.createTransport({
+            host: emailSettings.host || "smtp.gmail.com",
+            port: emailSettings.port || 587,
+            secure: emailSettings.secure || false,
+            auth: { user: emailSettings.smtpUser, pass: emailSettings.smtpPass }
+          });
+          const fromName  = emailSettings.fromName  || "ITAM System";
+          const fromEmail = emailSettings.fromEmail || emailSettings.smtpUser;
+          await transporter.sendMail({
+            from: `"${fromName}" <${fromEmail}>`,
+            to: user.email,
+            subject: "[ITAM] Your verification code",
+            html: `<div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#f8fafc;border-radius:8px;"><h2 style="margin:0 0 8px;color:#1e293b;">Verification Code</h2><p style="margin:0 0 24px;color:#64748b;font-size:14px;">Use the code below to complete your sign-in. It expires in <strong>10 minutes</strong>.</p><div style="text-align:center;margin:24px 0;"><span style="display:inline-block;padding:16px 32px;background:#1e293b;color:#fff;font-size:32px;font-weight:700;letter-spacing:8px;border-radius:8px;font-family:monospace;">${code}</span></div><p style="margin:0;color:#94a3b8;font-size:12px;">If you did not request this code, please contact your administrator immediately.</p></div>`
+          });
+        }
+      } catch (emailErr) {
+        console.error("[2FA] Auto-send OTP failed:", emailErr.message);
       }
+    }
+
+    const preAuthToken = generatePreAuthToken(user.id, { twoFactorPending: true, method: user.twoFactorMethod });
+    return res.json({
+      twoFactorPending: true,
+      preAuthToken,
+      method: user.twoFactorMethod
     });
   } catch (err) {
     console.error("Google auth error:", err.message);

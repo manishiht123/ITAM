@@ -39,54 +39,54 @@
 
   /* ============== COLORS ============== */
   /* Backgrounds */
-  --bg-main: #f4f8fd;
+  --bg-main: #f7f9fc;           /* Neutral light gray — clean, no blue cast */
   --bg-elevated: #ffffff;
-  --bg-muted: #ebf3fc;
-  --bg-sidebar: #1bc7bb;
-  --bg-sidebar-strong: #1778f2;
-  --bg-hover: #1369d8;
+  --bg-muted: #eef2f7;          /* Neutral muted — less blue-tinted */
+  --bg-sidebar: #0f2644;        /* Deep navy — enterprise standard (Freshservice/Jira style) */
+  --bg-sidebar-strong: #1a3a63; /* Medium navy for hover/active states */
+  --bg-hover: #1f4a80;          /* Navy hover */
 
   /* Text */
-  --text-primary: #0f172a;
-  --text-secondary: #334155;
-  --text-muted: #64748b;
-  --text-invert: #e8f6fb;
+  --text-primary: #0f172a;      /* Near-black — excellent contrast */
+  --text-secondary: #374151;    /* Dark slate — slightly warmer, more readable */
+  --text-muted: #6b7280;        /* Standard gray muted text */
+  --text-invert: #e8f0fb;
 
-  /* Primary Colors — OFBusiness Brand */
-  --brand-1: #19cbbf;
-  --brand-2: #16a9e8;
-  --brand-3: #186df2;
+  /* Primary Colors — Professional Blue */
+  --brand-1: #2563eb;           /* Primary action blue (replaces teal — industry standard) */
+  --brand-2: #3b82f6;           /* Medium blue */
+  --brand-3: #1d4ed8;           /* Deep blue */
   --brand-gradient: linear-gradient(90deg, var(--brand-1) 0%, var(--brand-2) 52%, var(--brand-3) 100%);
-  --brand-gradient-vertical: linear-gradient(180deg, var(--brand-1) 0%, var(--brand-2) 52%, var(--brand-3) 100%);
+  --brand-gradient-vertical: linear-gradient(180deg, #162d4f 0%, #0f2644 52%, #0a1e38 100%);
   --brand-gradient-diagonal: linear-gradient(135deg, var(--brand-1) 0%, var(--brand-2) 52%, var(--brand-3) 100%);
-  --primary: var(--brand-2);
-  --primary-600: #188fee;
+  --primary: var(--brand-1);
+  --primary-600: #1d5dc5;
   --primary-700: var(--brand-3);
-  --primary-soft: #e7f2ff;
+  --primary-soft: #eff6ff;      /* Very light blue for soft highlights */
 
   /* Semantic Colors */
   --success: #16a34a;
-  --warning: #f59e0b;
-  --danger: #ef4444;
-  --info: #0ea5e9;
+  --warning: #d97706;           /* Amber — slightly deeper for better light-mode visibility */
+  --danger: #dc2626;            /* Red — standard */
+  --info: #0284c7;              /* Blue-info */
 
   /* Feedback Colors */
   --feedback-success-bg: #dcfce7;
-  --feedback-success-text: #166534;
-  --feedback-warning-bg: #fef3c7;
-  --feedback-warning-text: #b45309;
+  --feedback-success-text: #15803d;
+  --feedback-warning-bg: #fef9c3;
+  --feedback-warning-text: #a16207;
   --feedback-danger-bg: #fee2e2;
   --feedback-danger-text: #b91c1c;
   --feedback-info-bg: #e0f2fe;
-  --feedback-info-text: #075985;
+  --feedback-info-text: #0369a1;
 
   /* Borders */
-  --border: #d6e3f2;
-  --border-strong: #b8ccdf;
+  --border: #e2e8f0;            /* Neutral slate — no blue cast */
+  --border-strong: #cbd5e1;     /* Standard slate border */
 
   /* Interactive States */
-  --hover-overlay: rgba(26, 159, 231, 0.1);
-  --active-overlay: rgba(26, 159, 231, 0.15);
+  --hover-overlay: rgba(37, 99, 235, 0.08);
+  --active-overlay: rgba(37, 99, 235, 0.12);
 
   /* ============== LAYOUT ============== */
   /* Border Radius */
@@ -94,12 +94,12 @@
   --radius-md: 14px;
   --radius-lg: 18px;
 
-  /* Shadows */
-  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.08);
-  --shadow-sm: 0 2px 6px rgba(15, 23, 42, 0.12);
-  --shadow-md: 0 10px 28px rgba(15, 23, 42, 0.15);
-  --shadow-lg: 0 18px 40px rgba(15, 23, 42, 0.18);
-  --shadow-xl: 0 24px 48px rgba(15, 23, 42, 0.22);
+  /* Shadows — neutral, crisp (no blue tint) */
+  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-sm: 0 2px 6px rgba(15, 23, 42, 0.09);
+  --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.12);
+  --shadow-lg: 0 16px 36px rgba(15, 23, 42, 0.15);
+  --shadow-xl: 0 24px 48px rgba(15, 23, 42, 0.18);
 
   /* Z-Index Scale */
   --z-dropdown: 50;

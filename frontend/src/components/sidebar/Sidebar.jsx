@@ -12,15 +12,25 @@ import {
   FaLayerGroup,
   FaRobot,
   FaSitemap,
-  FaRecycle
+  FaRecycle,
+  FaStore,
+  FaChartLine,
+  FaExclamationTriangle,
+  FaShieldAlt,
+  FaTasks,
+  FaPuzzlePiece
 } from "react-icons/fa";
 
 import "../../styles/sidebar.css";
 import { useAuth } from "../../context/AuthContext";
+import { useEntity } from "../../context/EntityContext";
+import api from "../../services/api";
+import ofbSidebarLogo from "../../assets/logos/default-dark.svg";
 
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(window.innerWidth <= 768);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [pendingApprovals, setPendingApprovals] = useState(0);
 
   useEffect(() => {
     const handleToggle = () => setCollapsed(prev => !prev);
@@ -28,7 +38,16 @@ export default function Sidebar() {
     return () => window.removeEventListener("toggle-sidebar", handleToggle);
   }, []);
   const navigate = useNavigate();
-  const { user, isAdmin, canAccess } = useAuth();
+  const { user, isAdmin, canAccess, hasRole } = useAuth();
+  const { entity } = useEntity();
+
+  // Fetch pending approval count for managers/admins
+  useEffect(() => {
+    if (!isAdmin && !hasRole("manager")) return;
+    api.getPendingApprovalCount(entity)
+      .then((r) => setPendingApprovals(r?.count || 0))
+      .catch(() => {});
+  }, [entity, isAdmin]);
 
   const userName = user?.name || user?.email || "User";
   const roleLabel = isAdmin
@@ -49,8 +68,10 @@ export default function Sidebar() {
     <aside className={`sidebar ${collapsed ? "collapsed" : ""}`}>
       {/* ================= HEADER ================= */}
       <div className="sidebar-header">
-        <div className="entity-name">
-          {!collapsed ? "OfBusiness" : ""}
+        <div className="sidebar-brand">
+          {!collapsed && (
+            <img src={ofbSidebarLogo} alt="OFBusiness" className="sidebar-logo-img" />
+          )}
         </div>
         <button
           className="collapse-btn"
@@ -80,6 +101,31 @@ export default function Sidebar() {
           {!collapsed && <span>Dashboard</span>}
         </NavLink>
 
+        <NavLink to="/approvals" className="menu-item" style={{ position: "relative" }}>
+          <FaTasks />
+          {!collapsed && (
+            <span>
+              Approvals
+              {pendingApprovals > 0 && (
+                <span style={{
+                  display: "inline-flex", alignItems: "center", justifyContent: "center",
+                  minWidth: "18px", height: "18px", padding: "0 5px", borderRadius: "9px",
+                  fontSize: "10px", fontWeight: 700, background: "var(--danger)", color: "#fff",
+                  marginLeft: "6px", lineHeight: 1
+                }}>{pendingApprovals}</span>
+              )}
+            </span>
+          )}
+          {collapsed && pendingApprovals > 0 && (
+            <span style={{
+              position: "absolute", top: "6px", right: "6px",
+              minWidth: "14px", height: "14px", borderRadius: "7px",
+              fontSize: "9px", fontWeight: 700, background: "var(--danger)", color: "#fff",
+              display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px"
+            }}>{pendingApprovals}</span>
+          )}
+        </NavLink>
+
         {showAssets && (
           <NavLink to="/assets" className="menu-item">
             <FaBoxOpen />
@@ -105,6 +151,27 @@ export default function Sidebar() {
           <NavLink to="/assets/disposals" className="menu-item">
             <FaRecycle />
             {!collapsed && <span>Disposals</span>}
+          </NavLink>
+        )}
+
+        {showAssets && (
+          <NavLink to="/assets/depreciation" className="menu-item">
+            <FaChartLine />
+            {!collapsed && <span>Depreciation</span>}
+          </NavLink>
+        )}
+
+        {showAssets && (
+          <NavLink to="/assets/faulty-report" className="menu-item">
+            <FaExclamationTriangle />
+            {!collapsed && <span>Faulty Assets</span>}
+          </NavLink>
+        )}
+
+        {showAssets && (
+          <NavLink to="/assets/warranty-alerts" className="menu-item">
+            <FaShieldAlt />
+            {!collapsed && <span>Warranty Alerts</span>}
           </NavLink>
         )}
 
@@ -141,10 +208,16 @@ export default function Sidebar() {
                 <NavLink to="/settings/assignments">Assignments & Ownership</NavLink>
                 <NavLink to="/settings/notifications">Notifications</NavLink>
                 <NavLink to="/settings/security">Security & Audit</NavLink>
-                <NavLink to="/settings/reports">Reports</NavLink>
+                <NavLink to="/settings/reports">Reports & Scheduling</NavLink>
                 <NavLink to="/settings/system">System Preferences</NavLink>
                 <NavLink to="/settings/password">Password Policy</NavLink>
                 <NavLink to="/settings/backup">Backup &amp; Restore</NavLink>
+                <NavLink to="/settings/vendors">
+                  <FaStore style={{ marginRight: 6, fontSize: 11 }} />Vendors
+                </NavLink>
+                <NavLink to="/settings/custom-fields">
+                  <FaPuzzlePiece style={{ marginRight: 6, fontSize: 11 }} />Custom Fields
+                </NavLink>
               </div>
             )}
           </>

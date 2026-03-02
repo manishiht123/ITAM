@@ -25,7 +25,12 @@ const AssetSchema = {
     warrantyExpireDate: { type: DataTypes.DATEONLY, allowNull: true },
     price: { type: DataTypes.STRING, allowNull: true },
     invoiceNumber: { type: DataTypes.STRING, allowNull: true },
-    vendorName: { type: DataTypes.STRING, allowNull: true }
+    vendorName: { type: DataTypes.STRING, allowNull: true },
+    // Per-asset depreciation overrides (null = use global SystemPreference defaults)
+    depreciationMethod: { type: DataTypes.STRING, allowNull: true },   // "Straight Line" | "Declining Balance"
+    usefulLifeMonths:   { type: DataTypes.INTEGER, allowNull: true },  // e.g. 36, 48, 60
+    salvageValueAmount: { type: DataTypes.DECIMAL(15, 2), allowNull: true }, // absolute ₹ amount
+    customFields:       { type: DataTypes.TEXT, allowNull: true, defaultValue: null } // JSON object: {fieldKey: value}
 };
 
 const Asset = sequelize.define("Asset", AssetSchema);

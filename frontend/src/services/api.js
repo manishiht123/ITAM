@@ -201,6 +201,155 @@ const api = {
         }));
     },
 
+    // --- VENDORS ---
+    getVendors: async (entityCode) =>
+        handleResponse(await fetch(`${BASE_URL}/vendors`, {
+            headers: buildHeaders(entityCode)
+        })),
+    createVendor: async (data, entityCode) =>
+        handleResponse(await fetch(`${BASE_URL}/vendors`, {
+            method: "POST",
+            headers: buildHeaders(entityCode, { "Content-Type": "application/json" }),
+            body: JSON.stringify(data)
+        })),
+    updateVendor: async (id, data, entityCode) =>
+        handleResponse(await fetch(`${BASE_URL}/vendors/${id}`, {
+            method: "PUT",
+            headers: buildHeaders(entityCode, { "Content-Type": "application/json" }),
+            body: JSON.stringify(data)
+        })),
+    deleteVendor: async (id, entityCode) =>
+        handleResponse(await fetch(`${BASE_URL}/vendors/${id}`, {
+            method: "DELETE",
+            headers: buildHeaders(entityCode)
+        })),
+
+    // --- ASSET REPORTS ---
+    getReportByDepartment: async (entityCode) =>
+        handleResponse(await fetch(`${BASE_URL}/assets/report/by-department`, {
+            headers: buildHeaders(entityCode)
+        })),
+    getReportByLocation: async (entityCode) =>
+        handleResponse(await fetch(`${BASE_URL}/assets/report/by-location`, {
+            headers: buildHeaders(entityCode)
+        })),
+    exportReportByDepartment: async (entityCode) => {
+        const res = await fetch(`${BASE_URL}/assets/report/by-department/export`, {
+            headers: buildHeaders(entityCode)
+        });
+        if (!res.ok) throw new Error("Export failed");
+        return res.blob();
+    },
+    exportReportByLocation: async (entityCode) => {
+        const res = await fetch(`${BASE_URL}/assets/report/by-location/export`, {
+            headers: buildHeaders(entityCode)
+        });
+        if (!res.ok) throw new Error("Export failed");
+        return res.blob();
+    },
+    getDepreciationReport: async (entityCode) =>
+        handleResponse(await fetch(`${BASE_URL}/assets/report/depreciation`, {
+            headers: buildHeaders(entityCode)
+        })),
+    exportDepreciationReport: async (entityCode) => {
+        const res = await fetch(`${BASE_URL}/assets/report/depreciation/export`, {
+            headers: buildHeaders(entityCode)
+        });
+        if (!res.ok) throw new Error("Export failed");
+        return res.blob();
+    },
+    getFaultyAssetsReport: async (entityCode) =>
+        handleResponse(await fetch(`${BASE_URL}/assets/report/faulty`, {
+            headers: buildHeaders(entityCode)
+        })),
+    exportFaultyAssetsReport: async (entityCode) => {
+        const res = await fetch(`${BASE_URL}/assets/report/faulty/export`, {
+            headers: buildHeaders(entityCode)
+        });
+        if (!res.ok) throw new Error("Export failed");
+        return res.blob();
+    },
+    // --- APPROVALS ---
+    getApprovals: async (entityCode, status = "") =>
+        handleResponse(await fetch(`${BASE_URL}/approvals?status=${status}`, {
+            headers: buildHeaders(entityCode)
+        })),
+    getMyApprovals: async (entityCode) =>
+        handleResponse(await fetch(`${BASE_URL}/approvals`, {
+            headers: buildHeaders(entityCode)
+        })),
+    getPendingApprovalCount: async (entityCode) =>
+        handleResponse(await fetch(`${BASE_URL}/approvals/pending-count`, {
+            headers: buildHeaders(entityCode)
+        })),
+    reviewApproval: async (id, action, comments, entityCode) =>
+        handleResponse(await fetch(`${BASE_URL}/approvals/${id}/review`, {
+            method: "POST",
+            headers: buildHeaders(entityCode, { "Content-Type": "application/json" }),
+            body: JSON.stringify({ action, comments })
+        })),
+
+    getWarrantyAlerts: async (entityCode, days = 90) =>
+        handleResponse(await fetch(`${BASE_URL}/assets/report/warranty-alerts?days=${days}`, {
+            headers: buildHeaders(entityCode)
+        })),
+    exportWarrantyAlerts: async (entityCode, days = 90) => {
+        const res = await fetch(`${BASE_URL}/assets/report/warranty-alerts/export?days=${days}`, {
+            headers: buildHeaders(entityCode)
+        });
+        if (!res.ok) throw new Error("Export failed");
+        return res.blob();
+    },
+
+    // --- TWO-FACTOR AUTHENTICATION ---
+    // Setup routes — tokens passed in body (no auth header needed)
+    totpGenerate: async (setupToken) =>
+        handleResponse(await fetch(`${BASE_URL}/auth/2fa/totp-generate`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token: setupToken })
+        })),
+    totpEnable: async (setupToken, code) =>
+        handleResponse(await fetch(`${BASE_URL}/auth/2fa/totp-enable`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token: setupToken, code })
+        })),
+    emailSetup: async (setupToken) =>
+        handleResponse(await fetch(`${BASE_URL}/auth/2fa/email-setup`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token: setupToken })
+        })),
+    emailEnable: async (preAuthToken, code) =>
+        handleResponse(await fetch(`${BASE_URL}/auth/2fa/email-enable`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token: preAuthToken, code })
+        })),
+    sendOtp: async (preAuthToken) =>
+        handleResponse(await fetch(`${BASE_URL}/auth/2fa/send-otp`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token: preAuthToken })
+        })),
+    verify2FA: async (preAuthToken, code) =>
+        handleResponse(await fetch(`${BASE_URL}/auth/2fa/verify`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token: preAuthToken, code })
+        })),
+    get2FAStatus: async () =>
+        handleResponse(await fetch(`${BASE_URL}/auth/2fa/status`, {
+            headers: buildHeaders()
+        })),
+    disable2FA: async (userId) =>
+        handleResponse(await fetch(`${BASE_URL}/auth/2fa/disable`, {
+            method: "POST",
+            headers: buildHeaders(null, { "Content-Type": "application/json" }),
+            body: JSON.stringify({ userId })
+        })),
+
     // --- ASSET CATEGORIES ---
     getAssetCategories: async (entityCode) => handleResponse(await fetch(`${BASE_URL}/asset-categories`, {
         headers: buildHeaders(entityCode)
@@ -635,6 +784,57 @@ const api = {
         return handleResponse(await fetch(`${BASE_URL}/report-schedules/${id}/run`, {
             method: "POST",
             headers: buildHeaders()
+        }));
+    },
+
+    // --- CUSTOM FIELDS ---
+    getCustomFields: async () => handleResponse(await fetch(`${BASE_URL}/custom-fields`, {
+        headers: buildHeaders()
+    })),
+    getActiveCustomFields: async () => handleResponse(await fetch(`${BASE_URL}/custom-fields/active`, {
+        headers: buildHeaders()
+    })),
+    createCustomField: async (data) => {
+        return handleResponse(await fetch(`${BASE_URL}/custom-fields`, {
+            method: "POST",
+            headers: buildHeaders(null, { "Content-Type": "application/json" }),
+            body: JSON.stringify(data),
+        }));
+    },
+    updateCustomField: async (id, data) => {
+        return handleResponse(await fetch(`${BASE_URL}/custom-fields/${id}`, {
+            method: "PUT",
+            headers: buildHeaders(null, { "Content-Type": "application/json" }),
+            body: JSON.stringify(data),
+        }));
+    },
+    deleteCustomField: async (id) => {
+        return handleResponse(await fetch(`${BASE_URL}/custom-fields/${id}`, {
+            method: "DELETE",
+            headers: buildHeaders(),
+        }));
+    },
+
+    // --- BATCH ASSET OPERATIONS ---
+    batchStatusChange: async (assets, status) => {
+        return handleResponse(await fetch(`${BASE_URL}/assets/batch/status`, {
+            method: "POST",
+            headers: buildHeaders(null, { "Content-Type": "application/json" }),
+            body: JSON.stringify({ assets, status }),
+        }));
+    },
+    batchTransfer: async (assets, transferData) => {
+        return handleResponse(await fetch(`${BASE_URL}/assets/batch/transfer`, {
+            method: "POST",
+            headers: buildHeaders(null, { "Content-Type": "application/json" }),
+            body: JSON.stringify({ assets, ...transferData }),
+        }));
+    },
+    batchDispose: async (assets, disposalData) => {
+        return handleResponse(await fetch(`${BASE_URL}/assets/batch/dispose`, {
+            method: "POST",
+            headers: buildHeaders(null, { "Content-Type": "application/json" }),
+            body: JSON.stringify({ assets, ...disposalData }),
         }));
     },
 };

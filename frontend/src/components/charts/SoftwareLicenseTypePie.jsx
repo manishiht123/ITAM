@@ -6,6 +6,7 @@ import {
 } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
 import { useMemo } from "react";
+import "./GenericDoughnutPie.css";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 

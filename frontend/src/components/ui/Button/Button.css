@@ -81,6 +81,28 @@
   filter: brightness(1.1);
 }
 
+/* Danger ghost — transparent with red icon/text, red background on hover */
+.btn-danger-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.btn-danger-ghost:hover {
+  background: #fee2e2;
+  color: #dc2626;
+  border-color: #fca5a5;
+  transform: none;
+  box-shadow: none;
+}
+
+[data-theme="dark"] .btn-danger-ghost:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
 /* ============== STATES ============== */
 .btn-disabled,
 .btn:disabled {

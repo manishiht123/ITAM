@@ -1,0 +1,304 @@
+/* =========================================================
+   TWO-FACTOR SETUP PAGE
+   ========================================================= */
+
+.tfs-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-base);
+  padding: var(--space-xl) var(--space-md);
+}
+
+.tfs-card {
+  width: 100%;
+  max-width: 500px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-2xl) var(--space-xl);
+  box-shadow: var(--shadow-md);
+}
+
+/* ── Header ── */
+.tfs-header {
+  text-align: center;
+  margin-bottom: var(--space-xl);
+}
+
+.tfs-shield-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(22, 169, 232, 0.1);
+  color: var(--primary);
+  font-size: 28px;
+  margin: 0 auto var(--space-md);
+}
+
+.tfs-title {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  margin: 0 0 var(--space-xs);
+}
+
+.tfs-subtitle {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.tfs-email {
+  display: inline-block;
+  margin-top: var(--space-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-secondary);
+}
+
+/* ── Error ── */
+.tfs-error {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--radius-sm);
+  color: var(--danger);
+  font-size: var(--text-sm);
+  margin-bottom: var(--space-lg);
+}
+
+/* ── Method picker ── */
+.tfs-methods-label {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-secondary);
+  margin: 0 0 var(--space-md);
+}
+
+.tfs-methods {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.tfs-method-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-muted);
+  cursor: pointer;
+  text-align: left;
+  transition: all var(--transition-fast);
+  width: 100%;
+}
+
+.tfs-method-card:hover:not(:disabled) {
+  border-color: var(--primary);
+  background: var(--hover-overlay);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.tfs-method-card:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tfs-method-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.tfs-method-icon-blue  { background: rgba(22, 169, 232, 0.12); color: var(--primary); }
+.tfs-method-icon-green { background: rgba(22, 163, 74, 0.12);  color: #16a34a; }
+
+.tfs-method-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tfs-method-name {
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+}
+
+.tfs-method-desc {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.tfs-method-arrow {
+  font-size: var(--text-lg);
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* ── TOTP steps ── */
+.tfs-totp {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.tfs-steps {
+  margin: 0;
+  padding-left: 1.4em;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+
+.tfs-steps li + li {
+  margin-top: var(--space-xs);
+}
+
+.tfs-qr-wrap {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-md);
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.tfs-qr-img {
+  width: 200px;
+  height: 200px;
+}
+
+.tfs-manual-code {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--bg-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.tfs-manual-label {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tfs-manual-value {
+  font-family: monospace;
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  word-break: break-all;
+  letter-spacing: 2px;
+}
+
+/* ── Verify form ── */
+.tfs-verify {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.tfs-verify-hint {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.tfs-code-input {
+  width: 100%;
+  text-align: center;
+  font-size: 2rem;
+  font-family: monospace;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 12px;
+  padding: var(--space-md);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-muted);
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color var(--transition-fast);
+  box-sizing: border-box;
+}
+
+.tfs-code-input:focus {
+  border-color: var(--primary);
+}
+
+/* ── Buttons ── */
+.tfs-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-xl);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  border: none;
+  transition: all var(--transition-fast);
+  width: 100%;
+}
+
+.tfs-btn-primary {
+  background: var(--primary);
+  color: #fff;
+}
+
+.tfs-btn-primary:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.tfs-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tfs-btn-ghost {
+  background: var(--bg-muted);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+
+.tfs-btn-ghost:hover:not(:disabled) {
+  background: var(--hover-overlay);
+  color: var(--text-primary);
+}
+
+/* ── Footer ── */
+.tfs-footer {
+  text-align: center;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  margin-top: var(--space-lg);
+  margin-bottom: 0;
+}
+
+/* ── Dark mode ── */
+[data-theme="dark"] .tfs-qr-wrap {
+  background: #fff;
+}

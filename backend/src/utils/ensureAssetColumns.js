@@ -2,7 +2,7 @@ const ensureAssetColumns = async (sequelize) => {
     try {
         const [rows] = await sequelize.query(`
             SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
-            WHERE TABLE_SCHEMA = "${sequelize.options.database}"
+            WHERE TABLE_SCHEMA = DATABASE()
               AND TABLE_NAME IN ("Assets", "assets")
         `);
         const existing = new Set(rows.map((row) => row.COLUMN_NAME));
@@ -43,6 +43,18 @@ const ensureAssetColumns = async (sequelize) => {
         }
         if (!existing.has("vendorName")) {
             await addColumn("ALTER TABLE `Assets` ADD COLUMN `vendorName` VARCHAR(255) NULL;");
+        }
+        if (!existing.has("depreciationMethod")) {
+            await addColumn("ALTER TABLE `Assets` ADD COLUMN `depreciationMethod` VARCHAR(50) NULL;");
+        }
+        if (!existing.has("usefulLifeMonths")) {
+            await addColumn("ALTER TABLE `Assets` ADD COLUMN `usefulLifeMonths` INT NULL;");
+        }
+        if (!existing.has("salvageValueAmount")) {
+            await addColumn("ALTER TABLE `Assets` ADD COLUMN `salvageValueAmount` DECIMAL(15,2) NULL;");
+        }
+        if (!existing.has("customFields")) {
+            await addColumn("ALTER TABLE `Assets` ADD COLUMN `customFields` TEXT NULL;");
         }
     } catch (err) {
         console.error("[ensureAssetColumns] Critical error checking columns:", err.message);

@@ -15,7 +15,14 @@ const User = sequelize.define("User", {
   // Password security fields (ISO 27001 / PCI-DSS)
   failedLoginAttempts: { type: DataTypes.INTEGER, defaultValue: 0 },
   lockedUntil: { type: DataTypes.DATE, allowNull: true },
-  lastPasswordChange: { type: DataTypes.DATE, allowNull: true }
+  lastPasswordChange: { type: DataTypes.DATE, allowNull: true },
+  // Two-Factor Authentication
+  twoFactorEnabled:  { type: DataTypes.BOOLEAN, defaultValue: false },
+  twoFactorMethod:   { type: DataTypes.STRING,  allowNull: true },
+  totpSecret:        { type: DataTypes.STRING,  allowNull: true },
+  totpSecretTemp:    { type: DataTypes.STRING,  allowNull: true },
+  emailOtpCode:      { type: DataTypes.STRING,  allowNull: true },
+  emailOtpExpiry:    { type: DataTypes.DATE,    allowNull: true }
 });
 
 module.exports = User;

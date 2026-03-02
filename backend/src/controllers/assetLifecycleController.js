@@ -2,6 +2,7 @@ const { Op } = require("sequelize");
 const TenantManager = require("../utils/TenantManager");
 const AuditLog = require("../models/AuditLog");
 const AssetDisposal = require("../models/AssetDisposal");
+const ApprovalRequest = require("../models/ApprovalRequest");
 
 // ── helpers ─────────────────────────────────────────────────────────────────
 
@@ -47,6 +48,9 @@ exports.retireAsset = async (req, res) => {
     if (asset.status === "Retired") {
       return res.status(409).json({ error: "Asset is already retired." });
     }
+    if (asset.status === "Pending Approval") {
+      return res.status(409).json({ error: "Asset already has a pending approval request." });
+    }
 
     const {
       disposalReason  = "End of Life",
@@ -57,36 +61,51 @@ exports.retireAsset = async (req, res) => {
       notes           = ""
     } = req.body || {};
 
-    // Record formal disposal
-    await AssetDisposal.create({
-      assetId:        asset.assetId,
-      assetName:      asset.name,
-      category:       asset.category,
-      serialNumber:   asset.serialNumber || "",
-      entity:         req.headers["x-entity-code"] || asset.entity || "",
-      purchasePrice:  asset.price || "",
-      disposalReason,
-      disposalMethod,
-      disposalDate,
-      saleValue,
-      authorizedBy,
-      performedBy:    req.user?.email || req.user?.name || "System",
-      notes
-    });
+    const entityCode = req.headers["x-entity-code"] || asset.entity || "";
+    const previousAssetStatus = asset.status;
 
-    // Update asset — release from employee + mark Retired
+    // Lock asset pending approval
     await Asset.update(
-      { status: "Retired", employeeId: null, department: null, location: null },
+      { status: "Pending Approval" },
       { where: { id: req.params.id } }
     );
 
+    // Create approval request (disposal record created only after approval)
+    const approval = await ApprovalRequest.create({
+      requestType:         "disposal",
+      entityCode,
+      assetId:             asset.assetId,
+      assetName:           asset.name,
+      requestedBy:         req.user?.name || req.user?.email || "System",
+      requestedByEmail:    req.user?.email || "",
+      previousAssetStatus,
+      payload: {
+        assetId:        asset.assetId,
+        assetName:      asset.name,
+        category:       asset.category,
+        serialNumber:   asset.serialNumber || "",
+        entity:         entityCode,
+        purchasePrice:  asset.price || "",
+        disposalReason,
+        disposalMethod,
+        disposalDate,
+        saleValue,
+        authorizedBy,
+        notes,
+        assetDbId:      req.params.id   // DB primary key for updating status
+      }
+    });
+
     await logAudit(
       req,
-      "Asset retired",
-      `Asset ID: ${asset.assetId}, Reason: ${disposalReason}, Method: ${disposalMethod}${authorizedBy ? `, Authorized by: ${authorizedBy}` : ""}`
+      "DISPOSAL_REQUESTED",
+      `Asset ID: ${asset.assetId}, Reason: ${disposalReason}, Method: ${disposalMethod} — submitted for approval.`
     );
 
-    return res.json({ message: "Asset retired successfully." });
+    return res.json({
+      message: "Disposal request submitted for manager approval.",
+      requestId: approval.id
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

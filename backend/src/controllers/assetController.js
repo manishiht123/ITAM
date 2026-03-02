@@ -119,8 +119,13 @@ const buildEmpMap = (employees) => {
 const enrichWithEmployee = (asset, empMap) => {
     const key = asset.employeeId ? String(asset.employeeId).trim().toLowerCase() : null;
     const emp = key ? (empMap[key] || null) : null;
+    let parsedCustomFields = {};
+    if (asset.customFields) {
+        try { parsedCustomFields = JSON.parse(asset.customFields); } catch (_) {}
+    }
     return {
         ...asset,
+        customFields: parsedCustomFields,
         employeeName: emp?.name || null,
         employeeEmail: emp?.email || null,
         employeeDepartment: emp?.department || asset.department || null
@@ -424,7 +429,11 @@ exports.createAsset = async (req, res) => {
             return res.status(409).json({ error: "Asset ID already exists" });
         }
 
-        const asset = await Asset.create(req.body);
+        const body = { ...req.body };
+        if (body.customFields && typeof body.customFields === "object") {
+            body.customFields = JSON.stringify(body.customFields);
+        }
+        const asset = await Asset.create(body);
         await logAudit(req, "Asset created", `Asset ID: ${asset.assetId || asset.id}`);
         res.status(201).json(asset);
     } catch (error) {
@@ -520,7 +529,11 @@ exports.updateAsset = async (req, res) => {
             req.body.location = null;
         }
 
-        await Asset.update(req.body, { where: { id: req.params.id } });
+        const updateBody = { ...req.body };
+        if (updateBody.customFields && typeof updateBody.customFields === "object") {
+            updateBody.customFields = JSON.stringify(updateBody.customFields);
+        }
+        await Asset.update(updateBody, { where: { id: req.params.id } });
         const updated = await Asset.findByPk(req.params.id);
         await logAudit(
             req,

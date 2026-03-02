@@ -6,6 +6,8 @@ import RoleGuard from "./components/RoleGuard";
 // Eager load critical components (needed immediately)
 import Layout from "./components/Layout";
 import Login from "./pages/Login";
+import TwoFactorSetup  from "./pages/TwoFactorSetup";
+import TwoFactorVerify from "./pages/TwoFactorVerify";
 
 // Lazy load all other pages for code splitting
 // Main Pages
@@ -36,6 +38,12 @@ const SystemPreferences = lazy(() => import("./pages/settings/SystemPreferences"
 const PasswordPolicy = lazy(() => import("./pages/settings/PasswordPolicy"));
 const Reports = lazy(() => import("./pages/settings/Reports"));
 const BackupRestore = lazy(() => import("./pages/settings/BackupRestore"));
+const Vendors = lazy(() => import("./pages/settings/Vendors"));
+const CustomFields = lazy(() => import("./pages/settings/CustomFields"));
+const Approvals          = lazy(() => import("./pages/Approvals"));
+const DepreciationReport = lazy(() => import("./pages/DepreciationReport"));
+const FaultyAssetReport  = lazy(() => import("./pages/FaultyAssetReport"));
+const WarrantyAlerts     = lazy(() => import("./pages/WarrantyAlerts"));
 const AIIntelligence = lazy(() => import("./pages/AIIntelligence"));
 
 // Loading fallback component
@@ -45,7 +53,9 @@ export default function App() {
   return (
     <Routes>
       {/* Login - No suspense needed, eager loaded */}
-      <Route path="/login" element={<Login />} />
+      <Route path="/login"      element={<Login />} />
+      <Route path="/2fa-setup"  element={<TwoFactorSetup />} />
+      <Route path="/2fa-verify" element={<TwoFactorVerify />} />
 
       {/* Protected layout */}
       <Route path="/" element={<Layout />}>
@@ -57,6 +67,16 @@ export default function App() {
           element={
             <Suspense fallback={<PageLoader />}>
               <Dashboard />
+            </Suspense>
+          }
+        />
+
+        {/* Approvals — available to all authenticated users */}
+        <Route
+          path="/approvals"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <Approvals />
             </Suspense>
           }
         />
@@ -110,7 +130,30 @@ export default function App() {
             </Suspense>
           }
         />
-
+        <Route
+          path="/assets/depreciation"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <RoleGuard module="assets"><DepreciationReport /></RoleGuard>
+            </Suspense>
+          }
+        />
+        <Route
+          path="/assets/faulty-report"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <RoleGuard module="assets"><FaultyAssetReport /></RoleGuard>
+            </Suspense>
+          }
+        />
+        <Route
+          path="/assets/warranty-alerts"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <RoleGuard module="assets"><WarrantyAlerts /></RoleGuard>
+            </Suspense>
+          }
+        />
         {/* Employees — requires employees access */}
         <Route
           path="employees"
@@ -260,6 +303,22 @@ export default function App() {
           element={
             <Suspense fallback={<PageLoader />}>
               <RoleGuard adminOnly><BackupRestore /></RoleGuard>
+            </Suspense>
+          }
+        />
+        <Route
+          path="settings/vendors"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <RoleGuard adminOnly><Vendors /></RoleGuard>
+            </Suspense>
+          }
+        />
+        <Route
+          path="settings/custom-fields"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <RoleGuard adminOnly><CustomFields /></RoleGuard>
             </Suspense>
           }
         />

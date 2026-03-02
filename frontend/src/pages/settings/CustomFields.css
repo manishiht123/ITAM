@@ -1,0 +1,316 @@
+/* ── Add button ──────────────────────────────────────────────────── */
+.cf-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 18px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s;
+  box-shadow: 0 1px 4px rgba(37,99,235,0.25);
+}
+.cf-add-btn:hover {
+  background: var(--primary-dark, #1d4ed8);
+  box-shadow: 0 3px 10px rgba(37,99,235,0.35);
+}
+
+/* ── Notice ──────────────────────────────────────────────────────── */
+.cf-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 18px;
+  background: rgba(37,99,235,0.07);
+  border: 1px solid rgba(37,99,235,0.18);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 13.5px;
+  margin-bottom: 18px;
+  line-height: 1.5;
+}
+.cf-notice svg { color: var(--primary); margin-top: 2px; flex-shrink: 0; font-size: 15px; }
+
+/* ── Empty state ─────────────────────────────────────────────────── */
+.cf-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 60px 20px;
+  gap: 14px;
+  color: var(--text-secondary);
+}
+.cf-empty-icon { font-size: 40px; opacity: 0.3; }
+.cf-empty p { font-size: 15px; margin: 0; }
+
+/* ── Table ───────────────────────────────────────────────────────── */
+.cf-table-wrap { overflow-x: auto; }
+.cf-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+.cf-table th {
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.cf-table td {
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.cf-table tbody tr:hover { background: var(--hover, rgba(0,0,0,0.03)); }
+.cf-table tbody tr:last-child td { border-bottom: none; }
+.cf-row-inactive td { opacity: 0.55; }
+
+.cf-drag-handle { color: var(--text-secondary); opacity: 0.4; cursor: grab; }
+.cf-field-name { font-weight: 600; color: var(--text-primary); }
+.cf-muted { color: var(--text-secondary); font-size: 12.5px; }
+.cf-options-cell { font-size: 12.5px; color: var(--text-secondary); max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── Type badge ──────────────────────────────────────────────────── */
+.cf-type-badge {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 12px;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+/* ── Required badge ──────────────────────────────────────────────── */
+.cf-badge-req {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11.5px;
+  font-weight: 600;
+  background: rgba(220,38,38,0.1);
+  color: #dc2626;
+}
+
+/* ── Active toggle button ────────────────────────────────────────── */
+.cf-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border: none;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.cf-toggle-on  { background: rgba(22,163,74,0.12);  color: #16a34a; }
+.cf-toggle-off { background: rgba(107,114,128,0.12); color: #6b7280; }
+.cf-toggle-on svg, .cf-toggle-off svg { font-size: 14px; }
+
+/* ── Action buttons ──────────────────────────────────────────────── */
+.cf-actions { display: flex; gap: 6px; }
+.cf-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  font-size: 13px;
+}
+.cf-edit   { background: rgba(37,99,235,0.1);  color: #2563eb; }
+.cf-delete { background: rgba(220,38,38,0.1);  color: #dc2626; }
+.cf-edit:hover   { background: #2563eb; color: #fff; }
+.cf-delete:hover { background: #dc2626; color: #fff; }
+
+/* ── Drawer overlay ──────────────────────────────────────────────── */
+.cf-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 1100;
+  display: flex;
+  justify-content: flex-end;
+}
+.cf-drawer {
+  width: 460px;
+  max-width: 95vw;
+  height: 100%;
+  background: var(--bg-elevated, #fff);
+  display: flex;
+  flex-direction: column;
+  box-shadow: -4px 0 24px rgba(0,0,0,0.18);
+  animation: cf-slide-in 0.22s ease;
+}
+@keyframes cf-slide-in {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+.cf-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.cf-drawer-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 16px;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+.cf-drawer-close:hover { background: var(--hover); }
+
+.cf-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.cf-drawer-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* ── Form elements ───────────────────────────────────────────────── */
+.cf-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cf-form-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.cf-form-group input[type="text"],
+.cf-form-group input[type="number"],
+.cf-form-group textarea,
+.cf-form-group select {
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--bg, #fff);
+  color: var(--text-primary);
+  font-size: 13.5px;
+  transition: border-color 0.15s;
+  resize: vertical;
+}
+.cf-form-group input:focus,
+.cf-form-group textarea:focus { outline: none; border-color: var(--primary); }
+
+.cf-req-star { color: #dc2626; margin-left: 2px; }
+.cf-hint { font-size: 11.5px; color: var(--text-secondary); }
+.cf-hint code { background: var(--hover); padding: 1px 5px; border-radius: 3px; font-size: 11px; }
+
+.cf-form-row {
+  display: flex;
+  gap: 14px;
+}
+.cf-form-group-half { flex: 1; }
+
+/* ── Toggle switch ───────────────────────────────────────────────── */
+.cf-toggle-group {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+.cf-switch { position: relative; display: inline-block; width: 44px; height: 24px; cursor: pointer; }
+.cf-switch input { opacity: 0; width: 0; height: 0; }
+.cf-slider {
+  position: absolute;
+  inset: 0;
+  background: #ccc;
+  border-radius: 24px;
+  transition: background 0.2s;
+}
+.cf-slider:before {
+  content: "";
+  position: absolute;
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+.cf-switch input:checked + .cf-slider { background: var(--primary); }
+.cf-switch input:checked + .cf-slider:before { transform: translateX(20px); }
+
+/* ── Type grid ───────────────────────────────────────────────────── */
+.cf-type-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.cf-type-card {
+  padding: 12px 14px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cf-type-card:hover { border-color: var(--primary); background: rgba(37,99,235,0.04); }
+.cf-type-selected { border-color: var(--primary) !important; background: rgba(37,99,235,0.08) !important; }
+.cf-type-label { font-size: 13.5px; font-weight: 700; color: var(--text-primary); }
+.cf-type-desc  { font-size: 11.5px; color: var(--text-secondary); }
+
+/* ── Drawer buttons ──────────────────────────────────────────────── */
+.cf-cancel-btn {
+  padding: 9px 18px;
+  border: 1px solid var(--border);
+  background: transparent;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text-primary);
+  transition: background 0.15s;
+}
+.cf-cancel-btn:hover:not(:disabled) { background: var(--hover); }
+.cf-cancel-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.cf-save-btn {
+  padding: 9px 22px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.cf-save-btn:hover:not(:disabled) { background: var(--primary-dark, #1d4ed8); }
+.cf-save-btn:disabled { opacity: 0.45; cursor: not-allowed; }

@@ -9,6 +9,7 @@ const EmailSettings = require("../models/EmailSettings");
 const License = require("../models/License");
 const SoftwareLicense = require("../models/SoftwareLicense");
 const SoftwareAssignment = require("../models/SoftwareAssignment");
+const Vendor = require("../models/Vendor");
 const ensureAssetColumns = require("./ensureAssetColumns");
 const ensureAssetStatusEnum = require("./ensureAssetStatusEnum");
 
@@ -88,6 +89,7 @@ const getTenantConnection = async (entityCode) => {
     License.init(sequelize);
     SoftwareLicense.init(sequelize);
     SoftwareAssignment.init(sequelize);
+    Vendor.init(sequelize);
 
     try {
         await sequelize.authenticate();

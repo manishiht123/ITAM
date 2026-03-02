@@ -80,6 +80,9 @@ export default function AddAsset() {
   const [departments, setDepartments] = useState([]);
   const [entities, setEntities] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [vendors, setVendors] = useState([]);
+  const [customFieldDefs, setCustomFieldDefs] = useState([]);
+  const [customFields, setCustomFields] = useState({});
 
   // Form State
   const [formData, setFormData] = useState({
@@ -101,7 +104,10 @@ export default function AddAsset() {
     vendor: "",
     additionalItems: "",
     insuranceStatus: "",
-    comments: ""
+    comments: "",
+    depreciationMethod: "",
+    usefulLifeMonths: "",
+    salvageValueAmount: ""
   });
 
   useEffect(() => {
@@ -155,18 +161,26 @@ export default function AddAsset() {
 
   const loadDropdowns = async () => {
     try {
-      const [locs, depts, cats] = await Promise.all([
+      const [locs, depts, cats, cfDefs] = await Promise.all([
         api.getLocationsCommon(),
         api.getDepartmentsCommon(),
-        api.getAssetCategoriesCommon()
+        api.getAssetCategoriesCommon(),
+        api.getActiveCustomFields().catch(() => [])
       ]);
       setLocations(locs);
       setDepartments(depts);
       setCategories(cats);
+      setCustomFieldDefs(cfDefs);
     } catch (err) {
       console.error("Error loading dropdowns", err);
     }
   };
+
+  useEffect(() => {
+    const entity = formData.entity;
+    if (!entity || entity === "ALL") return;
+    api.getVendors(entity).then(setVendors).catch(() => setVendors([]));
+  }, [formData.entity]);
 
   useEffect(() => {
     if (!purchaseDate || !warrantyYears) return;
@@ -200,13 +214,47 @@ export default function AddAsset() {
     return () => clearTimeout(timer);
   }, [formData.name, formData.entity]);
 
+  const [errors, setErrors] = useState({});
+
+  const validate = () => {
+    const e = {};
+    if (!formData.entity)               e.entity         = "Entity is required";
+    if (!formData.name?.trim())         e.name           = "Asset Name / Tag is required";
+    if (!formData.department)           e.department     = "Department is required";
+    if (!formData.location?.trim())     e.location       = "Location is required";
+    if (!formData.makeModel?.trim())    e.makeModel      = "Make / Model is required";
+    if (!formData.serialNumber?.trim()) e.serialNumber   = "Serial Number is required";
+    if (!formData.cpu?.trim())          e.cpu            = "CPU is required";
+    if (!formData.ram?.trim())          e.ram            = "RAM is required";
+    if (!formData.storage?.trim())      e.storage        = "Storage is required";
+    if (!formData.os)                   e.os             = "Operating System is required";
+    if (!purchaseDate)                  e.purchaseDate   = "Purchase Date is required";
+    if (!warrantyYears || Number(warrantyYears) < 1) e.warrantyYears = "Warranty Years is required";
+    if (!formData.price?.toString().trim()) e.price      = "Asset Price is required";
+    if (!formData.invoice?.trim())      e.invoice        = "Invoice Number is required";
+    if (!formData.insuranceStatus)      e.insuranceStatus = "Insurance Status is required";
+    customFieldDefs.forEach(def => {
+      if (def.required && !String(customFields[def.fieldKey] || "").trim()) {
+        e[`cf_${def.fieldKey}`] = `${def.fieldName} is required`;
+      }
+    });
+    return e;
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: undefined }));
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
+    const errs = validate();
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+      toast.error("Please fill in all required fields.");
+      return;
+    }
     try {
       const assetPayload = {
         assetId: assetId,
@@ -230,7 +278,11 @@ export default function AddAsset() {
         vendorName: formData.vendor || null,
         additionalItems: formData.additionalItems || null,
         insuranceStatus: formData.insuranceStatus || null,
-        comments: formData.comments || null
+        comments: formData.comments || null,
+        depreciationMethod: formData.depreciationMethod || null,
+        usefulLifeMonths: formData.usefulLifeMonths ? Number(formData.usefulLifeMonths) : null,
+        salvageValueAmount: formData.salvageValueAmount ? Number(formData.salvageValueAmount) : null,
+        customFields: Object.keys(customFields).length > 0 ? customFields : null
       };
 
       // Pass entity code for correct database routing
@@ -257,7 +309,7 @@ export default function AddAsset() {
             <input value={assetId} disabled className="accent-input" />
           </Field>
 
-          <Field label="Entity">
+          <Field label="Entity" required error={errors.entity}>
             <select name="entity" value={formData.entity} onChange={handleChange}>
               <option value="">Select Entity</option>
               {entities.map(ent => (
@@ -294,7 +346,7 @@ export default function AddAsset() {
             )}
           </Field>
 
-          <Field label="Department">
+          <Field label="Department" required error={errors.department}>
             <select name="department" value={formData.department} onChange={handleChange}>
               <option value="">-- Select --</option>
               {departments.map(d => (
@@ -303,15 +355,18 @@ export default function AddAsset() {
             </select>
           </Field>
 
-          <Field label="Location">
+          <Field label="Location" required error={errors.location}>
             <CityDropdown
               value={formData.location}
-              onChange={(city) => setFormData(prev => ({ ...prev, location: city }))}
+              onChange={(city) => {
+                setFormData(prev => ({ ...prev, location: city }));
+                if (errors.location) setErrors(prev => ({ ...prev, location: undefined }));
+              }}
               placeholder="Search Indian city..."
             />
           </Field>
 
-          <Field label="Asset Name / Tag">
+          <Field label="Asset Name / Tag" required error={errors.name}>
             <input name="name" value={formData.name} onChange={handleChange} placeholder="e.g. Dell-XPS-01" />
           </Field>
 
@@ -328,27 +383,27 @@ export default function AddAsset() {
         <h3>Hardware Specifications</h3>
 
         <div className="grid-3">
-          <Field label="Make / Model">
+          <Field label="Make / Model" required error={errors.makeModel}>
             <input name="makeModel" value={formData.makeModel} onChange={handleChange} placeholder="Dell Latitude 5420" />
           </Field>
 
-          <Field label="Serial Number">
+          <Field label="Serial Number" required error={errors.serialNumber}>
             <input name="serialNumber" value={formData.serialNumber} onChange={handleChange} placeholder="SNXXXXXXX" />
           </Field>
 
-          <Field label="CPU">
+          <Field label="CPU" required error={errors.cpu}>
             <input name="cpu" value={formData.cpu} onChange={handleChange} placeholder="Intel i5 / i7" />
           </Field>
 
-          <Field label="RAM">
+          <Field label="RAM" required error={errors.ram}>
             <input name="ram" value={formData.ram} onChange={handleChange} placeholder="16 GB" />
           </Field>
 
-          <Field label="Storage">
+          <Field label="Storage" required error={errors.storage}>
             <input name="storage" value={formData.storage} onChange={handleChange} placeholder="512 GB SSD" />
           </Field>
 
-          <Field label="Operating System">
+          <Field label="Operating System" required error={errors.os}>
             <select name="os" value={formData.os} onChange={handleChange}>
               <option value="">Select OS</option>
               <option value="Windows">Windows</option>
@@ -374,20 +429,26 @@ export default function AddAsset() {
         <h3>Procurement & Financial</h3>
 
         <div className="grid-3">
-          <Field label="Purchase Date">
+          <Field label="Purchase Date" required error={errors.purchaseDate}>
             <input
               type="date"
               value={purchaseDate}
-              onChange={(e) => setPurchaseDate(e.target.value)}
+              onChange={(e) => {
+                setPurchaseDate(e.target.value);
+                if (errors.purchaseDate) setErrors(prev => ({ ...prev, purchaseDate: undefined }));
+              }}
             />
           </Field>
 
-          <Field label="Warranty (Years)">
+          <Field label="Warranty (Years)" required error={errors.warrantyYears}>
             <input
               type="number"
               min="1"
               value={warrantyYears}
-              onChange={(e) => setWarrantyYears(e.target.value)}
+              onChange={(e) => {
+                setWarrantyYears(e.target.value);
+                if (errors.warrantyYears) setErrors(prev => ({ ...prev, warrantyYears: undefined }));
+              }}
             />
           </Field>
 
@@ -395,19 +456,24 @@ export default function AddAsset() {
             <input value={warrantyExpiry} disabled />
           </Field>
 
-          <Field label="Asset Price">
+          <Field label="Asset Price" required error={errors.price}>
             <input name="price" value={formData.price} onChange={handleChange} placeholder="₹ 75,000" />
           </Field>
 
-          <Field label="Invoice Number">
+          <Field label="Invoice Number" required error={errors.invoice}>
             <input name="invoice" value={formData.invoice} onChange={handleChange} placeholder="INV-2025-001" />
           </Field>
 
           <Field label="Vendor Name">
-            <input name="vendor" value={formData.vendor} onChange={handleChange} placeholder="Dell India Pvt Ltd" />
+            <select name="vendor" value={formData.vendor} onChange={handleChange}>
+              <option value="">— No Vendor —</option>
+              {vendors.map(v => (
+                <option key={v.id} value={v.name}>{v.name}</option>
+              ))}
+            </select>
           </Field>
 
-          <Field label="Insurance Status">
+          <Field label="Insurance Status" required error={errors.insuranceStatus}>
             <select name="insuranceStatus" value={formData.insuranceStatus} onChange={handleChange}>
               <option value="">Select</option>
               <option value="Insured">Insured</option>
@@ -425,6 +491,82 @@ export default function AddAsset() {
         </div>
       </section>
 
+      {/* DEPRECIATION OVERRIDES */}
+      <section className="form-card">
+        <h3>Depreciation Overrides <span style={{ fontSize: "0.8em", fontWeight: 400, color: "var(--text-muted)" }}>(optional — leave blank to use global settings)</span></h3>
+        <div className="grid-3">
+          <Field label="Depreciation Method">
+            <select name="depreciationMethod" value={formData.depreciationMethod} onChange={handleChange}>
+              <option value="">— Use Global Default —</option>
+              <option value="Straight Line">Straight Line</option>
+              <option value="Declining Balance">Declining Balance (WDV)</option>
+            </select>
+          </Field>
+          <Field label="Useful Life (Months)">
+            <input
+              type="number"
+              name="usefulLifeMonths"
+              value={formData.usefulLifeMonths}
+              onChange={handleChange}
+              placeholder="e.g. 36"
+              min="1"
+            />
+          </Field>
+          <Field label="Salvage Value (₹)">
+            <input
+              type="number"
+              name="salvageValueAmount"
+              value={formData.salvageValueAmount}
+              onChange={handleChange}
+              placeholder="e.g. 5000"
+              min="0"
+            />
+          </Field>
+        </div>
+      </section>
+
+      {/* CUSTOM FIELDS */}
+      {customFieldDefs.length > 0 && (
+        <section className="form-card">
+          <h3>Custom Fields</h3>
+          <div className="grid-3">
+            {customFieldDefs.map(def => (
+              <Field
+                key={def.id}
+                label={def.fieldName}
+                required={def.required}
+                error={errors[`cf_${def.fieldKey}`]}
+              >
+                {def.fieldType === "select" ? (
+                  <select
+                    value={customFields[def.fieldKey] || ""}
+                    onChange={e => {
+                      setCustomFields(prev => ({ ...prev, [def.fieldKey]: e.target.value }));
+                      if (errors[`cf_${def.fieldKey}`]) setErrors(prev => ({ ...prev, [`cf_${def.fieldKey}`]: undefined }));
+                    }}
+                  >
+                    <option value="">— Select —</option>
+                    {(def.options || []).map(opt => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type={def.fieldType === "number" ? "number" : def.fieldType === "date" ? "date" : "text"}
+                    value={customFields[def.fieldKey] || ""}
+                    onChange={e => {
+                      setCustomFields(prev => ({ ...prev, [def.fieldKey]: e.target.value }));
+                      if (errors[`cf_${def.fieldKey}`]) setErrors(prev => ({ ...prev, [`cf_${def.fieldKey}`]: undefined }));
+                    }}
+                    placeholder={def.fieldName}
+                  />
+                )}
+              </Field>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* ACTIONS */}
       <div className="form-actions">
         <Button variant="secondary" onClick={() => navigate("/assets")}>Cancel</Button>
@@ -435,11 +577,12 @@ export default function AddAsset() {
 }
 
 /* Reusable field wrapper */
-function Field({ label, children }) {
+function Field({ label, children, required, error }) {
   return (
-    <div className="field">
-      <label>{label}</label>
+    <div className={`field${error ? " field-has-error" : ""}`}>
+      <label>{label}{required && <span className="field-required">*</span>}</label>
       {children}
+      {error && <span className="field-error-msg">{error}</span>}
     </div>
   );
 }

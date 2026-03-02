@@ -92,7 +92,10 @@ const generatePdf = async (title, columns, rows, entityName, entityLogo, dateStr
             product: 1.2, vendor: 1.0, seatsOwned: 0.7,  seatsUsed: 0.7,
             compliance: 0.9, renewalDate: 1.0, cost: 0.9,
             employee: 1.2, email: 1.4, license: 1.2, assignedAt: 1.0,
-            category: 0.9
+            category: 0.9,
+            // dept/location report columns
+            total: 0.6, inUse: 0.6, available: 0.6, underRepair: 0.7,
+            retired: 0.6, other: 0.55, utilization: 0.7, topCategory: 1.0
         };
         const totalWt  = columns.reduce((s, c) => s + (WEIGHTS[c.key] || 1.0), 0);
         const colWidths = columns.map(c => ((WEIGHTS[c.key] || 1.0) / totalWt) * tableW);
@@ -503,6 +506,40 @@ const fetchReportData = async (reportType, entityCode) => {
             { key: "assignedAt", label: "Assigned On" }
         ];
         return { columns, rows: allAssignments, count: allAssignments.length, title: "Assignment & Ownership Report", entityName, entityLogo };
+    }
+
+    if (reportType === "department" || reportType === "location") {
+        const { fetchAssets, groupAssets } = require("../controllers/assetReportController");
+        const assets = await fetchAssets(entityCode);
+        const field  = reportType === "department" ? "department" : "location";
+        const grouped = groupAssets(assets, field);
+        const groupLabel = reportType === "department" ? "Department" : "Location";
+        const title = reportType === "department"
+            ? "Department-wise Asset Report"
+            : "Location-wise Asset Report";
+        const columns = [
+            { key: "name",        label: groupLabel },
+            { key: "total",       label: "Total" },
+            { key: "inUse",       label: "In Use" },
+            { key: "available",   label: "Available" },
+            { key: "underRepair", label: "Under Repair" },
+            { key: "retired",     label: "Retired" },
+            { key: "other",       label: "Other" },
+            { key: "utilization", label: "Utilization %" },
+            { key: "topCategory", label: "Top Category" }
+        ];
+        const rows = grouped.map(r => ({
+            name:        r.name,
+            total:       r.total,
+            inUse:       r.inUse,
+            available:   r.available,
+            underRepair: r.underRepair,
+            retired:     r.retired,
+            other:       r.other,
+            utilization: `${r.utilization}%`,
+            topCategory: r.topCategory || "—"
+        }));
+        return { columns, rows, count: rows.length, title, entityName, entityLogo };
     }
 
     throw new Error(`Unknown report type: ${reportType}`);

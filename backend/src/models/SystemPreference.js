@@ -32,7 +32,11 @@ const SystemPreferenceSchema = {
   passwordLockoutAttempts: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 5 },
   passwordLockoutDurationMins: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 15 },
   // Domain restriction — comma-separated allowed domains (null/empty = allow all)
-  allowedLoginDomains: { type: DataTypes.TEXT, allowNull: true, defaultValue: null }
+  allowedLoginDomains: { type: DataTypes.TEXT, allowNull: true, defaultValue: null },
+  // Warranty alert settings
+  warrantyAlertEnabled:    { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
+  warrantyAlertDays:       { type: DataTypes.STRING,  allowNull: false, defaultValue: "7,30,60,90" },
+  warrantyAlertRecipients: { type: DataTypes.TEXT,    allowNull: true,  defaultValue: null }
 };
 
 const SystemPreference = sequelize.define("SystemPreference", SystemPreferenceSchema);

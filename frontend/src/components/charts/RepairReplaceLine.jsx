@@ -9,8 +9,8 @@ export default function RepairReplaceLine({ data }) {
       {
         label: "Repair",
         data: data.map((d) => d.repair),
-        borderColor: "#19cbbf",
-        backgroundColor: "rgba(25, 203, 191, 0.2)",
+        borderColor: "#2563eb",
+        backgroundColor: "rgba(37, 99, 235, 0.15)",
         pointRadius: 5,
         pointHoverRadius: 7,
         borderWidth: 2,

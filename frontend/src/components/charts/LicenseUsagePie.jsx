@@ -5,7 +5,8 @@ import {
   Legend
 } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
+import "./GenericDoughnutPie.css";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -25,10 +26,20 @@ export default function LicenseUsagePie({ data }) {
   const items = isNoData ? [] : data;
   const totalUsed = items.reduce((s, d) => s + (d.seatsUsed || 0), 0);
 
+  const [isDark, setIsDark] = useState(
+    document.documentElement.getAttribute("data-theme") === "dark"
+  );
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.getAttribute("data-theme") === "dark");
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => observer.disconnect();
+  }, []);
+
   const chartData = useMemo(() => {
-    const cardBg = document.documentElement.getAttribute("data-theme") === "dark"
-      ? "#0f2034"
-      : "#ffffff";
+    const cardBg = isDark ? "#0f2034" : "#ffffff";
     return {
       labels: items.map((d) => d.name),
       datasets: [{
@@ -41,7 +52,7 @@ export default function LicenseUsagePie({ data }) {
       }]
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data]);
+  }, [data, isDark]);
 
   const options = {
     responsive: true,
@@ -78,7 +89,7 @@ export default function LicenseUsagePie({ data }) {
   return (
     <div className="digital-pie-wrap">
       <div className="digital-pie-canvas">
-        <Doughnut data={chartData} options={options} plugins={[]} />
+        <Doughnut key={String(isDark)} data={chartData} options={options} plugins={[]} />
         {totalUsed > 0 && (
           <div className="dpc-center">
             <span className="dpc-num">{totalUsed}</span>

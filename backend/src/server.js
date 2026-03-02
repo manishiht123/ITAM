@@ -20,12 +20,30 @@ const Role = require("./models/Role");
 const AlertRule = require("./models/AlertRule");
 const AssetTransfer = require("./models/AssetTransfer");
 const AssetDisposal = require("./models/AssetDisposal");
+const ApprovalRequest = require("./models/ApprovalRequest");
 require("./models/Entity");
 require("./models/Organization");
 require("./models/AssetIdPrefix");
+require("./models/Vendor");
+const CustomFieldDefinition = require("./models/CustomFieldDefinition");
 const bcrypt = require("bcryptjs");
 const ensureAssetStatusEnum = require("./utils/ensureAssetStatusEnum");
 const ensureAssetColumns = require("./utils/ensureAssetColumns");
+
+const ensureVendorTable = async (tenantSeq) => {
+  try {
+    const [cols] = await tenantSeq.query(`
+      SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'Vendors'
+    `);
+    if (cols.length === 0) {
+      const Vendor = require("./models/Vendor");
+      if (Vendor.init) await Vendor.init(tenantSeq).sync({ force: false });
+    }
+  } catch (err) {
+    console.error("[Migration] ensureVendorTable:", err.message);
+  }
+};
 
 // One-time data cleanup: clear employee associations from Retired / Theft-Missing assets
 // across all tenant databases. Safe to run on every startup — only touches rows that
@@ -173,13 +191,46 @@ const ensureUserLockoutColumns = async () => {
   }
 };
 
+const ensureUserTwoFactorColumns = async () => {
+  const [rows] = await sequelize.query(`
+    SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = "Users"
+      AND COLUMN_NAME IN (
+        "twoFactorEnabled", "twoFactorMethod",
+        "totpSecret", "totpSecretTemp",
+        "emailOtpCode", "emailOtpExpiry"
+      )
+  `);
+  const existing = new Set(rows.map((r) => r.COLUMN_NAME));
+  if (!existing.has('twoFactorEnabled')) {
+    await sequelize.query("ALTER TABLE `Users` ADD COLUMN `twoFactorEnabled` TINYINT(1) NOT NULL DEFAULT 0;");
+  }
+  if (!existing.has('twoFactorMethod')) {
+    await sequelize.query("ALTER TABLE `Users` ADD COLUMN `twoFactorMethod` VARCHAR(16) NULL;");
+  }
+  if (!existing.has('totpSecret')) {
+    await sequelize.query("ALTER TABLE `Users` ADD COLUMN `totpSecret` VARCHAR(255) NULL;");
+  }
+  if (!existing.has('totpSecretTemp')) {
+    await sequelize.query("ALTER TABLE `Users` ADD COLUMN `totpSecretTemp` VARCHAR(255) NULL;");
+  }
+  if (!existing.has('emailOtpCode')) {
+    await sequelize.query("ALTER TABLE `Users` ADD COLUMN `emailOtpCode` VARCHAR(16) NULL;");
+  }
+  if (!existing.has('emailOtpExpiry')) {
+    await sequelize.query("ALTER TABLE `Users` ADD COLUMN `emailOtpExpiry` DATETIME NULL;");
+  }
+};
+
 const ensureSystemPreferenceColumns = async () => {
   const [rows] = await sequelize.query(`
     SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
     WHERE TABLE_SCHEMA = DATABASE()
       AND TABLE_NAME = "SystemPreferences"
       AND COLUMN_NAME IN (
-        "passwordMaxLength", "passwordLockoutDurationMins", "allowedLoginDomains"
+        "passwordMaxLength", "passwordLockoutDurationMins", "allowedLoginDomains",
+        "warrantyAlertEnabled", "warrantyAlertDays", "warrantyAlertRecipients"
       )
   `);
   const existing = new Set(rows.map((r) => r.COLUMN_NAME));
@@ -191,6 +242,15 @@ const ensureSystemPreferenceColumns = async () => {
   }
   if (!existing.has('allowedLoginDomains')) {
     await sequelize.query("ALTER TABLE `SystemPreferences` ADD COLUMN `allowedLoginDomains` TEXT NULL;");
+  }
+  if (!existing.has('warrantyAlertEnabled')) {
+    await sequelize.query("ALTER TABLE `SystemPreferences` ADD COLUMN `warrantyAlertEnabled` TINYINT(1) NOT NULL DEFAULT 1;");
+  }
+  if (!existing.has('warrantyAlertDays')) {
+    await sequelize.query("ALTER TABLE `SystemPreferences` ADD COLUMN `warrantyAlertDays` VARCHAR(255) NOT NULL DEFAULT '7,30,60,90';");
+  }
+  if (!existing.has('warrantyAlertRecipients')) {
+    await sequelize.query("ALTER TABLE `SystemPreferences` ADD COLUMN `warrantyAlertRecipients` TEXT NULL;");
   }
 };
 
@@ -234,10 +294,13 @@ const startServer = async () => {
     await AlertRule.sync();
     await AssetTransfer.sync();
     await AssetDisposal.sync();
+    await ApprovalRequest.sync();
+    await CustomFieldDefinition.sync();
     await ensureAssetColumns(sequelize);
     await ensureAssetStatusEnum(sequelize);
     await ensureUserPermissionColumns();
     await ensureUserLockoutColumns();
+    await ensureUserTwoFactorColumns();
     await ensureSystemPreferenceColumns();
     await ensureEntityLogoColumn();
     await ensureEmailSettingsBackendUrlColumn();
@@ -245,6 +308,18 @@ const startServer = async () => {
     await ReportSchedule.sync();
     await releaseRetiredAssets();
     await releaseAvailableAssets();
+    // Ensure Vendor table + asset columns exist in every tenant DB
+    try {
+      const Entity = require("./models/Entity");
+      const allEntities = await Entity.findAll();
+      for (const ent of allEntities) {
+        try {
+          const tSeq = await TenantManager.getConnection(ent.code);
+          await ensureVendorTable(tSeq);
+          await ensureAssetColumns(tSeq);
+        } catch (_) {}
+      }
+    } catch (_) {}
     // Start the report scheduler (non-blocking)
     require("./services/reportScheduler").startScheduler().catch(err =>
         console.error("[Scheduler] Startup error:", err.message)
@@ -252,6 +327,10 @@ const startServer = async () => {
     // Start the backup scheduler (non-blocking)
     require("./services/backupScheduler").startScheduler().catch(err =>
         console.error("[BackupScheduler] Startup error:", err.message)
+    );
+    // Start the warranty alert scheduler (non-blocking)
+    require("./services/warrantyAlertScheduler").startScheduler().catch(err =>
+        console.error("[WarrantyAlert] Startup error:", err.message)
     );
 
     const admin = await User.findOne({

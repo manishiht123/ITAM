@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button } from "./ui";
 import "./AssetRetireModal.css";
+import { useEscClose } from "../hooks/useEscClose";
 
 const DISPOSAL_REASONS = [
   "End of Life",
@@ -31,6 +32,8 @@ export default function AssetRetireModal({ asset, onConfirm, onCancel, loading }
     authorizedBy:    "",
     notes:           ""
   });
+
+  useEscClose(!!asset, onCancel);
 
   const set = (key, val) => setForm((p) => ({ ...p, [key]: val }));
 
@@ -130,8 +133,10 @@ export default function AssetRetireModal({ asset, onConfirm, onCancel, loading }
           {/* Warning */}
           <div className="arm-warning">
             <span className="arm-warning-icon">⚠</span>
-            This will permanently mark the asset as <strong>Retired</strong> and release it
-            from any employee association. It cannot be re-allocated after retirement.
+            <span>
+              This will permanently mark the asset as <strong>Retired</strong> and release it
+              from any employee association. It cannot be re-allocated after retirement.
+            </span>
           </div>
 
           <div className="page-modal-footer">
