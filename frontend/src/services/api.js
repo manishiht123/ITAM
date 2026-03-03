@@ -695,6 +695,8 @@ const api = {
         body: JSON.stringify(payload),
     })),
 
+    getAuthConfig: async () => handleResponse(await fetch(`${BASE_URL}/auth/config`)),
+
     googleLogin: async (credential) => handleResponse(await fetch(`${BASE_URL}/auth/google`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

@@ -28,6 +28,9 @@ export default function PasswordPolicy() {
   const [domainError, setDomainError] = useState("");
   const domainInputRef = useRef(null);
 
+  // Google OAuth Client ID
+  const [googleClientId, setGoogleClientId] = useState("");
+
   useEffect(() => {
     const load = async () => {
       try {
@@ -48,6 +51,8 @@ export default function PasswordPolicy() {
         // Load allowed domains
         const raw = prefs.allowedLoginDomains ?? "";
         setDomains(raw ? raw.split(",").map((d) => d.trim()).filter(Boolean) : []);
+        // Load Google Client ID
+        setGoogleClientId(prefs.googleClientId ?? "");
       } catch {
         // use defaults
       } finally {
@@ -103,6 +108,7 @@ export default function PasswordPolicy() {
         passwordLockoutAttempts:     policy.lockoutAttempts,
         passwordLockoutDurationMins: policy.lockoutDurationMins,
         allowedLoginDomains:         domains.join(","),
+        googleClientId:              googleClientId.trim() || null,
       });
       toast.success("Password policy saved.");
     } catch (err) {
@@ -207,6 +213,30 @@ export default function PasswordPolicy() {
               </label>
             ))}
           </div>
+        </div>
+
+        {/* ── Google OAuth ── */}
+        <div className="card pp-domain-card">
+          <div className="card-title">Google Sign-In (OAuth 2.0)</div>
+          <p className="pp-info" style={{ marginTop: 0, marginBottom: 12 }}>
+            Enter your Google OAuth 2.0 Client ID to enable "Sign in with Google" on the login page.
+            Create one at <strong>Google Cloud Console → APIs &amp; Credentials</strong>.
+          </p>
+          <input
+            type="text"
+            className="pp-domain-text-input"
+            style={{ width: "100%", padding: "8px 12px", border: "1px solid var(--border)", borderRadius: 8, fontSize: 13, fontFamily: "monospace", background: "var(--bg-muted)", color: "var(--text-primary)" }}
+            value={googleClientId}
+            onChange={(e) => setGoogleClientId(e.target.value)}
+            placeholder="xxxxxx.apps.googleusercontent.com"
+            spellCheck={false}
+            autoComplete="off"
+          />
+          <p className="pp-domain-hint" style={{ marginTop: 8 }}>
+            {googleClientId.trim()
+              ? "✓ Google Sign-In is configured. Changes take effect after saving."
+              : "Google Sign-In is disabled — no Client ID configured."}
+          </p>
         </div>
 
         {/* ── Domain Restrictions ── */}

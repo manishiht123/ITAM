@@ -33,6 +33,8 @@ const SystemPreferenceSchema = {
   passwordLockoutDurationMins: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 15 },
   // Domain restriction — comma-separated allowed domains (null/empty = allow all)
   allowedLoginDomains: { type: DataTypes.TEXT, allowNull: true, defaultValue: null },
+  // Google OAuth 2.0 Client ID (fallback when GOOGLE_CLIENT_ID env var is not set)
+  googleClientId: { type: DataTypes.TEXT, allowNull: true, defaultValue: null },
   // Warranty alert settings
   warrantyAlertEnabled:    { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
   warrantyAlertDays:       { type: DataTypes.STRING,  allowNull: false, defaultValue: "7,30,60,90" },

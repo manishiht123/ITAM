@@ -230,7 +230,8 @@ const ensureSystemPreferenceColumns = async () => {
       AND TABLE_NAME = "SystemPreferences"
       AND COLUMN_NAME IN (
         "passwordMaxLength", "passwordLockoutDurationMins", "allowedLoginDomains",
-        "warrantyAlertEnabled", "warrantyAlertDays", "warrantyAlertRecipients"
+        "warrantyAlertEnabled", "warrantyAlertDays", "warrantyAlertRecipients",
+        "googleClientId"
       )
   `);
   const existing = new Set(rows.map((r) => r.COLUMN_NAME));
@@ -251,6 +252,9 @@ const ensureSystemPreferenceColumns = async () => {
   }
   if (!existing.has('warrantyAlertRecipients')) {
     await sequelize.query("ALTER TABLE `SystemPreferences` ADD COLUMN `warrantyAlertRecipients` TEXT NULL;");
+  }
+  if (!existing.has('googleClientId')) {
+    await sequelize.query("ALTER TABLE `SystemPreferences` ADD COLUMN `googleClientId` TEXT NULL;");
   }
 };
 

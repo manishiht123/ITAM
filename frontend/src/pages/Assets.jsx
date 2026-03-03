@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useEntity } from "../context/EntityContext";
 import "./Assets.css";
-import { FaPencilAlt, FaUserPlus, FaUndoAlt, FaCheckCircle, FaExchangeAlt, FaHistory, FaTrashAlt, FaRecycle, FaQrcode } from "react-icons/fa";
+import { FaPencilAlt, FaEye, FaUserPlus, FaUndoAlt, FaCheckCircle, FaExchangeAlt, FaHistory, FaTrashAlt, FaRecycle, FaQrcode } from "react-icons/fa";
 import { MdTimeline } from "react-icons/md";
 import { KpiCard, Card, Button, Badge, ConfirmDialog, Spinner } from "../components/ui";
 import ChartCard from "../components/ChartCard";
@@ -11,6 +11,7 @@ import api from "../services/api";
 import { useToast } from "../context/ToastContext";
 import AssetRetireModal from "../components/AssetRetireModal";
 import AssetLifecycleDrawer from "../components/AssetLifecycleDrawer";
+import AssetDetailDrawer from "../components/AssetDetailDrawer";
 import AssetQRModal from "../components/AssetQRModal";
 import { useEscClose } from "../hooks/useEscClose";
 
@@ -48,6 +49,9 @@ export default function Assets() {
 
   // Lifecycle history drawer state
   const [lifecycleDrawer, setLifecycleDrawer] = useState({ open: false, data: null, loading: false });
+
+  // Asset detail drawer state
+  const [detailDrawer, setDetailDrawer] = useState({ open: false, asset: null });
 
   // Batch selection: Map of id → {id, entity, assetId, name}
   const [selectedIds, setSelectedIds] = useState(new Map());
@@ -312,6 +316,9 @@ export default function Assets() {
       setLifecycleDrawer({ open: false, data: null, loading: false });
     }
   };
+
+  // ── Asset detail drawer ──
+  const openDetailDrawer = (asset) => setDetailDrawer({ open: true, asset });
 
   // ── Disposal details modal ──
   const openDisposalModal = async (asset) => {
@@ -859,6 +866,13 @@ export default function Assets() {
                   <td>
                     <div className="asset-action-icons">
                       <button
+                        className="asset-icon-btn view"
+                        title="View Asset Details"
+                        onClick={() => openDetailDrawer(asset)}
+                      >
+                        <FaEye />
+                      </button>
+                      <button
                         className="asset-icon-btn edit"
                         title="Edit Asset"
                         onClick={() => navigate(`/assets/edit/${asset.id}?entity=${encodeURIComponent(asset.entity || "")}`)}
@@ -1030,6 +1044,18 @@ export default function Assets() {
           data={lifecycleDrawer.data}
           loading={lifecycleDrawer.loading}
           onClose={() => setLifecycleDrawer({ open: false, data: null, loading: false })}
+        />
+      )}
+
+      {/* ================= ASSET DETAIL DRAWER ================= */}
+      {detailDrawer.open && (
+        <AssetDetailDrawer
+          asset={detailDrawer.asset}
+          onClose={() => setDetailDrawer({ open: false, asset: null })}
+          onEdit={(a) => {
+            setDetailDrawer({ open: false, asset: null });
+            navigate(`/assets/edit/${a.id}?entity=${encodeURIComponent(a.entity || "")}`);
+          }}
         />
       )}
 

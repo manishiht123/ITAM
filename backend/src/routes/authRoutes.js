@@ -7,6 +7,18 @@ const roleGuard = require("../middleware/roleGuard");
 
 const router = express.Router();
 
+// Public config — returns the Google Client ID (env var takes priority, then DB setting)
+router.get("/config", async (req, res) => {
+  try {
+    const SystemPreference = require("../models/SystemPreference");
+    const prefs = await SystemPreference.findOne();
+    const googleClientId = process.env.GOOGLE_CLIENT_ID || prefs?.googleClientId || null;
+    res.json({ googleClientId });
+  } catch {
+    res.json({ googleClientId: process.env.GOOGLE_CLIENT_ID || null });
+  }
+});
+
 router.post("/login",  login);
 router.post("/google", googleLogin);   // Google OAuth 2.0 sign-in
 

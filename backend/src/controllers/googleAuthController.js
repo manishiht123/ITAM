@@ -17,15 +17,18 @@ exports.googleLogin = async (req, res) => {
     return res.status(400).json({ message: "Google credential is missing." });
   }
 
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  if (!clientId) {
-    return res.status(500).json({ message: "Google OAuth is not configured on this server." });
-  }
-
   const rawIp = req.headers["x-forwarded-for"] || req.ip || req.connection?.remoteAddress;
   const ip = rawIp ? rawIp.replace(/^::ffff:/, "") : rawIp;
 
   try {
+    // Resolve client ID: env var first, then DB setting
+    let policy;
+    try { policy = await SystemPreference.findOne(); } catch (_) {}
+    const clientId = process.env.GOOGLE_CLIENT_ID || policy?.googleClientId || null;
+    if (!clientId) {
+      return res.status(500).json({ message: "Google OAuth is not configured on this server." });
+    }
+
     // Verify the Google ID token
     const client = new OAuth2Client(clientId);
     const ticket = await client.verifyIdToken({ idToken: credential, audience: clientId });
@@ -37,8 +40,6 @@ exports.googleLogin = async (req, res) => {
     }
 
     // --- Domain restriction check ---
-    let policy;
-    try { policy = await SystemPreference.findOne(); } catch (_) {}
     if (!isDomainAllowed(email, policy?.allowedLoginDomains ?? "")) {
       try {
         await AuditLog.create({ user: email, action: "Google login blocked", ip, details: "Email domain not permitted" });

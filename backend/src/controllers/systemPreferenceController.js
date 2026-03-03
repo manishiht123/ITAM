@@ -27,7 +27,7 @@ exports.updateSystemPreferences = async (req, res) => {
     const stringFields = [
       "allocationWarningMessage", "backupFrequency", "backupTime",
       "backupType", "backupLocation", "fiscalYearStart", "depreciationMethod",
-      "allowedLoginDomains"
+      "allowedLoginDomains", "googleClientId"
     ];
     const numberFields = [
       "maxAssetsPerEmployee", "backupRetentionDays", "defaultUsefulLife",
