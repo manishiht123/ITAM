@@ -210,6 +210,10 @@ exports.importAssets = async (req, res) => {
             return res.status(400).json({ error: "No file uploaded." });
         }
 
+        // Query params: dryRun=true → validate only, skipErrors=true → skip invalid rows
+        const dryRun     = req.query.dryRun     === "true";
+        const skipErrors = req.query.skipErrors === "true";
+
         const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
         const sheetName = workbook.SheetNames[0];
         const sheet = workbook.Sheets[sheetName];
@@ -226,8 +230,9 @@ exports.importAssets = async (req, res) => {
         const existingAssets = await Asset.findAll({ attributes: ["assetId"] });
         const existingSet = new Set(existingAssets.map((a) => String(a.assetId || "").toLowerCase()));
 
-        const errors = [];
-        const assetsToCreate = [];
+        const validRows    = [];
+        const invalidRows  = [];
+        const previewRows  = [];
 
         rows.forEach((row, index) => {
             const normalized = {};
@@ -235,63 +240,94 @@ exports.importAssets = async (req, res) => {
                 normalized[normalizeHeader(key)] = row[key];
             });
 
+            const rowNum    = index + 2;
+            const rowErrors = [];
+
             const assetId = String(normalized.assetid || "").trim();
             if (!assetId) {
-                errors.push({ row: index + 2, error: "Asset ID is required." });
-                return;
-            }
-            if (existingSet.has(assetId.toLowerCase())) {
-                errors.push({ row: index + 2, error: `Asset ID ${assetId} already exists.` });
-                return;
+                rowErrors.push("Asset ID is required");
+            } else if (existingSet.has(assetId.toLowerCase())) {
+                rowErrors.push(`Asset ID "${assetId}" already exists`);
             }
 
             const department = String(normalized.department || "").trim();
             if (department && !deptSet.has(department.toLowerCase())) {
-                errors.push({ row: index + 2, error: `Department '${department}' not found.` });
-                return;
+                rowErrors.push(`Department "${department}" not found`);
             }
 
             const location = String(normalized.location || "").trim();
             if (location && !locSet.has(location.toLowerCase())) {
-                errors.push({ row: index + 2, error: `Location '${location}' not found.` });
-                return;
+                rowErrors.push(`Location "${location}" not found`);
             }
 
             const category = String(normalized.assettype || normalized.category || "").trim() || "Laptop";
-            const status = normalizeStatus(normalized.assetstatus);
+            const status   = normalizeStatus(normalized.assetstatus);
+            const name     = String(normalized.makemodel || normalized.assetname || assetId).trim();
 
-            assetsToCreate.push({
+            const assetPayload = {
                 assetId,
-                name: String(normalized.makemodel || normalized.assetname || assetId).trim(),
+                name,
                 category,
-                entity: entityCode,
+                entity:          entityCode,
                 status,
-                employeeId: String(normalized.employeeid || "").trim() || null,
-                department: department || null,
-                location: location || null,
-                makeModel: String(normalized.makemodel || "").trim() || null,
-                serialNumber: String(normalized.serialnumber || "").trim() || null,
-                storage: String(normalized.ssdhdd || "").trim() || null,
-                ram: String(normalized.ramsize || "").trim() || null,
-                cpu: String(normalized.cpu || "").trim() || null,
-                os: String(normalized.os || "").trim() || null,
-                comments: String(normalized.faultylaptopissue || "").trim() || null,
+                employeeId:      String(normalized.employeeid || "").trim() || null,
+                department:      department || null,
+                location:        location || null,
+                makeModel:       String(normalized.makemodel || "").trim() || null,
+                serialNumber:    String(normalized.serialnumber || "").trim() || null,
+                storage:         String(normalized.ssdhdd || "").trim() || null,
+                ram:             String(normalized.ramsize || "").trim() || null,
+                cpu:             String(normalized.cpu || "").trim() || null,
+                os:              String(normalized.os || "").trim() || null,
+                comments:        String(normalized.faultylaptopissue || "").trim() || null,
                 additionalItems: String(normalized.additionalitems || "").trim() || null,
                 insuranceStatus: String(normalized.insurancestatus || "").trim() || null,
-                dateOfPurchase: parseDate(normalized.dateofpurchase),
+                dateOfPurchase:  parseDate(normalized.dateofpurchase),
                 warrantyExpireDate: parseDate(normalized.warrantyexpiredate),
-                price: String(normalized.price || "").trim() || null,
-                invoiceNumber: String(normalized.invoicenumber || "").trim() || null,
-                vendorName: String(normalized.vendorname || "").trim() || null
-            });
+                price:           String(normalized.price || "").trim() || null,
+                invoiceNumber:   String(normalized.invoicenumber || "").trim() || null,
+                vendorName:      String(normalized.vendorname || "").trim() || null,
+            };
+
+            const previewRow = { rowNum, assetId, name, category, status, department, location, valid: rowErrors.length === 0, errors: rowErrors };
+
+            if (rowErrors.length === 0) {
+                validRows.push(assetPayload);
+                previewRows.push(previewRow);
+            } else {
+                invalidRows.push({ rowNum, assetId, errors: rowErrors });
+                previewRows.push(previewRow);
+            }
         });
 
-        if (errors.length) {
-            return res.status(400).json({ error: "Validation failed.", details: errors });
+        // Dry run: return preview only, do not insert
+        if (dryRun) {
+            return res.json({
+                validCount:   validRows.length,
+                invalidCount: invalidRows.length,
+                rows:         previewRows,
+            });
         }
 
-        await Asset.bulkCreate(assetsToCreate);
-        return res.json({ message: `Imported ${assetsToCreate.length} assets.` });
+        // If there are errors and skipErrors is false, reject the whole import
+        if (invalidRows.length > 0 && !skipErrors) {
+            return res.status(400).json({
+                error:   "Validation failed. Fix errors or use 'Skip invalid rows' option.",
+                details: invalidRows.map(r => ({ row: r.rowNum, error: r.errors.join("; ") })),
+            });
+        }
+
+        if (validRows.length === 0) {
+            return res.status(400).json({ error: "No valid rows to import." });
+        }
+
+        await Asset.bulkCreate(validRows);
+        return res.json({
+            message:  `Imported ${validRows.length} asset(s).${invalidRows.length ? ` Skipped ${invalidRows.length} invalid row(s).` : ""}`,
+            imported: validRows.length,
+            skipped:  invalidRows.length,
+            errors:   invalidRows.map(r => ({ row: r.rowNum, assetId: r.assetId, error: r.errors.join("; ") })),
+        });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -639,6 +675,26 @@ exports.updateAsset = async (req, res) => {
                     } else if (becameReturned && !returnEnabled) {
                         console.log("[Email] Asset return email disabled in notification settings — skipping.");
                     }
+
+                    // Status change alert (theft/missing, under repair, not submitted)
+                    const alertStatuses = ["Theft/Missing", "Under Repair", "Not Submitted"];
+                    const statusChangeEnabled = notificationSettings ? notificationSettings.assetStatusChange !== false : true;
+                    if (statusChangeEnabled && updated && existing?.status !== updated.status && alertStatuses.includes(updated.status)) {
+                        try {
+                            const { sendStatusChangeEmail } = require("../services/emailService");
+                            await sendStatusChangeEmail({
+                                settings: settings.toJSON(),
+                                asset: updated.toJSON(),
+                                newStatus: updated.status,
+                                changedBy: req.user?.name || req.user?.email || "System",
+                                entityInfo: entityInfo?.toJSON ? entityInfo.toJSON() : entityInfo,
+                                backendUrl,
+                                entityCode
+                            });
+                        } catch (scErr) {
+                            console.error("[Email] Status change email failed:", scErr.message);
+                        }
+                    }
                 }
             }
         } catch (emailErr) {
@@ -646,6 +702,77 @@ exports.updateAsset = async (req, res) => {
         }
 
         res.json({ message: "Asset updated" });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+exports.returnAsset = async (req, res) => {
+    try {
+        const entityCode = req.headers["x-entity-code"];
+        if (!entityCode || entityCode.toUpperCase() === "ALL") {
+            return res.status(400).json({ error: "A specific entity code is required to return an asset." });
+        }
+
+        const Asset = await getAssetModel(req);
+        const asset = await Asset.findByPk(req.params.id);
+        if (!asset) return res.status(404).json({ error: "Asset not found." });
+
+        const allocatedStatuses = ["In Use", "Allocated", "Pending Approval"];
+        if (!allocatedStatuses.includes(asset.status)) {
+            return res.status(400).json({ error: `Asset cannot be returned — current status is "${asset.status}".` });
+        }
+
+        const { reason = "Not specified", notes = "" } = req.body;
+        const prevEmployeeId = asset.employeeId;
+
+        await Asset.update(
+            { status: "Available", employeeId: null, department: null, location: null },
+            { where: { id: req.params.id } }
+        );
+        const updated = await Asset.findByPk(req.params.id);
+
+        await logAudit(
+            req,
+            "Asset returned",
+            `Asset: ${asset.assetId} | Reason: ${reason}${notes ? ` | Notes: ${notes}` : ""}`
+        );
+
+        // Fire return email notification (non-blocking)
+        try {
+            const tSeq = await TenantManager.getConnection(entityCode);
+            const Employee = tSeq.models.Employee || require("../models/Employee").init(tSeq);
+            const EmailSettings = require("../models/EmailSettings");
+            const NotifSettings = require("../models/NotificationSettings");
+            const settings = await EmailSettings.findOne();
+            const notifSettings = await NotifSettings.findOne();
+            const returnEnabled = notifSettings ? notifSettings.assetReturn !== false : true;
+
+            if (settings?.enabled && returnEnabled && prevEmployeeId) {
+                const employee = await Employee.findOne({
+                    where: tSeq.where(
+                        tSeq.fn("LOWER", tSeq.col("employeeId")),
+                        prevEmployeeId.toLowerCase()
+                    )
+                });
+                if (employee?.email) {
+                    const entityInfo = await Entity.findOne({ where: { code: entityCode } });
+                    const backendUrl = settings.backendUrl || `http://${req.hostname}:5000`;
+                    await sendReturnEmail({
+                        settings: settings.toJSON(),
+                        employee: employee.toJSON(),
+                        asset: updated.toJSON(),
+                        entity: entityInfo?.toJSON ? entityInfo.toJSON() : entityInfo,
+                        backendUrl,
+                        entityCode
+                    });
+                }
+            }
+        } catch (emailErr) {
+            console.error("[returnAsset] Email notification failed:", emailErr.message);
+        }
+
+        res.json({ message: "Asset returned successfully.", asset: updated });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

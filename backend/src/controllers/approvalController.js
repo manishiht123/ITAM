@@ -68,6 +68,22 @@ exports.getApprovals = async (req, res) => {
     }
 };
 
+// ── GET /api/approvals/my ─────────────────────────────────────────────────────
+// Always returns only the current user's own submitted requests (regardless of role)
+
+exports.getMyApprovals = async (req, res) => {
+    try {
+        const email = req.user?.email || "";
+        const approvals = await ApprovalRequest.findAll({
+            where: { requestedByEmail: email },
+            order: [["createdAt", "DESC"]]
+        });
+        res.json(approvals);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
 // ── GET /api/approvals/pending-count ─────────────────────────────────────────
 
 exports.getPendingCount = async (req, res) => {
@@ -136,7 +152,30 @@ exports.reviewApproval = async (req, res) => {
                 `${approval.requestType === "transfer" ? "Transfer" : "Disposal"} request for asset ${approval.assetId} rejected by ${reviewer}. Reason: ${comments || "N/A"}`
             );
 
-            return res.json({ message: "Request rejected and asset status reverted." });
+            // Non-blocking decision email
+        try {
+            const EmailSettings = require("../models/EmailSettings");
+            const NotificationSettings = require("../models/NotificationSettings");
+            const Entity = require("../models/Entity");
+            const { sendApprovalDecisionEmail } = require("../services/emailService");
+            const settings = await EmailSettings.findOne();
+            const notifSettings = await NotificationSettings.findOne();
+            if (settings?.enabled && notifSettings?.approvalDecision !== false) {
+                const entityInfo = await Entity.findOne({ where: { code: approval.entityCode } });
+                const backendUrl = settings.backendUrl || `http://${req.hostname}:5000`;
+                await sendApprovalDecisionEmail({
+                    settings: settings.toJSON(),
+                    approval: approval.toJSON(),
+                    entityInfo: entityInfo?.toJSON ? entityInfo.toJSON() : entityInfo,
+                    backendUrl,
+                    entityCode: approval.entityCode
+                });
+            }
+        } catch (emailErr) {
+            console.error("[reviewApproval] Rejection decision email failed:", emailErr.message);
+        }
+
+        return res.json({ message: "Request rejected and asset status reverted." });
         }
 
         // ── APPROVE ───────────────────────────────────────────────────────────
@@ -193,6 +232,29 @@ exports.reviewApproval = async (req, res) => {
         await logAudit(reviewerEmail, ip, "APPROVAL_APPROVED",
             `${approval.requestType === "transfer" ? "Transfer" : "Disposal"} request for asset ${approval.assetId} approved by ${reviewer}.`
         );
+
+        // Non-blocking decision email
+        try {
+            const EmailSettings = require("../models/EmailSettings");
+            const NotificationSettings = require("../models/NotificationSettings");
+            const Entity = require("../models/Entity");
+            const { sendApprovalDecisionEmail } = require("../services/emailService");
+            const settings = await EmailSettings.findOne();
+            const notifSettings = await NotificationSettings.findOne();
+            if (settings?.enabled && notifSettings?.approvalDecision !== false) {
+                const entityInfo = await Entity.findOne({ where: { code: approval.entityCode } });
+                const backendUrl = settings.backendUrl || `http://${req.hostname}:5000`;
+                await sendApprovalDecisionEmail({
+                    settings: settings.toJSON(),
+                    approval: approval.toJSON(),
+                    entityInfo: entityInfo?.toJSON ? entityInfo.toJSON() : entityInfo,
+                    backendUrl,
+                    entityCode: approval.entityCode
+                });
+            }
+        } catch (emailErr) {
+            console.error("[reviewApproval] Approval decision email failed:", emailErr.message);
+        }
 
         res.json({ message: "Request approved and action executed successfully." });
     } catch (err) {

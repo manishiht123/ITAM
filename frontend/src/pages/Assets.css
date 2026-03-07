@@ -798,6 +798,10 @@ textarea.page-modal-input {
   }
 }
 
+.page-modal-sm {
+  max-width: 360px;
+}
+
 .page-modal-md {
   max-width: 480px;
 }

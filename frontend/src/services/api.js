@@ -139,10 +139,14 @@ const api = {
         }
         return res.blob();
     },
-    importAssets: async (file, entityCode) => {
+    importAssets: async (file, entityCode, dryRun = false, skipErrors = false) => {
         const formData = new FormData();
         formData.append("file", file);
-        const res = await fetch(`${BASE_URL}/assets/import`, {
+        const params = new URLSearchParams();
+        if (dryRun)     params.set("dryRun",     "true");
+        if (skipErrors) params.set("skipErrors",  "true");
+        const query = params.toString() ? `?${params}` : "";
+        const res = await fetch(`${BASE_URL}/assets/import${query}`, {
             method: "POST",
             headers: buildHeaders(entityCode),
             body: formData
@@ -183,6 +187,13 @@ const api = {
     },
 
     // --- ASSET LIFECYCLE ---
+    returnAsset: async (id, data, entityCode) => {
+        return handleResponse(await fetch(`${BASE_URL}/assets/${id}/return`, {
+            method: "POST",
+            headers: buildHeaders(entityCode, { "Content-Type": "application/json" }),
+            body: JSON.stringify(data)
+        }));
+    },
     retireAsset: async (id, disposalData, entityCode) => {
         return handleResponse(await fetch(`${BASE_URL}/assets/${id}/retire`, {
             method: "POST",
@@ -274,9 +285,9 @@ const api = {
         handleResponse(await fetch(`${BASE_URL}/approvals?status=${status}`, {
             headers: buildHeaders(entityCode)
         })),
-    getMyApprovals: async (entityCode) =>
-        handleResponse(await fetch(`${BASE_URL}/approvals`, {
-            headers: buildHeaders(entityCode)
+    getMyApprovals: async () =>
+        handleResponse(await fetch(`${BASE_URL}/approvals/my`, {
+            headers: buildHeaders()
         })),
     getPendingApprovalCount: async (entityCode) =>
         handleResponse(await fetch(`${BASE_URL}/approvals/pending-count`, {
@@ -473,6 +484,15 @@ const api = {
         });
         return handleResponse(res);
     },
+
+    getEmployeeAssets: async (employeeId, entityCode) => handleResponse(await fetch(`${BASE_URL}/employees/${employeeId}/assets`, {
+        headers: buildHeaders(entityCode)
+    })),
+    offboardEmployee: async (employeeId, data, entityCode) => handleResponse(await fetch(`${BASE_URL}/employees/${employeeId}/offboard`, {
+        method: "POST",
+        headers: buildHeaders(entityCode, { "Content-Type": "application/json" }),
+        body: JSON.stringify(data)
+    })),
 
     // --- ORGANIZATION ---
     getOrganization: async () => handleResponse(await fetch(`${BASE_URL}/organization`, {
@@ -839,6 +859,37 @@ const api = {
             body: JSON.stringify({ assets, ...disposalData }),
         }));
     },
+
+    // --- PHYSICAL AUDITS ---
+    getAudits: async () =>
+        handleResponse(await fetch(`${BASE_URL}/audits`, { headers: buildHeaders() })),
+    createAudit: async (data) =>
+        handleResponse(await fetch(`${BASE_URL}/audits`, {
+            method: "POST",
+            headers: buildHeaders(null, { "Content-Type": "application/json" }),
+            body: JSON.stringify(data),
+        })),
+    getAudit: async (id) =>
+        handleResponse(await fetch(`${BASE_URL}/audits/${id}`, { headers: buildHeaders() })),
+    startAudit: async (id) =>
+        handleResponse(await fetch(`${BASE_URL}/audits/${id}/start`, {
+            method: "POST", headers: buildHeaders(),
+        })),
+    scanAuditItem: async (auditId, itemId, data) =>
+        handleResponse(await fetch(`${BASE_URL}/audits/${auditId}/items/${itemId}`, {
+            method: "PATCH",
+            headers: buildHeaders(null, { "Content-Type": "application/json" }),
+            body: JSON.stringify(data),
+        })),
+    completeAudit: async (id) =>
+        handleResponse(await fetch(`${BASE_URL}/audits/${id}/complete`, {
+            method: "POST", headers: buildHeaders(),
+        })),
+    deleteAudit: async (id) =>
+        handleResponse(await fetch(`${BASE_URL}/audits/${id}`, {
+            method: "DELETE", headers: buildHeaders(),
+        })),
+    exportAuditUrl: (id) => `${BASE_URL}/audits/${id}/export`,
 };
 
 export default api;

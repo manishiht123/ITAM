@@ -32,7 +32,8 @@ router.post("/batch/dispose",  batchController.batchDispose);
 router.post("/", assetController.createAsset);
 router.post("/import", upload.single("file"), assetController.importAssets);
 router.post("/transfer", transferController.initiateTransfer);
-router.post("/:id/retire", lifecycleController.retireAsset);
+router.post("/:id/retire",  lifecycleController.retireAsset);
+router.post("/:id/return", assetController.returnAsset);
 router.put("/:id", assetController.updateAsset);
 router.delete("/:id", assetController.deleteAsset);
 

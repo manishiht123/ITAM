@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { Card, Table, Badge, Button } from "../ui";
-import { FaPen, FaTrash } from "react-icons/fa";
+import { FaPen, FaTrash, FaUserMinus } from "react-icons/fa";
 import api from "../../services/api";
 import { useEntity } from "../../context/EntityContext";
 
-export default function EmployeeTable({ onEdit, onDelete, refreshToken }) {
+export default function EmployeeTable({ onEdit, onDelete, onOffboard, refreshToken }) {
   const { entity } = useEntity();
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -67,6 +67,17 @@ export default function EmployeeTable({ onEdit, onDelete, refreshToken }) {
             title="Edit"
             onClick={() => onEdit && onEdit(employee)}
           />
+          {employee.status !== "Inactive" && (
+            <Button
+              variant="ghost"
+              size="sm"
+              iconOnly
+              icon={<FaUserMinus />}
+              title="Offboard Employee"
+              style={{ color: "#f59e0b" }}
+              onClick={() => onOffboard && onOffboard(employee)}
+            />
+          )}
           <Button
             variant="danger"
             size="sm"

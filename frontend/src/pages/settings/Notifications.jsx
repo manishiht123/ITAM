@@ -14,7 +14,11 @@ export default function Notifications() {
         securityAlerts: true,
         maintenanceReminders: true,
         assetAllocation: true,
-        assetReturn: true
+        assetReturn: true,
+        approvalRequest: true,
+        approvalDecision: true,
+        assetStatusChange: true,
+        employeeOffboarding: true
     });
     const [emailSettings, setEmailSettings] = useState({
         enabled: true,
@@ -193,6 +197,58 @@ export default function Notifications() {
                         <button
                             onClick={() => toggle('assetReturn')}
                             className={`toggle-switch ${settings.assetReturn ? 'on' : 'off'}`}
+                        >
+                            <span className="toggle-thumb" />
+                        </button>
+                    </div>
+
+                    <div className="toggle-row">
+                        <div className="toggle-label">
+                            <h4>Approval Request Submitted</h4>
+                            <p>Notify IT admins when a transfer or disposal request is submitted for approval</p>
+                        </div>
+                        <button
+                            onClick={() => toggle('approvalRequest')}
+                            className={`toggle-switch ${settings.approvalRequest ? 'on' : 'off'}`}
+                        >
+                            <span className="toggle-thumb" />
+                        </button>
+                    </div>
+
+                    <div className="toggle-row">
+                        <div className="toggle-label">
+                            <h4>Approval Decision</h4>
+                            <p>Notify the requestor when their transfer or disposal request is approved or rejected</p>
+                        </div>
+                        <button
+                            onClick={() => toggle('approvalDecision')}
+                            className={`toggle-switch ${settings.approvalDecision ? 'on' : 'off'}`}
+                        >
+                            <span className="toggle-thumb" />
+                        </button>
+                    </div>
+
+                    <div className="toggle-row">
+                        <div className="toggle-label">
+                            <h4>Asset Status Change Alert</h4>
+                            <p>Notify IT admins when an asset is marked as Theft/Missing, Under Repair, or Not Submitted</p>
+                        </div>
+                        <button
+                            onClick={() => toggle('assetStatusChange')}
+                            className={`toggle-switch ${settings.assetStatusChange ? 'on' : 'off'}`}
+                        >
+                            <span className="toggle-thumb" />
+                        </button>
+                    </div>
+
+                    <div className="toggle-row">
+                        <div className="toggle-label">
+                            <h4>Employee Offboarding Summary</h4>
+                            <p>Send an offboarding summary email to IT team with list of returned assets when an employee is offboarded</p>
+                        </div>
+                        <button
+                            onClick={() => toggle('employeeOffboarding')}
+                            className={`toggle-switch ${settings.employeeOffboarding ? 'on' : 'off'}`}
                         >
                             <span className="toggle-thumb" />
                         </button>

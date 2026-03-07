@@ -102,6 +102,29 @@ exports.retireAsset = async (req, res) => {
       `Asset ID: ${asset.assetId}, Reason: ${disposalReason}, Method: ${disposalMethod} — submitted for approval.`
     );
 
+    // Non-blocking approval request email to IT team
+    try {
+      const EmailSettings = require("../models/EmailSettings");
+      const NotificationSettings = require("../models/NotificationSettings");
+      const Entity = require("../models/Entity");
+      const { sendApprovalRequestEmail } = require("../services/emailService");
+      const settings = await EmailSettings.findOne();
+      const notifSettings = await NotificationSettings.findOne();
+      if (settings?.enabled && notifSettings?.approvalRequest !== false) {
+        const entityInfo = await Entity.findOne({ where: { code: entityCode } });
+        const backendUrl = settings.backendUrl || `http://${req.hostname}:5000`;
+        await sendApprovalRequestEmail({
+          settings: settings.toJSON(),
+          approval: { ...approval.toJSON(), requestedBy: req.user?.name || req.user?.email || "System" },
+          entityInfo: entityInfo?.toJSON ? entityInfo.toJSON() : entityInfo,
+          backendUrl,
+          entityCode
+        });
+      }
+    } catch (emailErr) {
+      console.error("[retireAsset] Approval request email failed:", emailErr.message);
+    }
+
     return res.json({
       message: "Disposal request submitted for manager approval.",
       requestId: approval.id

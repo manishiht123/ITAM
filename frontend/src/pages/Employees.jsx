@@ -6,9 +6,11 @@ import api from "../services/api";
 import EmployeeTable from "../components/employees/EmployeeTable";
 import AddEmployeeDrawer from "../components/employees/AddEmployeeDrawer";
 import { FaPlus, FaFileUpload, FaFileExport, FaFileAlt } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 import "./Employees.css";
 
 export default function Employees() {
+  const navigate = useNavigate();
   const { entity } = useEntity();
   const toast = useToast();
   const [openAdd, setOpenAdd] = useState(false);
@@ -68,6 +70,11 @@ export default function Employees() {
     } finally {
       e.target.value = null;
     }
+  };
+
+  const handleOffboard = (employee) => {
+    const entityCode = entity === "ALL" ? (employee.entity || null) : entity;
+    navigate("/employees/offboard", { state: { employee, entityCode } });
   };
 
   const handleEdit = (employee) => {
@@ -156,7 +163,7 @@ export default function Employees() {
       />
 
       <PageLayout.Content>
-        <EmployeeTable onEdit={handleEdit} onDelete={handleDelete} refreshToken={refreshToken} />
+        <EmployeeTable onEdit={handleEdit} onDelete={handleDelete} onOffboard={handleOffboard} refreshToken={refreshToken} />
       </PageLayout.Content>
 
       <AddEmployeeDrawer

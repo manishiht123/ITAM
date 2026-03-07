@@ -213,6 +213,29 @@ exports.initiateTransfer = async (req, res) => {
             `Asset ${assetData.assetId} (${assetData.name}) transfer from ${fromEntity} to ${toEntity} submitted for approval.`
         );
 
+        // Non-blocking approval request email to IT team
+        try {
+            const EmailSettings = require("../models/EmailSettings");
+            const NotificationSettings = require("../models/NotificationSettings");
+            const Entity = require("../models/Entity");
+            const { sendApprovalRequestEmail } = require("../services/emailService");
+            const settings = await EmailSettings.findOne();
+            const notifSettings = await NotificationSettings.findOne();
+            if (settings?.enabled && notifSettings?.approvalRequest !== false) {
+                const entityInfo = await Entity.findOne({ where: { code: String(fromEntity).trim().toUpperCase() } });
+                const backendUrl = settings.backendUrl || `http://${req.hostname}:5000`;
+                await sendApprovalRequestEmail({
+                    settings: settings.toJSON(),
+                    approval: { ...approval.toJSON(), requestedBy: req.user?.name || req.user?.email || "System" },
+                    entityInfo: entityInfo?.toJSON ? entityInfo.toJSON() : entityInfo,
+                    backendUrl,
+                    entityCode: String(fromEntity).trim().toUpperCase()
+                });
+            }
+        } catch (emailErr) {
+            console.error("[initiateTransfer] Approval request email failed:", emailErr.message);
+        }
+
         res.json({
             message: `Transfer request for "${assetData.name}" submitted for manager approval.`,
             requestId: approval.id,

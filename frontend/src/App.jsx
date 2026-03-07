@@ -19,6 +19,7 @@ const AssetAllocation = lazy(() => import("./pages/AssetAllocation"));
 const AssetHandover = lazy(() => import("./pages/AssetHandover"));
 const Disposals     = lazy(() => import("./pages/Disposals"));
 const Employees = lazy(() => import("./pages/Employees"));
+const EmployeeOffboarding = lazy(() => import("./pages/EmployeeOffboarding"));
 const Software = lazy(() => import("./pages/Software"));
 const Profile = lazy(() => import("./pages/Profile"));
 const ChangePassword = lazy(() => import("./pages/ChangePassword"));
@@ -45,6 +46,8 @@ const DepreciationReport = lazy(() => import("./pages/DepreciationReport"));
 const FaultyAssetReport  = lazy(() => import("./pages/FaultyAssetReport"));
 const WarrantyAlerts     = lazy(() => import("./pages/WarrantyAlerts"));
 const AIIntelligence = lazy(() => import("./pages/AIIntelligence"));
+const PhysicalAudit  = lazy(() => import("./pages/PhysicalAudit"));
+const AuditSession   = lazy(() => import("./pages/AuditSession"));
 
 // Loading fallback component
 const PageLoader = () => <LoadingOverlay visible={true} message="Loading page..." />;
@@ -154,12 +157,37 @@ export default function App() {
             </Suspense>
           }
         />
+        <Route
+          path="/assets/audit"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <RoleGuard module="assets"><PhysicalAudit /></RoleGuard>
+            </Suspense>
+          }
+        />
+        <Route
+          path="/assets/audit/:id"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <RoleGuard module="assets"><AuditSession /></RoleGuard>
+            </Suspense>
+          }
+        />
         {/* Employees — requires employees access */}
         <Route
           path="employees"
           element={
             <Suspense fallback={<PageLoader />}>
               <RoleGuard module="employees"><Employees /></RoleGuard>
+            </Suspense>
+          }
+        />
+
+        <Route
+          path="/employees/offboard"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <RoleGuard module="employees"><EmployeeOffboarding /></RoleGuard>
             </Suspense>
           }
         />

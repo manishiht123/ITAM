@@ -125,6 +125,138 @@ exports.importEmployees = async (req, res) => {
     }
 };
 
+exports.getEmployeeAssets = async (req, res) => {
+    try {
+        const entityCode = req.headers["x-entity-code"];
+        if (!entityCode || entityCode.toUpperCase() === "ALL") {
+            return res.status(400).json({ error: "A specific entity code is required." });
+        }
+        const Employee = await getEmployeeModel(req);
+        const employee = await Employee.findByPk(req.params.id);
+        if (!employee) return res.status(404).json({ error: "Employee not found." });
+
+        const tSeq = await TenantManager.getConnection(entityCode);
+        const Asset = tSeq.models.Asset || require("../models/Asset").init(tSeq);
+        const identifiers = [employee.employeeId, employee.email].filter(Boolean);
+        const assets = await Asset.findAll({
+            where: {
+                employeeId: { [Op.in]: identifiers },
+                status: { [Op.in]: ["In Use", "Allocated", "Pending Approval"] }
+            }
+        });
+        res.json({ employee, assets });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+exports.offboardEmployee = async (req, res) => {
+    try {
+        const entityCode = req.headers["x-entity-code"];
+        if (!entityCode || entityCode.toUpperCase() === "ALL") {
+            return res.status(400).json({ error: "A specific entity code is required." });
+        }
+        const Employee = await getEmployeeModel(req);
+        const employee = await Employee.findByPk(req.params.id);
+        if (!employee) return res.status(404).json({ error: "Employee not found." });
+
+        const { departureReason = "Not specified", lastWorkingDay, notes = "", assetIds = [] } = req.body;
+
+        const tSeq = await TenantManager.getConnection(entityCode);
+        const Asset = tSeq.models.Asset || require("../models/Asset").init(tSeq);
+
+        let returnedCount = 0;
+        for (const assetId of assetIds) {
+            try {
+                const asset = await Asset.findByPk(assetId);
+                if (!asset) continue;
+                await Asset.update(
+                    { status: "Available", employeeId: null, department: null, location: null },
+                    { where: { id: assetId } }
+                );
+                returnedCount++;
+
+                // Non-blocking return email
+                try {
+                    const EmailSettings = require("../models/EmailSettings");
+                    const NotificationSettings = require("../models/NotificationSettings");
+                    const { sendReturnEmail } = require("../services/emailService");
+                    const Entity = require("../models/Entity");
+                    const settings = await EmailSettings.findOne();
+                    const notifSettings = await NotificationSettings.findOne();
+                    const returnEnabled = notifSettings ? notifSettings.assetReturn !== false : true;
+                    if (settings?.enabled && returnEnabled && employee.email) {
+                        const entityInfo = await Entity.findOne({ where: { code: entityCode } });
+                        const backendUrl = settings.backendUrl || `http://${req.hostname}:5000`;
+                        const updatedAsset = await Asset.findByPk(assetId);
+                        await sendReturnEmail({
+                            settings: settings.toJSON(),
+                            employee: employee.toJSON(),
+                            asset: updatedAsset.toJSON(),
+                            entity: entityInfo?.toJSON ? entityInfo.toJSON() : entityInfo,
+                            backendUrl,
+                            entityCode
+                        });
+                    }
+                } catch (emailErr) {
+                    console.error(`[Offboard] Email for asset ${assetId} failed:`, emailErr.message);
+                }
+            } catch (assetErr) {
+                console.error(`[Offboard] Failed to return asset ${assetId}:`, assetErr.message);
+            }
+        }
+
+        await Employee.update({ status: "Inactive" }, { where: { id: req.params.id } });
+
+        const AuditLog = require("../models/AuditLog");
+        const user = req.user?.email || req.user?.name || "System";
+        const rawIp = req.headers["x-forwarded-for"] || req.ip || req.connection?.remoteAddress;
+        const ip = rawIp ? rawIp.replace(/^::ffff:/, "") : rawIp;
+        await AuditLog.create({
+            user, action: "Employee offboarded", ip,
+            details: `Employee: ${employee.name} (${employee.employeeId || employee.email}) | Reason: ${departureReason} | Assets returned: ${returnedCount}${notes ? ` | Notes: ${notes}` : ""}`
+        });
+
+        // Non-blocking offboarding summary email to IT team
+        try {
+            const EmailSettings = require("../models/EmailSettings");
+            const NotificationSettings = require("../models/NotificationSettings");
+            const Entity = require("../models/Entity");
+            const { sendOffboardingSummaryEmail } = require("../services/emailService");
+            const settings = await EmailSettings.findOne();
+            const notifSettings = await NotificationSettings.findOne();
+            if (settings?.enabled && notifSettings?.employeeOffboarding !== false) {
+                const entityInfo = await Entity.findOne({ where: { code: entityCode } });
+                const backendUrl = settings.backendUrl || `http://${req.hostname}:5000`;
+                // Collect returned asset details for the email
+                const returnedAssets = [];
+                for (const assetId of assetIds) {
+                    try {
+                        const a = await Asset.findByPk(assetId, { raw: true });
+                        if (a) returnedAssets.push(a);
+                    } catch (_) {}
+                }
+                await sendOffboardingSummaryEmail({
+                    settings: settings.toJSON(),
+                    employee: employee.toJSON(),
+                    returnedAssets,
+                    departureReason,
+                    lastWorkingDay,
+                    entityInfo: entityInfo?.toJSON ? entityInfo.toJSON() : entityInfo,
+                    backendUrl,
+                    entityCode
+                });
+            }
+        } catch (emailErr) {
+            console.error("[Offboard] Summary email failed:", emailErr.message);
+        }
+
+        res.json({ message: "Employee offboarded successfully.", returnedCount });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 exports.exportEmployees = async (req, res) => {
     try {
         const rawEntityCode = req.headers["x-entity-code"];

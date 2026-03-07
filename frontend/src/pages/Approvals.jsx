@@ -66,7 +66,7 @@ export default function Approvals() {
     try {
       const [all, my] = await Promise.all([
         isManager ? api.getApprovals(entity, "") : Promise.resolve([]),
-        api.getMyApprovals(entity)
+        api.getMyApprovals()
       ]);
       setAllRows(all || []);
       setMyRows(my || []);

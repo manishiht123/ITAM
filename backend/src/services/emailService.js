@@ -432,4 +432,215 @@ const sendReturnEmail = async ({ settings, employee, asset, entity, backendUrl, 
     });
 };
 
-module.exports = { sendAllocationEmail, sendReturnEmail };
+// ─── Shared helpers for new templates ─────────────────────────────────────────
+const buildTransporterAndFrom = (settings) => ({
+    transporter: buildTransporter(settings),
+    from: resolveFrom(settings)
+});
+
+const simpleRow = (label, value, color) =>
+    `<tr>
+      <td style="padding:9px 16px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#64748b;background:#f8fafc;width:160px;border-bottom:1px solid #f1f5f9;">${label}</td>
+      <td style="padding:9px 16px;font-size:13px;color:${color || "#1e293b"};border-bottom:1px solid #f1f5f9;">${safeValue(value)}</td>
+    </tr>`;
+
+const buildEmailShell = (logoBlock, entityName, title, badgeText, accentColor, bodyHtml) => `
+<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:28px 0;background:#f1f5f9;font-family:'Segoe UI',Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0"
+       style="max-width:600px;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.10);">
+  <tr><td style="background:#0f3460;padding:0;">
+    <table width="100%" cellpadding="0" cellspacing="0"><tr>
+      ${logoBlock}
+      <td style="padding:20px 22px;vertical-align:middle;">
+        <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:#93c5fd;margin-bottom:5px;">${safeValue(entityName)}</div>
+        <div style="font-size:18px;font-weight:700;color:#fff;margin-bottom:3px;">${title}</div>
+        <div style="font-size:11px;color:#bfdbfe;">${new Date().toLocaleDateString("en-GB",{day:"2-digit",month:"long",year:"numeric"})}</div>
+      </td>
+      <td style="padding:0 20px;vertical-align:middle;text-align:right;white-space:nowrap;">
+        <span style="display:inline-block;background:${accentColor};color:#fff;font-size:9px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;padding:6px 14px;border-radius:4px;">${badgeText}</span>
+      </td>
+    </tr></table>
+    <div style="height:3px;background:${accentColor};"></div>
+  </td></tr>
+  <tr><td style="padding:24px 32px 0;">${bodyHtml}</td></tr>
+  <tr><td style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:16px 32px;text-align:center;">
+    <p style="font-size:11px;color:#64748b;margin:0 0 4px;font-weight:600;">${safeValue(entityName || "IT Asset Management")} · IT Asset Management</p>
+    <p style="font-size:10px;color:#94a3b8;margin:0;">This is an automated notification. Please do not reply.</p>
+  </td></tr>
+</table></td></tr></table></body></html>`;
+
+const detailsCard = (title, rows) => `
+  <table width="100%" cellpadding="0" cellspacing="0"
+         style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;margin-bottom:20px;">
+    <tr><td colspan="2" style="background:#0f3460;padding:10px 16px;">
+      <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#fff;">${title}</span>
+    </td></tr>
+    ${rows}
+  </table>`;
+
+// ─── Approval Request Email (notify IT team when request is submitted) ─────────
+const sendApprovalRequestEmail = async ({ settings, approval, entityInfo, backendUrl, entityCode }) => {
+    if (!settings?.enabled || !settings?.smtpUser || !settings?.smtpPass) return;
+    const to = [settings.notifyEmail, settings.smtpUser].filter(Boolean).join(", ");
+    if (!to) return;
+
+    const type = approval.requestType === "transfer" ? "Transfer" : "Disposal";
+    const accentColor = approval.requestType === "transfer" ? "#7c3aed" : "#dc2626";
+    const logoBlock = await resolveLogoBlock(entityInfo?.logo || "", entityInfo?.name || "", backendUrl, entityCode, accentColor);
+    const { transporter, from } = buildTransporterAndFrom(settings);
+
+    const body = `
+      <p style="font-size:13px;color:#475569;margin:0 0 20px;line-height:1.7;">
+        A new <strong>${type} approval request</strong> has been submitted and requires your review.
+      </p>
+      ${detailsCard("Request Details",
+        simpleRow("Asset ID", approval.assetId) +
+        simpleRow("Asset Name", approval.assetName) +
+        simpleRow("Request Type", type) +
+        simpleRow("Requested By", approval.requestedBy) +
+        simpleRow("Entity", approval.entityCode)
+      )}
+      <table width="100%" cellpadding="0" cellspacing="0"
+             style="background:#eff6ff;border-left:4px solid #1a56db;border-radius:0 6px 6px 0;margin-bottom:24px;">
+        <tr><td style="padding:12px 16px;font-size:12.5px;color:#1d4ed8;line-height:1.6;">
+          &#128203; Log in to the ITAM system and review this request under <strong>Approvals</strong>.
+        </td></tr>
+      </table>`;
+
+    await transporter.sendMail({
+        from, to,
+        subject: `[ITAM] ${type} Request Pending Approval — ${safeValue(approval.assetId)}`,
+        html: buildEmailShell(logoBlock, entityInfo?.name, `New ${type} Request — Approval Required`, "Pending", accentColor, body)
+    });
+};
+
+// ─── Approval Decision Email (notify requestor of approve / reject) ────────────
+const sendApprovalDecisionEmail = async ({ settings, approval, entityInfo, backendUrl, entityCode }) => {
+    if (!settings?.enabled || !settings?.smtpUser || !settings?.smtpPass) return;
+    if (!approval.requestedByEmail) return;
+
+    const approved = approval.status === "Approved";
+    const accentColor = approved ? "#10b981" : "#ef4444";
+    const badge = approved ? "Approved" : "Rejected";
+    const type = approval.requestType === "transfer" ? "Transfer" : "Disposal";
+    const logoBlock = await resolveLogoBlock(entityInfo?.logo || "", entityInfo?.name || "", backendUrl, entityCode, accentColor);
+    const { transporter, from } = buildTransporterAndFrom(settings);
+
+    const lastRow = approval.reviewComments
+        ? `<tr><td style="padding:9px 16px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#64748b;background:#f8fafc;">Comments</td><td style="padding:9px 16px;font-size:13px;color:#1e293b;">${safeValue(approval.reviewComments)}</td></tr>`
+        : "";
+
+    const body = `
+      <p style="font-size:14px;color:#1e293b;margin:0 0 4px;">Hi <strong>${safeValue(approval.requestedBy)}</strong>,</p>
+      <p style="font-size:13px;color:#475569;margin:0 0 20px;line-height:1.7;">
+        Your <strong>${type}</strong> request for asset <strong>${safeValue(approval.assetId)}</strong>
+        has been <strong style="color:${accentColor};">${badge.toLowerCase()}</strong>
+        by <strong>${safeValue(approval.reviewedBy)}</strong>.
+      </p>
+      ${detailsCard("Decision Details",
+        simpleRow("Asset", `${approval.assetId} — ${approval.assetName}`) +
+        `<tr><td style="padding:9px 16px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#64748b;background:#f8fafc;border-bottom:1px solid #f1f5f9;">Decision</td>
+         <td style="padding:9px 16px;font-size:13px;font-weight:700;color:${accentColor};border-bottom:1px solid #f1f5f9;">${badge}</td></tr>` +
+        simpleRow("Reviewed By", approval.reviewedBy) +
+        lastRow
+      )}`;
+
+    await transporter.sendMail({
+        from,
+        to: approval.requestedByEmail,
+        subject: `[ITAM] ${type} Request ${badge} — ${safeValue(approval.assetId)}`,
+        html: buildEmailShell(logoBlock, entityInfo?.name, `${type} Request ${badge}`, badge, accentColor, body)
+    });
+};
+
+// ─── Asset Status Change Email (notify IT team of theft / repair / etc.) ───────
+const sendStatusChangeEmail = async ({ settings, asset, newStatus, changedBy, entityInfo, backendUrl, entityCode }) => {
+    if (!settings?.enabled || !settings?.smtpUser || !settings?.smtpPass) return;
+    const to = [settings.notifyEmail, settings.smtpUser].filter(Boolean).join(", ");
+    if (!to) return;
+
+    const isAlert = ["Theft/Missing", "Not Submitted"].includes(newStatus);
+    const accentColor = isAlert ? "#dc2626" : "#f59e0b";
+    const logoBlock = await resolveLogoBlock(entityInfo?.logo || "", entityInfo?.name || "", backendUrl, entityCode, accentColor);
+    const { transporter, from } = buildTransporterAndFrom(settings);
+
+    const body = `
+      <p style="font-size:13px;color:#475569;margin:0 0 20px;line-height:1.7;">
+        ${isAlert ? "&#9888;&#65039; An asset has been flagged with a critical status update." : "An asset status has been updated."}
+      </p>
+      ${detailsCard("Asset Details",
+        simpleRow("Asset ID", asset.assetId) +
+        simpleRow("Asset Name", asset.name) +
+        `<tr><td style="padding:9px 16px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#64748b;background:#f8fafc;border-bottom:1px solid #f1f5f9;">New Status</td>
+         <td style="padding:9px 16px;font-size:13px;font-weight:700;color:${accentColor};border-bottom:1px solid #f1f5f9;">${safeValue(newStatus)}</td></tr>` +
+        simpleRow("Changed By", changedBy) +
+        simpleRow("Serial No.", asset.serialNumber)
+      )}`;
+
+    await transporter.sendMail({
+        from, to,
+        subject: `[ITAM] Asset Status: ${safeValue(newStatus)} — ${safeValue(asset.assetId)}`,
+        html: buildEmailShell(logoBlock, entityInfo?.name, `Asset Status Change${isAlert ? " — Alert" : ""}`, safeValue(newStatus), accentColor, body)
+    });
+};
+
+// ─── Employee Offboarding Summary Email (to IT team) ──────────────────────────
+const sendOffboardingSummaryEmail = async ({ settings, employee, returnedAssets, departureReason, lastWorkingDay, entityInfo, backendUrl, entityCode }) => {
+    if (!settings?.enabled || !settings?.smtpUser || !settings?.smtpPass) return;
+    const to = [settings.notifyEmail, settings.returnToEmail, settings.smtpUser].filter(Boolean).join(", ");
+    if (!to) return;
+
+    const logoBlock = await resolveLogoBlock(entityInfo?.logo || "", entityInfo?.name || "", backendUrl, entityCode, "#f59e0b");
+    const { transporter, from } = buildTransporterAndFrom(settings);
+
+    const assetRows = (returnedAssets || []).map(a =>
+        `<tr>
+          <td style="padding:8px 14px;font-size:12px;color:#1e293b;border-bottom:1px solid #f1f5f9;">${safeValue(a.assetId)}</td>
+          <td style="padding:8px 14px;font-size:12px;color:#1e293b;border-bottom:1px solid #f1f5f9;">${safeValue(a.name)}</td>
+          <td style="padding:8px 14px;font-size:12px;color:#1e293b;border-bottom:1px solid #f1f5f9;">${safeValue(a.category)}</td>
+        </tr>`
+    ).join("");
+
+    const assetsTable = returnedAssets?.length ? `
+      <table width="100%" cellpadding="0" cellspacing="0"
+             style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;margin-bottom:20px;">
+        <tr><td colspan="3" style="background:#0f3460;padding:10px 16px;">
+          <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#fff;">
+            Assets Returned to Inventory (${returnedAssets.length})
+          </span>
+        </td></tr>
+        <tr>
+          <th style="padding:8px 14px;font-size:11px;font-weight:600;text-transform:uppercase;color:#64748b;background:#f8fafc;text-align:left;border-bottom:1px solid #e2e8f0;">Asset ID</th>
+          <th style="padding:8px 14px;font-size:11px;font-weight:600;text-transform:uppercase;color:#64748b;background:#f8fafc;text-align:left;border-bottom:1px solid #e2e8f0;">Name</th>
+          <th style="padding:8px 14px;font-size:11px;font-weight:600;text-transform:uppercase;color:#64748b;background:#f8fafc;text-align:left;border-bottom:1px solid #e2e8f0;">Category</th>
+        </tr>
+        ${assetRows}
+      </table>` : `<p style="font-size:13px;color:#475569;margin-bottom:20px;">No assets were returned (employee had no assigned assets).</p>`;
+
+    const body = `
+      ${detailsCard("Employee Details",
+        simpleRow("Name", employee.name) +
+        simpleRow("Employee ID", employee.employeeId) +
+        simpleRow("Department", employee.department) +
+        simpleRow("Reason", departureReason) +
+        simpleRow("Last Working Day", lastWorkingDay)
+      )}
+      ${assetsTable}`;
+
+    await transporter.sendMail({
+        from, to,
+        subject: `[ITAM] Offboarding Complete — ${safeValue(employee.name)}`,
+        html: buildEmailShell(logoBlock, entityInfo?.name, "Employee Offboarding Complete", "Offboarded", "#f59e0b", body)
+    });
+};
+
+module.exports = {
+    sendAllocationEmail,
+    sendReturnEmail,
+    sendApprovalRequestEmail,
+    sendApprovalDecisionEmail,
+    sendStatusChangeEmail,
+    sendOffboardingSummaryEmail
+};

@@ -7,8 +7,10 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 router.get("/", employeeController.getEmployees);
 router.get("/export", employeeController.exportEmployees);
+router.get("/:id/assets", employeeController.getEmployeeAssets);
 router.post("/", employeeController.createEmployee);
 router.post("/import", upload.single("file"), employeeController.importEmployees);
+router.post("/:id/offboard", employeeController.offboardEmployee);
 router.put("/:id", employeeController.updateEmployee);
 router.delete("/:id", employeeController.deleteEmployee);
 

@@ -18,7 +18,8 @@ import {
   FaExclamationTriangle,
   FaShieldAlt,
   FaTasks,
-  FaPuzzlePiece
+  FaPuzzlePiece,
+  FaClipboardCheck
 } from "react-icons/fa";
 
 import "../../styles/sidebar.css";
@@ -101,31 +102,6 @@ export default function Sidebar() {
           {!collapsed && <span>Dashboard</span>}
         </NavLink>
 
-        <NavLink to="/approvals" className="menu-item" style={{ position: "relative" }}>
-          <FaTasks />
-          {!collapsed && (
-            <span>
-              Approvals
-              {pendingApprovals > 0 && (
-                <span style={{
-                  display: "inline-flex", alignItems: "center", justifyContent: "center",
-                  minWidth: "18px", height: "18px", padding: "0 5px", borderRadius: "9px",
-                  fontSize: "10px", fontWeight: 700, background: "var(--danger)", color: "#fff",
-                  marginLeft: "6px", lineHeight: 1
-                }}>{pendingApprovals}</span>
-              )}
-            </span>
-          )}
-          {collapsed && pendingApprovals > 0 && (
-            <span style={{
-              position: "absolute", top: "6px", right: "6px",
-              minWidth: "14px", height: "14px", borderRadius: "7px",
-              fontSize: "9px", fontWeight: 700, background: "var(--danger)", color: "#fff",
-              display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px"
-            }}>{pendingApprovals}</span>
-          )}
-        </NavLink>
-
         {showAssets && (
           <NavLink to="/assets" className="menu-item">
             <FaBoxOpen />
@@ -168,10 +144,43 @@ export default function Sidebar() {
           </NavLink>
         )}
 
+        <NavLink to="/approvals" className="menu-item" style={{ position: "relative" }}>
+          <FaTasks />
+          {!collapsed && (
+            <span>
+              Approvals
+              {pendingApprovals > 0 && (
+                <span style={{
+                  display: "inline-flex", alignItems: "center", justifyContent: "center",
+                  minWidth: "18px", height: "18px", padding: "0 5px", borderRadius: "9px",
+                  fontSize: "10px", fontWeight: 700, background: "var(--danger)", color: "#fff",
+                  marginLeft: "6px", lineHeight: 1
+                }}>{pendingApprovals}</span>
+              )}
+            </span>
+          )}
+          {collapsed && pendingApprovals > 0 && (
+            <span style={{
+              position: "absolute", top: "6px", right: "6px",
+              minWidth: "14px", height: "14px", borderRadius: "7px",
+              fontSize: "9px", fontWeight: 700, background: "var(--danger)", color: "#fff",
+              display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px"
+            }}>{pendingApprovals}</span>
+          )}
+        </NavLink>
+        
+
         {showAssets && (
           <NavLink to="/assets/warranty-alerts" className="menu-item">
             <FaShieldAlt />
             {!collapsed && <span>Warranty Alerts</span>}
+          </NavLink>
+        )}
+
+        {showAssets && (
+          <NavLink to="/assets/audit" className="menu-item">
+            <FaClipboardCheck />
+            {!collapsed && <span>Physical Audit</span>}
           </NavLink>
         )}
 

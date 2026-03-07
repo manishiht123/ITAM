@@ -21,6 +21,8 @@ const AlertRule = require("./models/AlertRule");
 const AssetTransfer = require("./models/AssetTransfer");
 const AssetDisposal = require("./models/AssetDisposal");
 const ApprovalRequest = require("./models/ApprovalRequest");
+const AssetAudit = require("./models/AssetAudit");
+const AssetAuditItem = require("./models/AssetAuditItem");
 require("./models/Entity");
 require("./models/Organization");
 require("./models/AssetIdPrefix");
@@ -223,6 +225,28 @@ const ensureUserTwoFactorColumns = async () => {
   }
 };
 
+const ensureNotificationSettingsColumns = async () => {
+  const [rows] = await sequelize.query(`
+    SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = "NotificationSettings"
+      AND COLUMN_NAME IN ("approvalRequest", "approvalDecision", "assetStatusChange", "employeeOffboarding")
+  `);
+  const existing = new Set(rows.map((r) => r.COLUMN_NAME));
+  if (!existing.has('approvalRequest')) {
+    await sequelize.query("ALTER TABLE `NotificationSettings` ADD COLUMN `approvalRequest` TINYINT(1) NOT NULL DEFAULT 1;");
+  }
+  if (!existing.has('approvalDecision')) {
+    await sequelize.query("ALTER TABLE `NotificationSettings` ADD COLUMN `approvalDecision` TINYINT(1) NOT NULL DEFAULT 1;");
+  }
+  if (!existing.has('assetStatusChange')) {
+    await sequelize.query("ALTER TABLE `NotificationSettings` ADD COLUMN `assetStatusChange` TINYINT(1) NOT NULL DEFAULT 1;");
+  }
+  if (!existing.has('employeeOffboarding')) {
+    await sequelize.query("ALTER TABLE `NotificationSettings` ADD COLUMN `employeeOffboarding` TINYINT(1) NOT NULL DEFAULT 1;");
+  }
+};
+
 const ensureSystemPreferenceColumns = async () => {
   const [rows] = await sequelize.query(`
     SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
@@ -297,14 +321,29 @@ const startServer = async () => {
     });
     await AlertRule.sync();
     await AssetTransfer.sync();
+    // Ensure AssetTransfer table has Pending/Cancelled ENUM values and targetAssetId column
+    await sequelize.query(
+      "ALTER TABLE `AssetTransfers` MODIFY COLUMN `status` ENUM('Completed', 'Pending', 'Cancelled') NOT NULL DEFAULT 'Completed';"
+    ).catch(() => {});
+    await sequelize.query(`
+      SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'AssetTransfers' AND COLUMN_NAME = 'targetAssetId'
+    `).then(async ([rows]) => {
+      if (!rows.length) {
+        await sequelize.query("ALTER TABLE `AssetTransfers` ADD COLUMN `targetAssetId` VARCHAR(255) NULL;");
+      }
+    }).catch(() => {});
     await AssetDisposal.sync();
     await ApprovalRequest.sync();
+    await AssetAudit.sync();
+    await AssetAuditItem.sync();
     await CustomFieldDefinition.sync();
     await ensureAssetColumns(sequelize);
     await ensureAssetStatusEnum(sequelize);
     await ensureUserPermissionColumns();
     await ensureUserLockoutColumns();
     await ensureUserTwoFactorColumns();
+    await ensureNotificationSettingsColumns();
     await ensureSystemPreferenceColumns();
     await ensureEntityLogoColumn();
     await ensureEmailSettingsBackendUrlColumn();

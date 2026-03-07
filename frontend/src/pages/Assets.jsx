@@ -40,8 +40,7 @@ export default function Assets() {
   const [showAllocateModal, setShowAllocateModal] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [allocationData, setAllocationData] = useState({ employeeId: "" });
-  const [returnConfirm, setReturnConfirm] = useState({ open: false, asset: null });
-  const [repairConfirm, setRepairConfirm] = useState({ open: false, asset: null });
+const [repairConfirm, setRepairConfirm] = useState({ open: false, asset: null });
 
   // Retirement modal state
   const [retireModal, setRetireModal] = useState({ open: false, asset: null });
@@ -241,28 +240,10 @@ export default function Assets() {
   // --- ACTIONS ---
 
   const handleReturn = (asset) => {
-    setReturnConfirm({ open: true, asset });
-  };
-
-  const confirmReturn = async () => {
-    const asset = returnConfirm.asset;
-    setReturnConfirm({ open: false, asset: null });
-    try {
-      // Never send "ALL" as entity code — always resolve to the asset's own entity
-      const entityCode = (selectedEntityCode && selectedEntityCode !== "ALL")
-        ? selectedEntityCode
-        : (asset.entity || null);
-      await api.updateAsset(asset.id, {
-        status: "Available",
-        employeeId: null,
-        department: null,
-        location: null
-      }, entityCode);
-      toast.success(`Asset ${asset.name} returned successfully`);
-      loadData();
-    } catch (err) {
-      toast.error(err.message || "Failed to return asset");
-    }
+    const entityCode = (selectedEntityCode && selectedEntityCode !== "ALL")
+      ? selectedEntityCode
+      : (asset.entity || null);
+    navigate("/assets/handover", { state: { asset, entityCode } });
   };
 
   const confirmMarkAvailable = async () => {
@@ -372,7 +353,7 @@ export default function Assets() {
         authorizedBy: transferForm.authorizedBy,
         transferDate: transferForm.transferDate
       });
-      toast.success(`Asset "${transferAsset.name}" transferred to ${transferForm.toEntity} successfully.`);
+      toast.success(`Transfer request for "${transferAsset.name}" submitted for approval. Check the Approvals section to track status.`);
       setShowTransferModal(false);
       loadData();
     } catch (err) {
@@ -577,11 +558,13 @@ export default function Assets() {
   };
 
   // ── Batch selection helpers ──────────────────────────────────────
+  const selKey = (a) => `${a.entity || ""}::${a.id}`;
+
   const handleSelect = (asset, checked) => {
     setSelectedIds(prev => {
       const next = new Map(prev);
-      if (checked) next.set(asset.id, { id: asset.id, entity: asset.entity, assetId: asset.assetId, name: asset.name });
-      else next.delete(asset.id);
+      if (checked) next.set(selKey(asset), { id: asset.id, entity: asset.entity, assetId: asset.assetId, name: asset.name });
+      else next.delete(selKey(asset));
       return next;
     });
   };
@@ -590,8 +573,8 @@ export default function Assets() {
     setSelectedIds(prev => {
       const next = new Map(prev);
       visibleAssets.forEach(a => {
-        if (checked) next.set(a.id, { id: a.id, entity: a.entity, assetId: a.assetId, name: a.name });
-        else next.delete(a.id);
+        if (checked) next.set(selKey(a), { id: a.id, entity: a.entity, assetId: a.assetId, name: a.name });
+        else next.delete(selKey(a));
       });
       return next;
     });
@@ -752,7 +735,7 @@ export default function Assets() {
                 <input
                   type="checkbox"
                   className="batch-row-checkbox"
-                  checked={visibleAssets.length > 0 && visibleAssets.every(a => selectedIds.has(a.id))}
+                  checked={visibleAssets.length > 0 && visibleAssets.every(a => selectedIds.has(selKey(a)))}
                   onChange={e => handleSelectAll(e.target.checked, visibleAssets)}
                   title="Select all visible"
                 />
@@ -814,12 +797,12 @@ export default function Assets() {
                 const rowId = asset.assetId || asset.id || "";
                 const rowKey = `${rowEntity}::${String(rowId).trim().toUpperCase()}`;
                 return (
-                <tr key={rowKey} className={selectedIds.has(asset.id) ? "batch-row-selected" : ""}>
+                <tr key={rowKey} className={selectedIds.has(selKey(asset)) ? "batch-row-selected" : ""}>
                   <td className="batch-checkbox-th" onClick={e => e.stopPropagation()}>
                     <input
                       type="checkbox"
                       className="batch-row-checkbox"
-                      checked={selectedIds.has(asset.id)}
+                      checked={selectedIds.has(selKey(asset))}
                       onChange={e => handleSelect(asset, e.target.checked)}
                     />
                   </td>
@@ -1006,18 +989,7 @@ export default function Assets() {
         </div>
       )}
 
-      {/* ================= RETURN CONFIRM ================= */}
-      <ConfirmDialog
-        open={returnConfirm.open}
-        title="Return Asset"
-        message={`Are you sure you want to return "${returnConfirm.asset?.name}"? It will be marked as Available.`}
-        confirmText="Return Asset"
-        variant="danger"
-        onConfirm={confirmReturn}
-        onCancel={() => setReturnConfirm({ open: false, asset: null })}
-      />
-
-      {/* ================= REPAIR COMPLETE CONFIRM ================= */}
+{/* ================= REPAIR COMPLETE CONFIRM ================= */}
       <ConfirmDialog
         open={repairConfirm.open}
         title="Mark as Available"
